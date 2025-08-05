@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dashboard_page.dart';
+import 'package:go_router/go_router.dart';
+import '../router.dart';
+import '../main.dart' show MyAppStateBridge;
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -34,25 +36,76 @@ class _LoginPageState extends State<LoginPage> {
     // Login dummy: terima username/password apa saja
     if (_loading) return;
     setState(() => _loading = true);
+    debugPrint('[LOGIN] Button pressed');
 
     try {
-      // Tidak perlu delay panjang; cukup jadwalkan ke frame berikutnya
-      await Future<void>.delayed(Duration.zero);
+      // Validasi sederhana
+      final username = _usernameCtrl.text.trim();
+      final password = _passwordCtrl.text;
+      debugPrint(
+        '[LOGIN] Input username="$username" len(password)=${password.length}',
+      );
+
+      if (username.isEmpty || password.isEmpty) {
+        debugPrint('[LOGIN] Validation failed: empty field');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Username/Password tidak boleh kosong'),
+            ),
+          );
+        }
+        return;
+      }
+
+      // Simulasi minimal kerja async
+      await Future<void>.delayed(const Duration(milliseconds: 50));
 
       // Simpan status login dan username ke SharedPreferences
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('isLoggedIn', true);
-      await prefs.setString('username', _usernameCtrl.text.trim());
+      await prefs.setString('username', username);
+      debugPrint(
+        '[LOGIN] SharedPreferences saved: isLoggedIn=true, username="$username"',
+      );
+
+      // Beritahu aplikasi bahwa status login berubah (untuk GoRouter refresh)
+      // Update ValueNotifier statis milik MyApp agar GoRouter refresh redirect
+      MyAppStateBridge.isLoggedInNotifier.value = true;
 
       if (!mounted) return;
-
-      // Navigasi langsung ke DashboardPage tanpa named route
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const DashboardPage()),
+      // Tampilkan snackbar sukses
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Login berhasil'),
+          behavior: SnackBarBehavior.floating,
+        ),
       );
-    } catch (e) {
-      // Hilangkan SnackBar error agar tidak muncul pesan gagal masuk pada login dummy
-      debugPrint('Login error (suppressed): $e');
+
+      // Pastikan MaterialApp.router rebuild dengan status login terbaru,
+      // lalu gunakan rootNavigator untuk navigasi agar tidak bentrok context.
+      // Navigasi setelah frame berikutnya (setelah notifier di-update)
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final rootCtx = rootNavigatorKey.currentContext ?? context;
+        debugPrint(
+          '[LOGIN] Navigating to dashboard using root navigator '
+          '(rootCtx=${rootNavigatorKey.currentContext != null}, '
+          'mounted=$mounted)',
+        );
+        try {
+          rootCtx.goNamed(AppRoute.dashboard.name);
+          debugPrint('[LOGIN] rootCtx.goNamed(AppRoute.dashboard) invoked');
+        } catch (e, st) {
+          debugPrint('[LOGIN][NAV ERROR] goNamed failed: $e\n$st');
+        }
+      });
+    } catch (e, st) {
+      debugPrint('[LOGIN][ERROR] $e\n$st');
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Login gagal, coba lagi')));
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }

@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
+import 'services/session_storage.dart' show SessionStorage;
 import 'screens/dashboard_page.dart';
 import 'screens/tee_time/booking_calendar_page.dart';
 import 'screens/tee_time/manage_reservation_page.dart';
 import 'screens/tee_time/create_tee_time_page.dart';
 import 'screens/pos/pos_system_page.dart';
 import 'screens/pos/invoice_page.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'screens/login_page.dart';
+import 'package:go_router/go_router.dart';
+import 'router.dart';
+import 'router.dart' show rootNavigatorKey;
+import 'screens/profile/profile_page.dart';
+import 'main.dart' show MyAppStateBridge;
 
 /// Scaffold sederhana untuk header dengan dua dropdown dan body fleksibel.
 /// Dipisah dari main.dart agar main.dart hanya sebagai pemanggil.
@@ -15,8 +20,30 @@ class AppScaffold extends StatelessWidget {
   final String title;
   const AppScaffold({super.key, required this.body, this.title = 'Dashboard'});
 
+  Future<void> _handleLogout(BuildContext context) async {
+    // Hindari akses context selama operasi async: tidak menyentuh UI hingga await selesai.
+    final storage = const SessionStorage();
+    final success = await storage.clearSession();
+
+    // Setelah operasi selesai, baru boleh gunakan context untuk navigasi/UX.
+    if (!context.mounted) return;
+
+    // TODO: sesuaikan rute login Anda jika berbeda.
+    if (success) {
+      // Contoh: arahkan ke halaman login dan hapus stack.
+      Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+    } else {
+      // Beri umpan balik kegagalan.
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Gagal logout. Coba lagi.')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Contoh penempatan action Logout pada AppBar/Overflow menu:
+    // Jika file Anda sudah memiliki AppBar/menus, Anda bisa memindahkan IconButton ini ke sana.
     final isWide = MediaQuery.of(context).size.width >= 900;
 
     return Scaffold(
@@ -49,9 +76,17 @@ class AppScaffold extends StatelessWidget {
             icon: Icons.dashboard,
             label: 'Dashboard',
             onTap: () {
-              Navigator.of(
-                context,
-              ).push(MaterialPageRoute(builder: (_) => const DashboardPage()));
+              // Hindari memakai context dari AppBar langsung; gunakan root context
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                final rc = rootNavigatorKey.currentContext;
+                if (rc != null && rc.mounted) {
+                  try {
+                    GoRouter.of(rc).goNamed(AppRoute.dashboard.name);
+                  } catch (e) {
+                    debugPrint('Error navigating to dashboard: $e');
+                  }
+                }
+              });
             },
           ),
           // Membership & Register Player removed; keep working menus below.
@@ -59,29 +94,26 @@ class AppScaffold extends StatelessWidget {
             icon: Icons.calendar_month,
             label: 'Tee Time Reservation',
             onSelect: (ctx, key) {
-              switch (key) {
-                case 'booking':
-                  Navigator.of(ctx).push(
-                    MaterialPageRoute(
-                      builder: (_) => const BookingCalendarPage(),
-                    ),
-                  );
-                  break;
-                case 'manage':
-                  Navigator.of(ctx).push(
-                    MaterialPageRoute(
-                      builder: (_) => const ManageReservationPage(),
-                    ),
-                  );
-                  break;
-                case 'create':
-                  Navigator.of(ctx).push(
-                    MaterialPageRoute(
-                      builder: (context) => const CreateTeeTimePage(),
-                    ),
-                  );
-                  break;
-              }
+              // Navigasi selalu lewat root context dan dijalankan pada frame berikutnya
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                final rc = rootNavigatorKey.currentContext;
+                if (rc == null || !rc.mounted) return;
+                try {
+                  switch (key) {
+                    case 'booking':
+                      GoRouter.of(rc).goNamed(AppRoute.teeBooking.name);
+                      break;
+                    case 'manage':
+                      GoRouter.of(rc).goNamed(AppRoute.teeManage.name);
+                      break;
+                    case 'create':
+                      GoRouter.of(rc).goNamed(AppRoute.teeCreate.name);
+                      break;
+                  }
+                } catch (e) {
+                  debugPrint('Error navigating to tee time: $e');
+                }
+              });
             },
             items: const [
               _MenuItem(
@@ -97,18 +129,22 @@ class AppScaffold extends StatelessWidget {
             icon: Icons.point_of_sale,
             label: 'Manage POS',
             onSelect: (ctx, key) {
-              switch (key) {
-                case 'pos':
-                  Navigator.of(ctx).push(
-                    MaterialPageRoute(builder: (_) => const PosSystemPage()),
-                  );
-                  break;
-                case 'invoice':
-                  Navigator.of(ctx).push(
-                    MaterialPageRoute(builder: (_) => const InvoicePage()),
-                  );
-                  break;
-              }
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                final rc = rootNavigatorKey.currentContext;
+                if (rc == null || !rc.mounted) return;
+                try {
+                  switch (key) {
+                    case 'pos':
+                      GoRouter.of(rc).goNamed(AppRoute.pos.name);
+                      break;
+                    case 'invoice':
+                      GoRouter.of(rc).goNamed(AppRoute.invoice.name);
+                      break;
+                  }
+                } catch (e) {
+                  debugPrint('Error navigating to POS: $e');
+                }
+              });
             },
             items: const [
               _MenuItem('pos', 'POS System', Icons.store),
@@ -116,65 +152,175 @@ class AppScaffold extends StatelessWidget {
             ],
           ),
           const SizedBox(width: 8),
+          // User dropdown: Profile & Logout
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Row(
               children: [
                 const Icon(Icons.person, color: Colors.white70, size: 18),
                 const SizedBox(width: 6),
-                PopupMenuButton<String>(
-                  tooltip: 'User Menu',
-                  offset: const Offset(0, 40),
-                  onSelected: (key) async {
-                    switch (key) {
-                      case 'profile':
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => const _ProfilePage(),
-                          ),
+                Builder(
+                  builder: (btnContext) {
+                    return GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTapDown: (details) async {
+                        // Hitung posisi tepat untuk dropdown
+                        final RenderBox btnBox =
+                            btnContext.findRenderObject() as RenderBox;
+                        final Offset btnTopLeft = btnBox.localToGlobal(
+                          Offset.zero,
                         );
-                        break;
-                      case 'logout':
-                        final prefs = await SharedPreferences.getInstance();
-                        await prefs.setBool('isLoggedIn', false);
-                        if (context.mounted) {
-                          Navigator.of(context).pushAndRemoveUntil(
-                            MaterialPageRoute(
-                              builder: (_) => const LoginPage(),
+                        final Size btnSize = btnBox.size;
+                        final double left = btnTopLeft.dx;
+                        final double top = btnTopLeft.dy + btnSize.height;
+                        final RelativeRect position = RelativeRect.fromLTRB(
+                          left,
+                          top,
+                          left,
+                          0,
+                        );
+
+                        final key = await showMenu<String>(
+                          context: btnContext,
+                          position: position,
+                          items: const [
+                            PopupMenuItem<String>(
+                              value: 'profile',
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.person,
+                                    size: 18,
+                                    color: Colors.black,
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text('Profile'),
+                                ],
+                              ),
                             ),
-                            (route) => false,
-                          );
+                            PopupMenuDivider(),
+                            PopupMenuItem<String>(
+                              value: 'logout',
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.logout,
+                                    size: 18,
+                                    color: Colors.black,
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text('Logout'),
+                                ],
+                              ),
+                            ),
+                          ],
+                        );
+
+                        if (key != null) {
+                          // Pastikan menu benar-benar tertutup sebelum navigasi
+                          await Future.microtask(() async {
+                            // Tambah delay kecil untuk memastikan menu benar-benar tertutup
+                            await Future.delayed(
+                              const Duration(milliseconds: 100),
+                            );
+
+                            switch (key) {
+                              case 'profile':
+                                {
+                                  // Gunakan post frame callback untuk navigasi yang aman
+                                  WidgetsBinding.instance.addPostFrameCallback((
+                                    _,
+                                  ) {
+                                    final ctx = rootNavigatorKey.currentContext;
+                                    if (ctx != null && ctx.mounted) {
+                                      try {
+                                        GoRouter.of(
+                                          ctx,
+                                        ).goNamed(AppRoute.profile.name);
+                                      } catch (e) {
+                                        debugPrint(
+                                          'Error navigating to profile: $e',
+                                        );
+                                      }
+                                    }
+                                  });
+                                  break;
+                                }
+                              case 'logout':
+                                {
+                                  try {
+                                    // Jangan sentuh UI/context sampai operasi async selesai
+                                    final success = await SessionStorage()
+                                        .clearSession();
+                                    if (success) {
+                                      // Update state global
+                                      MyAppStateBridge
+                                              .isLoggedInNotifier
+                                              .value =
+                                          false;
+
+                                      // Navigasi di frame berikutnya menggunakan root context
+                                      WidgetsBinding.instance.addPostFrameCallback((
+                                        _,
+                                      ) {
+                                        final ctx =
+                                            rootNavigatorKey.currentContext;
+                                        if (ctx != null && ctx.mounted) {
+                                          try {
+                                            GoRouter.of(
+                                              ctx,
+                                            ).goNamed(AppRoute.login.name);
+                                          } catch (e) {
+                                            debugPrint(
+                                              'Error navigating to login: $e',
+                                            );
+                                          }
+                                        } else {
+                                          debugPrint(
+                                            'Context is null or not mounted on logout navigation',
+                                          );
+                                        }
+                                      });
+                                    } else {
+                                      // Gunakan root context untuk snackbar
+                                      WidgetsBinding.instance
+                                          .addPostFrameCallback((_) {
+                                            final ctx =
+                                                rootNavigatorKey.currentContext;
+                                            if (ctx != null && ctx.mounted) {
+                                              try {
+                                                ScaffoldMessenger.of(
+                                                  ctx,
+                                                ).showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text(
+                                                      'Gagal logout. Coba lagi.',
+                                                    ),
+                                                  ),
+                                                );
+                                              } catch (e) {
+                                                debugPrint(
+                                                  'Error showing snackbar: $e',
+                                                );
+                                              }
+                                            }
+                                          });
+                                    }
+                                  } catch (e) {
+                                    debugPrint('Error during logout: $e');
+                                  }
+                                  break;
+                                }
+                            }
+                          });
                         }
-                        break;
-                    }
+                      },
+                      child: const Text(
+                        'Welcome, fitri ▾',
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                    );
                   },
-                  itemBuilder: (context) => const [
-                    PopupMenuItem<String>(
-                      value: 'profile',
-                      child: Row(
-                        children: [
-                          Icon(Icons.person, size: 18, color: Colors.black),
-                          SizedBox(width: 8),
-                          Text('Profile'),
-                        ],
-                      ),
-                    ),
-                    PopupMenuDivider(),
-                    PopupMenuItem<String>(
-                      value: 'logout',
-                      child: Row(
-                        children: [
-                          Icon(Icons.logout, size: 18, color: Colors.black),
-                          SizedBox(width: 8),
-                          Text('Logout'),
-                        ],
-                      ),
-                    ),
-                  ],
-                  child: const Text(
-                    'Welcome, fitri ▾',
-                    style: TextStyle(color: Colors.white70),
-                  ),
                 ),
               ],
             ),
@@ -226,31 +372,57 @@ class _TopMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PopupMenuButton<String>(
-      tooltip: label,
-      offset: const Offset(0, 40),
-      itemBuilder: (context) {
-        return items
-            .map(
-              (e) => PopupMenuItem<String>(
-                value: e.key,
-                child: Row(
-                  children: [
-                    Icon(e.icon, size: 18),
-                    const SizedBox(width: 8),
-                    Flexible(child: Text(e.title)),
-                  ],
-                ),
-              ),
-            )
-            .toList();
+    // Gunakan onTapDown + showMenu manual agar kita bisa menutup menu terlebih dulu
+    // sebelum melakukan navigasi. Ini mencegah penggunaan context yang ter-deactivated.
+    return Builder(
+      builder: (btnContext) {
+        return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTapDown: (details) async {
+            // Hitung posisi tepat berdasarkan ukuran tombol header yang ditekan
+            final RenderBox btnBox = btnContext.findRenderObject() as RenderBox;
+            final Offset btnTopLeft = btnBox.localToGlobal(Offset.zero);
+            final Size btnSize = btnBox.size;
+            final double left = btnTopLeft.dx;
+            final double top = btnTopLeft.dy + btnSize.height;
+            final RelativeRect position = RelativeRect.fromLTRB(
+              left,
+              top,
+              left, // gunakan left juga sebagai right agar dropdown sejajar kiri tombol
+              0,
+            );
+            final key = await showMenu<String>(
+              context: btnContext,
+              position: position,
+              items: items
+                  .map(
+                    (e) => PopupMenuItem<String>(
+                      value: e.key,
+                      child: Row(
+                        children: [
+                          Icon(e.icon, size: 18),
+                          const SizedBox(width: 8),
+                          Flexible(child: Text(e.title)),
+                        ],
+                      ),
+                    ),
+                  )
+                  .toList(),
+            );
+            if (key != null) {
+              // Pastikan menu benar-benar tertutup sebelum navigasi
+              await Future.microtask(() {
+                onSelect(btnContext, key);
+              });
+            }
+          },
+          child: TextButton.icon(
+            onPressed: null,
+            icon: Icon(icon, size: 18, color: Colors.white70),
+            label: Text(label, style: const TextStyle(color: Colors.white70)),
+          ),
+        );
       },
-      onSelected: (key) => onSelect(context, key),
-      child: TextButton.icon(
-        onPressed: null,
-        icon: Icon(icon, size: 18, color: Colors.white70),
-        label: Text(label, style: const TextStyle(color: Colors.white70)),
-      ),
     );
   }
 }
@@ -262,14 +434,14 @@ class _MenuItem {
   const _MenuItem(this.key, this.title, this.icon);
 }
 
-class _ProfilePage extends StatelessWidget {
-  const _ProfilePage({super.key});
+class ProfilePage extends StatelessWidget {
+  const ProfilePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Meniru tampilan sederhana profil seperti di gambar:
-    // Card di tengah berisi avatar/emblem, nama pengguna, role, email (dummy), dan tombol Logout.
+    // Profile page UI similar to screenshot: title, username field, and Update Profile button.
     return Scaffold(
+      // Hindari menu/leading default yang mungkin men-trigger rebuild saat navigasi.
       appBar: AppBar(title: const Text('Profile')),
       body: Center(
         child: ConstrainedBox(
@@ -284,68 +456,95 @@ class _ProfilePage extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    Icons.shield_outlined,
-                    size: 84,
-                    color: Colors.brown.shade300,
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'fitri',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Your Profile',
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.w700),
                     ),
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Role: Administrator',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodyMedium?.copyWith(color: Colors.black54),
+                  const SizedBox(height: 20),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Username',
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.copyWith(color: Colors.black87),
+                    ),
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Email: fitri@example.com',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodyMedium?.copyWith(color: Colors.black54),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    initialValue: 'fitri',
+                    decoration: const InputDecoration(hintText: 'Username'),
+                    readOnly: true,
                   ),
-                  const SizedBox(height: 16),
-                  const Divider(),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () => Navigator.of(context).pop(),
-                          icon: const Icon(Icons.arrow_back),
-                          label: const Text('Back'),
+                  const SizedBox(height: 20),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Row(
+                      children: [
+                        FilledButton(
+                          onPressed: () {},
+                          child: const Text('Update Profile'),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFDC3545),
-                            foregroundColor: Colors.white,
-                          ),
+                        const SizedBox(width: 12),
+                        // Tambah tombol Logout juga di Profile agar jelas dan aman
+                        OutlinedButton.icon(
                           onPressed: () async {
-                            final prefs = await SharedPreferences.getInstance();
-                            await prefs.setBool('isLoggedIn', false);
-                            if (context.mounted) {
-                              Navigator.of(context).pushAndRemoveUntil(
-                                MaterialPageRoute(
-                                  builder: (_) => const LoginPage(),
-                                ),
-                                (route) => false,
+                            try {
+                              // Tambah delay kecil untuk memastikan UI stabil
+                              await Future.delayed(
+                                const Duration(milliseconds: 50),
                               );
+
+                              // Jangan akses context dulu sebelum operasi async selesai
+                              final ok = await SessionStorage().clearSession();
+                              if (!ok) {
+                                WidgetsBinding.instance.addPostFrameCallback((
+                                  _,
+                                ) {
+                                  final ctx = rootNavigatorKey.currentContext;
+                                  if (ctx != null && ctx.mounted) {
+                                    try {
+                                      ScaffoldMessenger.of(ctx).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            'Gagal logout. Coba lagi.',
+                                          ),
+                                        ),
+                                      );
+                                    } catch (e) {
+                                      debugPrint('Error showing snackbar: $e');
+                                    }
+                                  }
+                                });
+                                return;
+                              }
+                              MyAppStateBridge.isLoggedInNotifier.value = false;
+                              // Navigasi pada frame berikutnya menggunakan root context
+                              WidgetsBinding.instance.addPostFrameCallback((_) {
+                                final rc = rootNavigatorKey.currentContext;
+                                if (rc != null && rc.mounted) {
+                                  try {
+                                    GoRouter.of(
+                                      rc,
+                                    ).goNamed(AppRoute.login.name);
+                                  } catch (e) {
+                                    debugPrint('Error navigating to login: $e');
+                                  }
+                                }
+                              });
+                            } catch (e) {
+                              debugPrint('Error during logout: $e');
                             }
                           },
-                          icon: const Icon(Icons.logout),
+                          icon: const Icon(Icons.logout, size: 18),
                           label: const Text('Logout'),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ],
               ),
