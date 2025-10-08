@@ -8,7 +8,8 @@ import 'screens/pos/invoice_page.dart';
 import 'screens/tee_time/booking_calendar_page.dart';
 import 'screens/tee_time/manage_reservation_page.dart';
 import 'screens/tee_time/create_tee_time_page.dart';
-import 'app_scaffold.dart' show AppScaffold, ProfilePage;
+import 'app_scaffold.dart' show AppScaffold;
+import 'screens/profile/profile_page.dart' show ProfilePage;
 import 'main.dart' show MyAppStateBridge;
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>(

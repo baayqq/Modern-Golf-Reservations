@@ -1,8 +1,10 @@
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Abstraction over SharedPreferences for session-related data.
 /// Centralizes keys, adds minimal consistency handling, and keeps UI free from storage details.
 class SessionStorage {
+  // Gunakan key yang sama dengan yang digunakan di login_page.dart
   static const String _keyUsername = 'username';
   static const String _keyIsLoggedIn = 'isLoggedIn';
 
@@ -85,7 +87,9 @@ class SessionStorage {
 
   Future<String?> getUsername() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_keyUsername);
+    final username = prefs.getString(_keyUsername);
+    debugPrint('[SessionStorage] getUsername: $username');
+    return username;
   }
 
   Future<bool> isLoggedIn() async {

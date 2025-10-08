@@ -12,18 +12,9 @@ class _PosSystemPageState extends State<PosSystemPage> {
   final TextEditingController _searchCtrl = TextEditingController();
   final TextEditingController _customerCtrl = TextEditingController();
 
-  // Dummy categories
+  // Kategori yang digunakan
   final List<String> _categories = const [
     'GREEN FEE',
-    'BALLS',
-    'GLOVES',
-    'ACCS',
-    'SHOES',
-    'GOLFBAG',
-    'HEADWARE',
-    'SOCKS',
-    'APPAREL',
-    'OTHERS FEE',
   ];
 
   String _selectedCategory = 'GREEN FEE';
@@ -244,11 +235,13 @@ class _PosSystemPageState extends State<PosSystemPage> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       child: Padding(
         padding: const EdgeInsets.all(12),
-        child: GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: _filtered.length,
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        child: Container(
+          height: MediaQuery.of(context).size.height * 0.5, // Tinggi container untuk scrolling
+          child: GridView.builder(
+            shrinkWrap: false,
+            physics: const AlwaysScrollableScrollPhysics(),
+            itemCount: _filtered.length,
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: cols,
             crossAxisSpacing: 16,
             mainAxisSpacing: 16,
@@ -294,6 +287,7 @@ class _PosSystemPageState extends State<PosSystemPage> {
               ),
             );
           },
+          ),
         ),
       ),
     );

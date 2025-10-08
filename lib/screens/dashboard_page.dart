@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:modern_golf_reservations/app_scaffold.dart';
+import 'package:modern_golf_reservations/services/session_storage.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -12,6 +13,8 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   final TextEditingController _dateController = TextEditingController();
   DateTime _selectedDate = DateTime.now();
+  String _username = ''; // Menyimpan nama user yang login
+  final SessionStorage _sessionStorage = const SessionStorage();
 
   String get _formattedSelectedDate =>
       DateFormat('MMMM dd, yyyy').format(_selectedDate);
@@ -20,6 +23,17 @@ class _DashboardPageState extends State<DashboardPage> {
   void initState() {
     super.initState();
     _dateController.text = _formattedSelectedDate;
+    _loadUsername(); // Memuat username saat halaman dibuka
+  }
+  
+  // Fungsi untuk memuat username dari session storage
+  Future<void> _loadUsername() async {
+    final username = await _sessionStorage.getUsername();
+    if (username != null && mounted) {
+      setState(() {
+        _username = username;
+      });
+    }
   }
 
   Future<void> _pickDate() async {
@@ -107,7 +121,8 @@ class _DashboardPageState extends State<DashboardPage> {
           const SizedBox(height: 8),
           Center(
             child: Text(
-              '© 2024 | IT Department.',
+              // '© 2025 ${_username.isNotEmpty ? _username : "User"}',
+              '© 2025 Fitri Dwi Astuti',
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ),
