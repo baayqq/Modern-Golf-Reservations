@@ -1,16 +1,7 @@
 import 'package:flutter/material.dart';
-import 'services/session_storage.dart' show SessionStorage;
-import 'screens/dashboard_page.dart';
-import 'screens/tee_time/booking_calendar_page.dart';
-import 'screens/tee_time/manage_reservation_page.dart';
-import 'screens/tee_time/create_tee_time_page.dart';
-import 'screens/pos/pos_system_page.dart';
-import 'screens/pos/invoice_page.dart';
-import 'screens/login_page.dart';
 import 'package:go_router/go_router.dart';
-import 'router.dart';
-import 'router.dart' show rootNavigatorKey;
-import 'screens/profile/profile_page.dart';
+import 'router.dart' show AppRoute, rootNavigatorKey;
+import 'services/session_storage.dart' show SessionStorage;
 import 'main.dart' show MyAppStateBridge;
 
 /// Scaffold sederhana untuk header dengan dua dropdown dan body fleksibel.
@@ -416,8 +407,9 @@ class _TopMenu extends StatelessWidget {
                   .toList(),
             );
             if (key != null) {
-              // Pastikan menu benar-benar tertutup sebelum navigasi
+              // Guard BuildContext after the async gap (await showMenu)
               await Future.microtask(() {
+                if (!btnContext.mounted) return;
                 onSelect(btnContext, key);
               });
             }

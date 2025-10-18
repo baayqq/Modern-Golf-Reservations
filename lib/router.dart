@@ -8,7 +8,7 @@ import 'screens/pos/invoice_page.dart';
 import 'screens/tee_time/booking_calendar_page.dart';
 import 'screens/tee_time/manage_reservation_page.dart';
 import 'screens/tee_time/create_tee_time_page.dart';
-import 'app_scaffold.dart' show AppScaffold;
+import 'models/tee_time_model.dart';
 import 'screens/profile/profile_page.dart' show ProfilePage;
 import 'main.dart' show MyAppStateBridge;
 
@@ -144,8 +144,24 @@ GoRouter createRouter({required bool isLoggedIn}) {
       GoRoute(
         name: AppRoute.teeBooking.name,
         path: AppRoute.teeBooking.path,
-        pageBuilder: (context, state) =>
-            _slideFromRightPage(child: const BookingCalendarPage()),
+        pageBuilder: (context, state) {
+          DateTime? initialDate;
+          final extra = state.extra;
+          if (extra is DateTime) {
+            initialDate = extra;
+          } else {
+            final qp = state.uri.queryParameters['date'];
+            if (qp != null && qp.isNotEmpty) {
+              final parsed = DateTime.tryParse(qp);
+              if (parsed != null) {
+                initialDate = parsed;
+              }
+            }
+          }
+          return _slideFromRightPage(
+            child: BookingCalendarPage(initialSelectedDate: initialDate),
+          );
+        },
       ),
       GoRoute(
         name: AppRoute.teeManage.name,
@@ -156,8 +172,10 @@ GoRouter createRouter({required bool isLoggedIn}) {
       GoRoute(
         name: AppRoute.teeCreate.name,
         path: AppRoute.teeCreate.path,
-        pageBuilder: (context, state) =>
-            _slideFromRightPage(child: const CreateTeeTimePage()),
+        pageBuilder: (context, state) {
+          final initial = state.extra is TeeTimeModel ? state.extra as TeeTimeModel : null;
+          return _slideFromRightPage(child: CreateTeeTimePage(initial: initial));
+        },
       ),
       // Profile page now uses the real ProfilePage from app_scaffold.dart
       GoRoute(

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'screens/dashboard_page.dart';
-import 'screens/login_page.dart';
+
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:go_router/go_router.dart';
 import 'router.dart';
@@ -37,19 +36,6 @@ class _MyAppState extends State<MyApp> {
     return prefs.getBool('isLoggedIn') ?? false;
   }
 
-  // Dengarkan perubahan SharedPreferences agar GoRouter bisa rebuild setelah login/logout
-  // Pindahkan ValueNotifier ke MyAppStateBridge agar bisa diakses dari file lain
-
-  Future<void> _invalidateAfterLoginLogout() async {
-    // Recheck login dan update notifier + rebuild MaterialApp.router
-    final logged = await _checkLoggedIn();
-    MyAppStateBridge.isLoggedInNotifier.value = logged;
-    if (mounted) {
-      setState(() {
-        _initFuture = Future<bool>.value(logged);
-      });
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -85,7 +71,7 @@ class _MyAppState extends State<MyApp> {
                 onError: Colors.white,
                 surface: Colors.white,
                 onSurface: const Color(0xFF212529),
-                surfaceVariant: const Color(0xFFE9ECEF),
+                surfaceContainerHighest: const Color(0xFFE9ECEF),
                 outline: const Color(0xFFDEE2E6),
                 tertiary: const Color(0xFF198754),
                 onTertiary: Colors.white,
@@ -161,7 +147,7 @@ class _MyAppState extends State<MyApp> {
               onError: Colors.white,
               surface: Colors.white,
               onSurface: const Color(0xFF212529),
-              surfaceVariant: const Color(0xFFE9ECEF),
+              surfaceContainerHighest: const Color(0xFFE9ECEF),
               outline: const Color(0xFFDEE2E6),
               tertiary: const Color(0xFF198754),
               onTertiary: Colors.white,
@@ -221,7 +207,7 @@ class _MyAppState extends State<MyApp> {
 }
 
 class _Splash extends StatelessWidget {
-  const _Splash({super.key});
+  const _Splash();
   @override
   Widget build(BuildContext context) {
     return const Scaffold(body: Center(child: CircularProgressIndicator()));
