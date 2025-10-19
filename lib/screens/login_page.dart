@@ -194,25 +194,19 @@ class _LoginPageState extends State<LoginPage> {
                               _passwordCtrl.text.isEmpty)
                           ? null
                           : _onLogin,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF0D6EFD),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: _loading
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(
-                                valueColor: AlwaysStoppedAnimation(
-                                  Colors.white,
-                                ),
-                                strokeWidth: 2,
-                              ),
-                            )
-                          : const Text('Login'),
+                      // Gunakan ElevatedButtonTheme default (primary hijau & radius 8)
+                       child: _loading
+                           ? const SizedBox(
+                               width: 18,
+                               height: 18,
+                               child: CircularProgressIndicator(
+                                 valueColor: AlwaysStoppedAnimation(
+                                   Colors.white,
+                                 ),
+                                 strokeWidth: 2,
+                               ),
+                             )
+                           : const Text('Login'),
                     ),
                   ),
                   const SizedBox(height: 4),

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:modern_golf_reservations/app_scaffold.dart';
-import 'package:modern_golf_reservations/services/session_storage.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -13,8 +12,6 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   final TextEditingController _dateController = TextEditingController();
   DateTime _selectedDate = DateTime.now();
-  String _username = ''; // Menyimpan nama user yang login
-  final SessionStorage _sessionStorage = const SessionStorage();
 
   String get _formattedSelectedDate =>
       DateFormat('MMMM dd, yyyy').format(_selectedDate);
@@ -23,17 +20,6 @@ class _DashboardPageState extends State<DashboardPage> {
   void initState() {
     super.initState();
     _dateController.text = _formattedSelectedDate;
-    _loadUsername(); // Memuat username saat halaman dibuka
-  }
-  
-  // Fungsi untuk memuat username dari session storage
-  Future<void> _loadUsername() async {
-    final username = await _sessionStorage.getUsername();
-    if (username != null && mounted) {
-      setState(() {
-        _username = username;
-      });
-    }
   }
 
   Future<void> _pickDate() async {
@@ -144,10 +130,11 @@ class _StatsRow extends StatelessWidget {
     final width = MediaQuery.of(context).size.width;
     final isMobile = width < 600;
 
-    final cards = const [
-      _StatCard(title: 'Players Today', color: Color(0xFF0D6EFD)),
-      _StatCard(title: 'Players This Week', color: Color(0xFF198754)),
-      _StatCard(title: 'Players This Month', color: Color(0xFFFFC107)),
+    final cs = Theme.of(context).colorScheme;
+    final cards = [
+      _StatCard(title: 'Players Today', color: cs.primary),
+      _StatCard(title: 'Players This Week', color: cs.secondary),
+      _StatCard(title: 'Players This Month', color: cs.tertiary),
     ];
 
     if (isMobile) {
@@ -230,7 +217,7 @@ class _TeeTable extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
-            color: const Color(0xFFF1F3F5),
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
             child: Row(
               children: headers
                   .map(

@@ -63,22 +63,22 @@ class _MyAppState extends State<MyApp> {
               useMaterial3: true,
               colorScheme: ColorScheme(
                 brightness: Brightness.light,
-                primary: const Color(0xFF0D6EFD),
+                primary: const Color(0xFF2E7D32), // Golf green
                 onPrimary: Colors.white,
-                secondary: const Color(0xFF6C757D),
+                secondary: const Color(0xFF388E3C), // Accent green
                 onSecondary: Colors.white,
                 error: const Color(0xFFDC3545),
                 onError: Colors.white,
                 surface: Colors.white,
                 onSurface: const Color(0xFF212529),
-                surfaceContainerHighest: const Color(0xFFE9ECEF),
-                outline: const Color(0xFFDEE2E6),
-                tertiary: const Color(0xFF198754),
+                surfaceContainerHighest: const Color(0xFFF1F8E9), // Light green background
+                outline: const Color(0xFFC7D3C0), // Soft greenish outline
+                tertiary: const Color(0xFF1E88E5), // Sky blue accent
                 onTertiary: Colors.white,
               ),
-              scaffoldBackgroundColor: const Color(0xFFF8F9FA),
+              scaffoldBackgroundColor: const Color(0xFFF1F8E9),
               appBarTheme: const AppBarTheme(
-                backgroundColor: Color(0xFF2F363D),
+                backgroundColor: Color(0xFF1B5E20), // Dark forest green
                 elevation: 0,
                 foregroundColor: Colors.white,
                 centerTitle: false,
@@ -98,16 +98,16 @@ class _MyAppState extends State<MyApp> {
               inputDecorationTheme: InputDecorationTheme(
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(6),
-                  borderSide: const BorderSide(color: Color(0xFFCED4DA)),
+                  borderSide: const BorderSide(color: Color(0xFFC7D3C0)),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(6),
-                  borderSide: const BorderSide(color: Color(0xFFCED4DA)),
+                  borderSide: const BorderSide(color: Color(0xFFC7D3C0)),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(6),
                   borderSide: const BorderSide(
-                    color: Color(0xFF0D6EFD),
+                    color: Color(0xFF2E7D32),
                     width: 2,
                   ),
                 ),
@@ -118,9 +118,16 @@ class _MyAppState extends State<MyApp> {
                 ),
               ),
               dividerTheme: const DividerThemeData(
-                color: Color(0xFFDEE2E6),
+                color: Color(0xFFC7D3C0),
                 thickness: 1,
                 space: 0,
+              ),
+              elevatedButtonTheme: ElevatedButtonThemeData(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2E7D32),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
               ),
             ),
             routerConfig: tempRouter,
@@ -139,22 +146,22 @@ class _MyAppState extends State<MyApp> {
             useMaterial3: true,
             colorScheme: ColorScheme(
               brightness: Brightness.light,
-              primary: const Color(0xFF0D6EFD),
+              primary: const Color(0xFF2E7D32), // Golf green
               onPrimary: Colors.white,
-              secondary: const Color(0xFF6C757D),
+              secondary: const Color(0xFF388E3C), // Accent green
               onSecondary: Colors.white,
               error: const Color(0xFFDC3545),
               onError: Colors.white,
               surface: Colors.white,
               onSurface: const Color(0xFF212529),
-              surfaceContainerHighest: const Color(0xFFE9ECEF),
-              outline: const Color(0xFFDEE2E6),
-              tertiary: const Color(0xFF198754),
+              surfaceContainerHighest: const Color(0xFFF1F8E9), // Light green background
+              outline: const Color(0xFFC7D3C0), // Soft greenish outline
+              tertiary: const Color(0xFF1E88E5), // Sky blue accent
               onTertiary: Colors.white,
             ),
-            scaffoldBackgroundColor: const Color(0xFFF8F9FA),
+            scaffoldBackgroundColor: const Color(0xFFF1F8E9),
             appBarTheme: const AppBarTheme(
-              backgroundColor: Color(0xFF2F363D),
+              backgroundColor: Color(0xFF1B5E20), // Dark forest green
               elevation: 0,
               foregroundColor: Colors.white,
               centerTitle: false,
@@ -174,16 +181,16 @@ class _MyAppState extends State<MyApp> {
             inputDecorationTheme: InputDecorationTheme(
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(6),
-                borderSide: const BorderSide(color: Color(0xFFCED4DA)),
+                borderSide: const BorderSide(color: Color(0xFFC7D3C0)),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(6),
-                borderSide: const BorderSide(color: Color(0xFFCED4DA)),
+                borderSide: const BorderSide(color: Color(0xFFC7D3C0)),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(6),
                 borderSide: const BorderSide(
-                  color: Color(0xFF0D6EFD),
+                  color: Color(0xFF2E7D32),
                   width: 2,
                 ),
               ),
@@ -194,9 +201,16 @@ class _MyAppState extends State<MyApp> {
               ),
             ),
             dividerTheme: const DividerThemeData(
-              color: Color(0xFFDEE2E6),
+              color: Color(0xFFC7D3C0),
               thickness: 1,
               space: 0,
+            ),
+            elevatedButtonTheme: ElevatedButtonThemeData(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF2E7D32),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
             ),
           ),
           routerConfig: router,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../app_scaffold.dart';
 import '../../services/invoice_repository.dart';
+import 'package:intl/intl.dart';
 
 class InvoicePage extends StatefulWidget {
   const InvoicePage({super.key});
@@ -16,7 +17,6 @@ class _InvoicePageState extends State<InvoicePage> {
   List<InvoiceLine> _selectedItems = [];
   DateTime? _filterDate;
   final TextEditingController _filterNameCtrl = TextEditingController();
-  bool _loading = false;
 
   @override
   void initState() {
@@ -30,10 +30,11 @@ class _InvoicePageState extends State<InvoicePage> {
   }
 
   Future<void> _load() async {
-    setState(() => _loading = true);
     final rows = await _repo.getInvoices(
       date: _filterDate,
-      customerQuery: _filterNameCtrl.text.trim().isEmpty ? null : _filterNameCtrl.text.trim(),
+      customerQuery: _filterNameCtrl.text.trim().isEmpty
+          ? null
+          : _filterNameCtrl.text.trim(),
     );
     setState(() {
       _invoices = rows.map((e) {
@@ -47,12 +48,14 @@ class _InvoicePageState extends State<InvoicePage> {
         return InvoiceItem(
           id: idVal.toString(),
           customer: (e['customer'] as String?) ?? 'Walk-in',
-          total: (e['total'] is num) ? (e['total'] as num).toDouble() : (e['total'] as double? ?? 0.0),
+          total: (e['total'] is num)
+              ? (e['total'] as num).toDouble()
+              : (e['total'] as double? ?? 0.0),
           status: status,
-          date: DateTime.tryParse((e['date'] as String?) ?? '') ?? DateTime.now(),
+          date:
+              DateTime.tryParse((e['date'] as String?) ?? '') ?? DateTime.now(),
         );
       }).toList();
-      _loading = false;
     });
   }
 
@@ -65,8 +68,12 @@ class _InvoicePageState extends State<InvoicePage> {
     setState(() {
       _selectedItems = rows.map((e) {
         final name = (e['name'] as String?) ?? '';
-        final qty = (e['qty'] as int?) ?? (e['qty'] is num ? (e['qty'] as num).toInt() : 0);
-        final price = (e['price'] is num) ? (e['price'] as num).toDouble() : (e['price'] as double? ?? 0.0);
+        final qty =
+            (e['qty'] as int?) ??
+            (e['qty'] is num ? (e['qty'] as num).toInt() : 0);
+        final price = (e['price'] is num)
+            ? (e['price'] as num).toDouble()
+            : (e['price'] as double? ?? 0.0);
         return InvoiceLine(name: name, qty: qty, price: price);
       }).toList();
     });
@@ -80,7 +87,11 @@ class _InvoicePageState extends State<InvoicePage> {
       return;
     }
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Exported invoice #${_selectedInvoice!.id} to PDF (dummy)')),
+      SnackBar(
+        content: Text(
+          'Exported invoice #${_selectedInvoice!.id} to PDF (dummy)',
+        ),
+      ),
     );
   }
 
@@ -128,7 +139,7 @@ class _InvoicePageState extends State<InvoicePage> {
             const SizedBox(height: 12),
             Center(
               child: Text(
-                '© 2024 | IT Department.',
+                '© 2025 | Fitri Dwi Astuti.',
                 style: TextStyle(color: Colors.grey.shade700),
               ),
             ),
@@ -160,7 +171,7 @@ class _InvoicePageState extends State<InvoicePage> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         decoration: BoxDecoration(
-                          border: Border.all(color: const Color(0xFFCED4DA)),
+                          border: Border.all(color: Theme.of(context).colorScheme.outline),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         alignment: Alignment.centerLeft,
@@ -198,10 +209,7 @@ class _InvoicePageState extends State<InvoicePage> {
               height: 42,
               child: ElevatedButton(
                 onPressed: _load,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0D6EFD),
-                  foregroundColor: Colors.white,
-                ),
+                // Gunakan warna dari tema agar konsisten
                 child: const Text('Cari'),
               ),
             ),
@@ -211,34 +219,14 @@ class _InvoicePageState extends State<InvoicePage> {
               child: ElevatedButton(
                 onPressed: _clearFilters,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF6C757D),
-                  foregroundColor: Colors.white,
+                  backgroundColor: Theme.of(context).colorScheme.secondary,
+                  foregroundColor: Theme.of(context).colorScheme.onSecondary,
                 ),
                 child: const Text('Clear'),
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _btn({
-    required String label,
-    required Color color,
-    required VoidCallback? onPressed,
-  }) {
-    return SizedBox(
-      height: 36,
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: color,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-        ),
-        child: Text(label),
       ),
     );
   }
@@ -258,12 +246,12 @@ class _InvoicePageState extends State<InvoicePage> {
               4: FixedColumnWidth(200), // date
               5: FixedColumnWidth(160), // actions
             },
-            border: TableBorder.all(color: const Color(0xFFDEE2E6)),
+            border: TableBorder.all(color: Theme.of(context).colorScheme.outline),
             children: [
               _headerRow([
                 'Invoice ID',
                 'Customer Name',
-                'Total Amount (Rp.)',
+                'Total Amount',
                 'Payment Status',
                 'Date',
                 'Actions',
@@ -292,7 +280,7 @@ class _InvoicePageState extends State<InvoicePage> {
 
   TableRow _headerRow(List<String> headers) {
     return TableRow(
-      decoration: const BoxDecoration(color: Color(0xFFF8F9FA)),
+      decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest),
       children: headers
           .map(
             (h) => Padding(
@@ -315,7 +303,10 @@ class _InvoicePageState extends State<InvoicePage> {
           onTap: () => _viewDetails(inv),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: Text(inv.id, style: const TextStyle(fontWeight: FontWeight.w600)),
+            child: Text(
+              inv.id,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
           ),
         ),
         // Customer Name
@@ -357,6 +348,10 @@ class _InvoicePageState extends State<InvoicePage> {
                 setState(() => _selectedInvoice = inv);
                 _exportPdf();
               },
+              style: FilledButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.secondary,
+                foregroundColor: Theme.of(context).colorScheme.onSecondary,
+              ),
               child: const Text('Export to PDF'),
             ),
           ),
@@ -374,14 +369,17 @@ class _InvoicePageState extends State<InvoicePage> {
           padding: const EdgeInsets.all(12),
           child: Text(
             'Klik salah satu invoice untuk melihat detail item transaksi.',
-            style: TextStyle(color: Colors.grey.shade700),
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
         ),
       );
     }
 
     final inv = _selectedInvoice!;
-    final total = _selectedItems.fold<double>(0.0, (s, e) => s + e.price * e.qty);
+    final total = _selectedItems.fold<double>(
+      0.0,
+      (s, e) => s + e.price * e.qty,
+    );
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -392,55 +390,102 @@ class _InvoicePageState extends State<InvoicePage> {
           children: [
             Text(
               'Invoice #${inv.id} - ${inv.customer}',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 8),
             Text('Tanggal: ${_formatDate(inv.date)}'),
             const SizedBox(height: 12),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Table(
-                columnWidths: const {
-                  0: FlexColumnWidth(),
-                  1: FixedColumnWidth(80),
-                  2: FixedColumnWidth(160),
-                  3: FixedColumnWidth(180),
-                },
-                border: TableBorder.all(color: const Color(0xFFDEE2E6)),
-                children: [
-                  _headerRow(['Item', 'Qty', 'Price', 'Subtotal']),
-                  ..._selectedItems.map((it) => TableRow(children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                          child: Text(it.name),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                          child: Text('${it.qty}'),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                          child: Text(_formatCurrency(it.price)),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                          child: Text(_formatCurrency(it.price * it.qty)),
-                        ),
-                      ])),
-                  TableRow(children: [
-                    const SizedBox.shrink(),
-                    const SizedBox.shrink(),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      child: const Text('Total', style: TextStyle(fontWeight: FontWeight.w700)),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final table = Table(
+                  columnWidths: const {
+                    // Pastikan kolom Item cukup lebar agar teks tidak memecah per huruf
+                    0: FixedColumnWidth(220),
+                    1: FixedColumnWidth(80),
+                    2: FixedColumnWidth(160),
+                    3: FixedColumnWidth(180),
+                  },
+                  border: TableBorder.all(color: Theme.of(context).colorScheme.outline),
+                  children: [
+                    _headerRow(['Item', 'Qty', 'Price', 'Subtotal']),
+                    ..._selectedItems.map(
+                      (it) => TableRow(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
+                            child: Text(it.name),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
+                            child: Text('${it.qty}'),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
+                            child: Text(_formatCurrency(it.price)),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
+                            child: Text(_formatCurrency(it.price * it.qty)),
+                          ),
+                        ],
+                      ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      child: Text(_formatCurrency(total), style: const TextStyle(fontWeight: FontWeight.w700)),
+                    TableRow(
+                      children: [
+                        const SizedBox.shrink(),
+                        const SizedBox.shrink(),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
+                          child: const Text(
+                            'Total',
+                            style: TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
+                          child: Text(
+                            _formatCurrency(total),
+                            style: const TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                      ],
                     ),
-                  ]),
-                ],
-              ),
+                  ],
+                );
+
+                // Pastikan tabel minimal selebar area konten untuk mencegah kolom menyempit ekstrem
+                return Scrollbar(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minWidth: constraints.maxWidth,
+                      ),
+                      child: table,
+                    ),
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 12),
             Wrap(
@@ -450,10 +495,6 @@ class _InvoicePageState extends State<InvoicePage> {
                   height: 36,
                   child: ElevatedButton(
                     onPressed: _exportPdf,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0D6EFD),
-                      foregroundColor: Colors.white,
-                    ),
                     child: const Text('Export to PDF'),
                   ),
                 ),
@@ -471,18 +512,18 @@ class _InvoicePageState extends State<InvoicePage> {
     late final String label;
     switch (status) {
       case PaymentStatus.unpaid:
-        bg = const Color(0xFFFFF3CD);
-        fg = const Color(0xFF856404);
+        bg = Theme.of(context).colorScheme.tertiaryContainer;
+        fg = Theme.of(context).colorScheme.onTertiaryContainer;
         label = 'Unpaid';
         break;
       case PaymentStatus.paid:
-        bg = const Color(0xFFD4EDDA);
-        fg = const Color(0xFF155724);
+        bg = Theme.of(context).colorScheme.secondaryContainer;
+        fg = Theme.of(context).colorScheme.onSecondaryContainer;
         label = 'Paid';
         break;
       case PaymentStatus.partial:
-        bg = const Color(0xFFD1ECF1);
-        fg = const Color(0xFF0C5460);
+        bg = Theme.of(context).colorScheme.primaryContainer;
+        fg = Theme.of(context).colorScheme.onPrimaryContainer;
         label = 'Partial';
         break;
     }
@@ -492,7 +533,7 @@ class _InvoicePageState extends State<InvoicePage> {
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: bg),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Text(
         label,
@@ -502,19 +543,8 @@ class _InvoicePageState extends State<InvoicePage> {
   }
 
   String _formatCurrency(double v) {
-    // Simple currency format: 24,272,000.00
-    final s = v.toStringAsFixed(2);
-    final parts = s.split('.');
-    final whole = parts[0];
-    final decimals = parts[1];
-    final buffer = StringBuffer();
-    for (int i = 0; i < whole.length; i++) {
-      final idx = whole.length - i - 1;
-      buffer.write(whole[idx]);
-      if (i % 3 == 2 && idx != 0) buffer.write(',');
-    }
-    final reversed = buffer.toString().split('').reversed.join();
-    return '$reversed.$decimals';
+    final format = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp', decimalDigits: 0);
+    return format.format(v);
   }
 
   String _formatDate(DateTime dt) {

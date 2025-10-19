@@ -98,7 +98,10 @@ class _ManageReservationPageState extends State<ManageReservationPage> {
           TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            style: FilledButton.styleFrom(backgroundColor: const Color(0xFFDC3545), foregroundColor: Colors.white),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(ctx).colorScheme.error,
+              foregroundColor: Theme.of(ctx).colorScheme.onError,
+            ),
             child: const Text('Delete'),
           ),
         ],
@@ -121,15 +124,15 @@ class _ManageReservationPageState extends State<ManageReservationPage> {
           Container(
             height: 54,
             decoration: BoxDecoration(
-              color: const Color(0xFF0D6EFD),
+              color: Theme.of(context).colorScheme.primary,
               borderRadius: BorderRadius.circular(8),
             ),
             alignment: Alignment.centerLeft,
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: const Text(
+            child: Text(
               'Manage Reservations',
               style: TextStyle(
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.onPrimary,
                 fontWeight: FontWeight.w700,
                 fontSize: 18,
               ),
@@ -234,13 +237,15 @@ class _ReservationTable extends StatelessWidget {
               5: FixedColumnWidth(colActions),
             },
             border: TableBorder.symmetric(
-              inside: const BorderSide(color: Color(0xFFDEE2E6)),
-              outside: const BorderSide(color: Color(0xFFDEE2E6)),
+              inside: BorderSide(color: Theme.of(context).colorScheme.outline),
+              outside: BorderSide(color: Theme.of(context).colorScheme.outline),
             ),
             children: [
               // header
               TableRow(
-                decoration: const BoxDecoration(color: Color(0xFFF1F3F5)),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                ),
                 children: headers
                     .map((h) => Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -273,8 +278,8 @@ class _ReservationTable extends StatelessWidget {
                         child: _Badge(
                           label: r.status,
                           color: r.status == 'booked'
-                              ? const Color(0xFFFFC107)
-                              : const Color(0xFF198754),
+                              ? Theme.of(context).colorScheme.tertiary
+                              : Theme.of(context).colorScheme.secondary,
                         ),
                       ),
                     ),
@@ -289,8 +294,8 @@ class _ReservationTable extends StatelessWidget {
                               onPressed: () => onEdit(r),
                               style: FilledButton.styleFrom(
                                 padding: const EdgeInsets.symmetric(horizontal: 12),
-                                backgroundColor: const Color(0xFF0D6EFD),
-                                foregroundColor: Colors.white,
+                                backgroundColor: Theme.of(context).colorScheme.primary,
+                                foregroundColor: Theme.of(context).colorScheme.onPrimary,
                               ),
                               child: const Text('Edit'),
                             ),
@@ -301,8 +306,8 @@ class _ReservationTable extends StatelessWidget {
                               onPressed: () => onCreateInvoice(r),
                               style: FilledButton.styleFrom(
                                 padding: const EdgeInsets.symmetric(horizontal: 12),
-                                backgroundColor: const Color(0xFF198754),
-                                foregroundColor: Colors.white,
+                                backgroundColor: Theme.of(context).colorScheme.secondary,
+                                foregroundColor: Theme.of(context).colorScheme.onSecondary,
                               ),
                               child: const Text('Create Invoice'),
                             ),
@@ -313,8 +318,8 @@ class _ReservationTable extends StatelessWidget {
                               onPressed: () => onDelete(r),
                               style: FilledButton.styleFrom(
                                 padding: const EdgeInsets.symmetric(horizontal: 12),
-                                backgroundColor: const Color(0xFFDC3545),
-                                foregroundColor: Colors.white,
+                                backgroundColor: Theme.of(context).colorScheme.error,
+                                foregroundColor: Theme.of(context).colorScheme.onError,
                               ),
                               child: const Text('Delete'),
                             ),

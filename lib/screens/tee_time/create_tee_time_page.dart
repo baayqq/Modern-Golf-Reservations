@@ -26,8 +26,6 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
   DateTime? _editDate;
   TimeOfDay? _editTime;
 
-  final _dateFmt = DateFormat('dd/MM/yyyy');
-
   Future<void> _pickCreateDate() async {
     final now = DateTime.now();
     final res = await showDatePicker(
@@ -102,16 +100,17 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
           if (widget.initial != null) ...[
             Text(
               'Edit Tee Time Reservation',
-              style: Theme.of(context)
-                  .textTheme
-                  .headlineSmall
-                  ?.copyWith(fontWeight: FontWeight.w600),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 12),
             _FieldLabel('Tanggal:'),
             _DateField(
               hint: 'dd/mm/yyyy',
-              value: _editDate == null ? '' : DateFormat('dd/MM/yyyy').format(_editDate!),
+              value: _editDate == null
+                  ? ''
+                  : DateFormat('dd/MM/yyyy').format(_editDate!),
               onTap: () async {
                 final now = DateTime.now();
                 final res = await showDatePicker(
@@ -185,7 +184,9 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
                     time: _formatTime(_editTime!),
                     playerName: _playerCtrl.text.trim(),
                     playerCount: int.tryParse(_countCtrl.text.trim()) ?? 1,
-                    notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
+                    notes: _notesCtrl.text.trim().isEmpty
+                        ? null
+                        : _notesCtrl.text.trim(),
                     status: widget.initial!.status,
                   );
                   await _repo.updateReservation(updated);
@@ -193,8 +194,8 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
                   Navigator.of(context).pop(true);
                 },
                 style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFF198754),
-                  foregroundColor: Colors.white,
+                  backgroundColor: Theme.of(context).colorScheme.secondary,
+                  foregroundColor: Theme.of(context).colorScheme.onSecondary,
                 ),
                 child: const Text('Save Changes'),
               ),
@@ -211,7 +212,9 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
           _FieldLabel('Tanggal:'),
           _DateField(
             hint: 'dd/mm/yyyy',
-            value: _createDate == null ? '' : DateFormat('dd/MM/yyyy').format(_createDate!),
+            value: _createDate == null
+                ? ''
+                : DateFormat('dd/MM/yyyy').format(_createDate!),
             onTap: _pickCreateDate,
             icon: Icons.calendar_today,
           ),
@@ -259,9 +262,9 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
               onPressed: () async {
                 final err = _validate(editMode: false);
                 if (err != null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(err)),
-                  );
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text(err)));
                   return;
                 }
                 await _repo.createOrBookSlot(
@@ -269,7 +272,9 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
                   time: _formatTime(_createTime!),
                   playerName: _playerCtrl.text.trim(),
                   playerCount: int.tryParse(_countCtrl.text.trim()) ?? 1,
-                  notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
+                  notes: _notesCtrl.text.trim().isEmpty
+                      ? null
+                      : _notesCtrl.text.trim(),
                 );
                 if (!context.mounted) return;
                 // After saving, go to booking calendar and pre-select the created date
@@ -283,8 +288,8 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
                 );
               },
               style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF0D6EFD),
-                foregroundColor: Colors.white,
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
               ),
               child: const Text('Save'),
             ),
@@ -292,7 +297,7 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
           const SizedBox(height: 40),
           Center(
             child: Text(
-              '© 2024 | IT Department.',
+              '© 2025 | Fitri Dwi Astuti.',
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ),

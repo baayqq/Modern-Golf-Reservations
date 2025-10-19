@@ -11,31 +11,14 @@ class AppScaffold extends StatelessWidget {
   final String title;
   const AppScaffold({super.key, required this.body, this.title = 'Dashboard'});
 
-  Future<void> _handleLogout(BuildContext context) async {
-    // Hindari akses context selama operasi async: tidak menyentuh UI hingga await selesai.
-    final storage = const SessionStorage();
-    final success = await storage.clearSession();
-
-    // Setelah operasi selesai, baru boleh gunakan context untuk navigasi/UX.
-    if (!context.mounted) return;
-
-    // TODO: sesuaikan rute login Anda jika berbeda.
-    if (success) {
-      // Contoh: arahkan ke halaman login dan hapus stack.
-      Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
-    } else {
-      // Beri umpan balik kegagalan.
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Gagal logout. Coba lagi.')));
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
     // Contoh penempatan action Logout pada AppBar/Overflow menu:
     // Jika file Anda sudah memiliki AppBar/menus, Anda bisa memindahkan IconButton ini ke sana.
     final isWide = MediaQuery.of(context).size.width >= 900;
+    final appBarFg = Theme.of(context).appBarTheme.foregroundColor ?? Theme.of(context).colorScheme.onPrimary;
+    final appBarFgSubtle = appBarFg.withValues(alpha: 0.7);
 
     return Scaffold(
       appBar: AppBar(
@@ -44,22 +27,22 @@ class AppScaffold extends StatelessWidget {
           children: [
             const SizedBox(width: 12),
             // Logo placeholder
-            const CircleAvatar(
+            CircleAvatar(
               radius: 16,
               backgroundColor: Colors.white24,
-              child: Icon(Icons.park, size: 18, color: Colors.white),
+              child: Icon(Icons.park, size: 18, color: appBarFg),
             ),
             const SizedBox(width: 12),
-            const Text(
+            Text(
               'Modern Golf Reservations',
               style: TextStyle(
-                color: Colors.white,
+                color: appBarFg,
                 fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(width: 24),
             if (isWide)
-              Text(title, style: const TextStyle(color: Colors.white70)),
+              Text(title, style: TextStyle(color: appBarFgSubtle)),
           ],
         ),
         actions: [
@@ -148,7 +131,8 @@ class AppScaffold extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Row(
               children: [
-                const Icon(Icons.person, color: Colors.white70, size: 18),
+                Icon(Icons.person, color: appBarFgSubtle, size: 18),
+
                 const SizedBox(width: 6),
                 Builder(
                   builder: (btnContext) {
@@ -312,7 +296,8 @@ class AppScaffold extends StatelessWidget {
                           String username = snapshot.data?.isNotEmpty == true ? snapshot.data! : "User";
                           return Text(
                             'Welcome, $username ▾',
-                            style: const TextStyle(color: Colors.white70),
+                            style: TextStyle(color: appBarFgSubtle),
+
                           );
                         },
                       ),
@@ -346,11 +331,16 @@ class _TopLink extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appBarFg = Theme.of(context).appBarTheme.foregroundColor ?? Theme.of(context).colorScheme.onPrimary;
+    final appBarFgSubtle = appBarFg.withValues(alpha: 0.7);
     return TextButton.icon(
       onPressed: onTap,
-      icon: Icon(icon, size: 18, color: Colors.white70),
-      label: Text(label, style: const TextStyle(color: Colors.white70)),
-      style: TextButton.styleFrom(foregroundColor: Colors.white),
+      icon: Icon(icon, size: 18, color: appBarFgSubtle),
+      label: Text(label, style: TextStyle(color: appBarFgSubtle)),
+      style: TextButton.styleFrom(foregroundColor: appBarFg),
+
+
+
     );
   }
 }
@@ -369,6 +359,8 @@ class _TopMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appBarFg = Theme.of(context).appBarTheme.foregroundColor ?? Theme.of(context).colorScheme.onPrimary;
+    final appBarFgSubtle = appBarFg.withValues(alpha: 0.7);
     // Gunakan onTapDown + showMenu manual agar kita bisa menutup menu terlebih dulu
     // sebelum melakukan navigasi. Ini mencegah penggunaan context yang ter-deactivated.
     return Builder(
@@ -416,8 +408,10 @@ class _TopMenu extends StatelessWidget {
           },
           child: TextButton.icon(
             onPressed: null,
-            icon: Icon(icon, size: 18, color: Colors.white70),
-            label: Text(label, style: const TextStyle(color: Colors.white70)),
+            icon: Icon(icon, size: 18, color: appBarFgSubtle),
+            label: Text(label, style: TextStyle(color: appBarFgSubtle)),
+
+
           ),
         );
       },

@@ -21,8 +21,6 @@ class _BookingCalendarPageState extends State<BookingCalendarPage> {
   bool _loadingSlots = false;
   bool _loading = true;
   String? _error;
-  // Tambahan: penanda apakah bulan yang sedang ditampilkan memiliki minimal 1 booking
-  bool _monthHasBooking = false;
 
   @override
   void initState() {
@@ -51,8 +49,6 @@ class _BookingCalendarPageState extends State<BookingCalendarPage> {
         });
         await _openSlots(today);
       }
-      // Evaluasi apakah bulan ini punya booking (opsional)
-      await _evaluateMonthBooking();
       setState(() {
         _loading = false;
       });
@@ -64,27 +60,17 @@ class _BookingCalendarPageState extends State<BookingCalendarPage> {
     }
   }
 
-  Future<void> _evaluateMonthBooking() async {
-    final has = await _repo.hasAnyBookedInMonth(_visibleMonth);
-    if (mounted) {
-      setState(() {
-        _monthHasBooking = has;
-      });
-    }
-  }
 
   void _prevMonth() {
     setState(() {
       _visibleMonth = DateTime(_visibleMonth.year, _visibleMonth.month - 1);
     });
-    _evaluateMonthBooking();
   }
 
   void _nextMonth() {
     setState(() {
       _visibleMonth = DateTime(_visibleMonth.year, _visibleMonth.month + 1);
     });
-    _evaluateMonthBooking();
   }
 
 
@@ -146,11 +132,10 @@ class _BookingCalendarPageState extends State<BookingCalendarPage> {
                     _selectedDate = today;
                   });
                   _openSlots(today);
-                  _evaluateMonthBooking();
                 },
                 style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFF6C757D),
-                  foregroundColor: Colors.white,
+                  backgroundColor: Theme.of(context).colorScheme.secondary,
+                  foregroundColor: Theme.of(context).colorScheme.onSecondary,
                 ),
                 child: const Text('today'),
               ),
@@ -232,11 +217,11 @@ class _BookingCalendarPageState extends State<BookingCalendarPage> {
                 Text('Time: ${slot.time}'),
                 Text('Player: ${slot.playerName ?? '-'}'),
                 const SizedBox(height: 8),
-                const Row(
+                Row(
                   children: [
-                    Icon(Icons.check_circle, color: Colors.red, size: 16),
-                    SizedBox(width: 6),
-                    Text('Status: Booked'),
+                    Icon(Icons.check_circle, color: Theme.of(context).colorScheme.error, size: 16),
+                    const SizedBox(width: 6),
+                    const Text('Status: Booked'),
                   ],
                 ),
               ],
@@ -264,11 +249,11 @@ class _BookingCalendarPageState extends State<BookingCalendarPage> {
                 Text('Date: ${DateFormat('yyyy-MM-dd').format(slot.date)}'),
                 Text('Time: ${slot.time}'),
                 const SizedBox(height: 8),
-                const Row(
+                Row(
                   children: [
-                    Icon(Icons.info_outline, color: Colors.green, size: 16),
-                    SizedBox(width: 6),
-                    Text('Status: Available'),
+                    Icon(Icons.info_outline, color: Theme.of(context).colorScheme.secondary, size: 16),
+                    const SizedBox(width: 6),
+                    const Text('Status: Available'),
                   ],
                 ),
               ],
@@ -336,7 +321,7 @@ class _MonthGrid extends StatelessWidget {
         // Use shrinkWrap GridView so it calculates its full height inside a scroll view
         Container(
           decoration: BoxDecoration(
-            border: Border.all(color: const Color(0xFFDEE2E6)),
+            border: Border.all(color: Theme.of(context).colorScheme.outline),
             borderRadius: BorderRadius.circular(6),
           ),
           child: GridView.builder(
@@ -356,10 +341,11 @@ class _MonthGrid extends StatelessWidget {
                   selected != null && _isSameDay(date, selected!);
 
               Color? bg;
+              final cs = Theme.of(context).colorScheme;
               if (isSelected) {
-                bg = const Color(0xFFE8F0FE); // subtle blue for selection
+                bg = cs.primaryContainer; // selection highlight
               } else if (isToday) {
-                bg = const Color(0xFFF8F9FA); // very light gray for today
+                bg = cs.surfaceContainerLowest; // subtle background for today
               }
 
               return InkWell(
@@ -368,8 +354,8 @@ class _MonthGrid extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: bg,
                     border: Border(
-                      right: const BorderSide(color: Color(0xFFE9ECEF)),
-                      bottom: const BorderSide(color: Color(0xFFE9ECEF)),
+                      right: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+                      bottom: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
                     ),
                   ),
                   padding: const EdgeInsets.all(8),
@@ -380,8 +366,8 @@ class _MonthGrid extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 12,
                         color: isThisMonth
-                            ? const Color(0xFF495057)
-                            : Colors.black.withValues(alpha: .35),
+                            ? Theme.of(context).colorScheme.onSurface
+                            : Theme.of(context).colorScheme.onSurface.withValues(alpha: .35),
                       ),
                     ),
                   ),
@@ -443,12 +429,9 @@ class _SlotsPanel extends StatelessWidget {
             itemBuilder: (context, index) {
               final s = slots[index];
               final isBooked = s.status == 'booked';
-              final bg = isBooked
-                  ? const Color(0xFFF8D7DA)
-                  : const Color(0xFFD1E7DD);
-              final fg = isBooked
-                  ? const Color(0xFF842029)
-                  : const Color(0xFF0F5132);
+              final cs = Theme.of(context).colorScheme;
+              final bg = isBooked ? cs.errorContainer : cs.secondaryContainer;
+              final fg = isBooked ? cs.onErrorContainer : cs.onSecondaryContainer;
               return InkWell(
                 onTap: () => onTapSlot(s),
                 child: Container(

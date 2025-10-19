@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../app_scaffold.dart';
 import '../../services/invoice_repository.dart';
 import '../../router.dart' show AppRoute;
+import 'package:intl/intl.dart';
 
 class PosSystemPage extends StatefulWidget {
   const PosSystemPage({super.key});
@@ -142,6 +143,12 @@ class _PosSystemPageState extends State<PosSystemPage> {
 
   double get _subtotal =>
       _cart.fold(0.0, (s, e) => s + e.product.price * e.qty);
+
+  // Format Rupiah (IDR)
+  String _formatCurrency(double value) {
+    final fmt = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp', decimalDigits: 0);
+    return fmt.format(value);
+  }
 
   Future<void> _saveTransaction() async {
     if (_cart.isEmpty) {
@@ -360,7 +367,7 @@ class _PosSystemPageState extends State<PosSystemPage> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '${p.name} - Rp. ${p.price.toStringAsFixed(0)}',
+                      '${p.name} - ${_formatCurrency(p.price)}',
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(fontWeight: FontWeight.w600),
@@ -448,8 +455,8 @@ class _PosSystemPageState extends State<PosSystemPage> {
                   child: ElevatedButton(
                     onPressed: _addManualItem,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF198754),
-                      foregroundColor: Colors.white,
+                      backgroundColor: Theme.of(context).colorScheme.secondary,
+                      foregroundColor: Theme.of(context).colorScheme.onSecondary,
                     ),
                     child: const Text('Tambah'),
                   ),
@@ -478,7 +485,7 @@ class _PosSystemPageState extends State<PosSystemPage> {
                   'Subtotal:',
                   style: TextStyle(fontWeight: FontWeight.w600),
                 ),
-                Text('Rp. ${_subtotal.toStringAsFixed(2)}'),
+                Text(_formatCurrency(_subtotal)),
               ],
             ),
             const SizedBox(height: 12),
@@ -486,11 +493,8 @@ class _PosSystemPageState extends State<PosSystemPage> {
               height: 42,
               child: ElevatedButton(
                 onPressed: _cart.isEmpty ? null : _saveTransaction,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0D6EFD),
-                  foregroundColor: Colors.white,
-                ),
-                child: const Text('Simpan Transaksi'),
+                // Gunakan warna default dari ElevatedButtonTheme (primary)
+                 child: const Text('Simpan Transaksi'),
               ),
             ),
           ],
@@ -513,7 +517,7 @@ class _PosSystemPageState extends State<PosSystemPage> {
             ),
           ),
           const SizedBox(width: 8),
-          Text('Rp. ${(c.product.price * c.qty).toStringAsFixed(0)}'),
+          Text(_formatCurrency(c.product.price * c.qty)),
           IconButton(
             tooltip: 'Remove',
             onPressed: () => _removeFromCart(c.product.id),
