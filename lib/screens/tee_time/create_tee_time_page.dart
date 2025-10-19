@@ -5,6 +5,8 @@ import 'package:modern_golf_reservations/models/tee_time_model.dart';
 import 'package:modern_golf_reservations/services/tee_time_repository.dart';
 import 'package:go_router/go_router.dart';
 import 'package:modern_golf_reservations/router.dart';
+import 'package:modern_golf_reservations/services/invoice_repository.dart';
+import 'package:modern_golf_reservations/config/fees.dart';
 
 class CreateTeeTimePage extends StatefulWidget {
   final TeeTimeModel? initial;
@@ -275,6 +277,22 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
                   notes: _notesCtrl.text.trim().isEmpty
                       ? null
                       : _notesCtrl.text.trim(),
+                );
+                // Auto-create an invoice with BOOKING FEE
+                final invoiceRepo = InvoiceRepository();
+                await invoiceRepo.init();
+                final customer = _playerCtrl.text.trim().isEmpty
+                    ? 'Walk-in'
+                    : _playerCtrl.text.trim();
+                await invoiceRepo.createInvoice(
+                  customer: customer,
+                  items: const [
+                    InvoiceItemInput(
+                      name: 'BOOKING FEE',
+                      qty: 1,
+                      price: Fees.bookingFee,
+                    ),
+                  ],
                 );
                 if (!context.mounted) return;
                 // After saving, go to booking calendar and pre-select the created date

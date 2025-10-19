@@ -3,7 +3,8 @@ import 'package:go_router/go_router.dart';
 import '../../app_scaffold.dart';
 import '../../services/invoice_repository.dart';
 import '../../router.dart' show AppRoute;
-import 'package:intl/intl.dart';
+import '../../config/fees.dart';
+import 'package:modern_golf_reservations/utils/currency.dart';
 
 class PosSystemPage extends StatefulWidget {
   const PosSystemPage({super.key});
@@ -18,7 +19,7 @@ class _PosSystemPageState extends State<PosSystemPage> {
   // Manual item inputs (Green Fee)
   final TextEditingController _itemNameCtrl = TextEditingController(text: 'GREEN FEE');
   final TextEditingController _itemQtyCtrl = TextEditingController(text: '1');
-  final TextEditingController _itemPriceCtrl = TextEditingController(text: '750000');
+  final TextEditingController _itemPriceCtrl = TextEditingController(text: Fees.greenFeeDefault.toStringAsFixed(0));
 
   // Kategori yang digunakan
   final List<String> _categories = const [
@@ -144,11 +145,7 @@ class _PosSystemPageState extends State<PosSystemPage> {
   double get _subtotal =>
       _cart.fold(0.0, (s, e) => s + e.product.price * e.qty);
 
-  // Format Rupiah (IDR)
-  String _formatCurrency(double value) {
-    final fmt = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp', decimalDigits: 0);
-    return fmt.format(value);
-  }
+  // Format Rupiah (IDR) is centralized via Formatters.idr
 
   Future<void> _saveTransaction() async {
     if (_cart.isEmpty) {
@@ -367,7 +364,7 @@ class _PosSystemPageState extends State<PosSystemPage> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '${p.name} - ${_formatCurrency(p.price)}',
+                      '${p.name} - ${Formatters.idr(p.price)}',
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(fontWeight: FontWeight.w600),
@@ -485,7 +482,7 @@ class _PosSystemPageState extends State<PosSystemPage> {
                   'Subtotal:',
                   style: TextStyle(fontWeight: FontWeight.w600),
                 ),
-                Text(_formatCurrency(_subtotal)),
+                Text(Formatters.idr(_subtotal)),
               ],
             ),
             const SizedBox(height: 12),
@@ -517,7 +514,7 @@ class _PosSystemPageState extends State<PosSystemPage> {
             ),
           ),
           const SizedBox(width: 8),
-          Text(_formatCurrency(c.product.price * c.qty)),
+          Text(Formatters.idr(c.product.price * c.qty)),
           IconButton(
             tooltip: 'Remove',
             onPressed: () => _removeFromCart(c.product.id),

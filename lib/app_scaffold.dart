@@ -114,6 +114,9 @@ class AppScaffold extends StatelessWidget {
                     case 'invoice':
                       GoRouter.of(rc).goNamed(AppRoute.invoice.name);
                       break;
+                    case 'payments':
+                      GoRouter.of(rc).goNamed(AppRoute.payments.name);
+                      break;
                   }
                 } catch (e) {
                   debugPrint('Error navigating to POS: $e');
@@ -123,6 +126,7 @@ class AppScaffold extends StatelessWidget {
             items: const [
               _MenuItem('pos', 'POS System', Icons.store),
               _MenuItem('invoice', 'Invoice', Icons.receipt_long),
+              _MenuItem('payments', 'Payment History', Icons.history),
             ],
           ),
           const SizedBox(width: 8),

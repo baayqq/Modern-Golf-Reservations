@@ -38,6 +38,27 @@ class InvoiceRepository {
     await _db!.execute(
       'CREATE INDEX IF NOT EXISTS idx_invoice_items_invoice ON invoice_items(invoiceId);',
     );
+    // Payments: support combined payments across multiple invoices
+    await _db!.execute('''
+      CREATE TABLE IF NOT EXISTS payments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        payer TEXT NOT NULL,
+        amount REAL NOT NULL,
+        method TEXT,
+        date TEXT NOT NULL
+      );
+    ''');
+    await _db!.execute('''
+      CREATE TABLE IF NOT EXISTS payment_allocations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        paymentId INTEGER NOT NULL,
+        invoiceId INTEGER NOT NULL,
+        amount REAL NOT NULL
+      );
+    ''');
+    await _db!.execute(
+      'CREATE INDEX IF NOT EXISTS idx_payment_allocations_invoice ON payment_allocations(invoiceId);',
+    );
   }
 
   Future<void> _seedIfEmpty() async {
@@ -132,6 +153,97 @@ class InvoiceRepository {
       orderBy: 'id ASC',
     );
   }
+  // Total paid amount against an invoice (sum of allocations)
+  Future<double> getPaidAmountForInvoice(int invoiceId) async {
+    final rows = await _db!.rawQuery(
+      'SELECT SUM(amount) AS paid FROM payment_allocations WHERE invoiceId = ?',
+      [invoiceId],
+    );
+    final paid = (rows.first['paid'] as num?)?.toDouble() ?? 0.0;
+    return paid;
+  }
+
+  /// Create a combined payment that allocates amounts to multiple invoices.
+  /// This allows one payer to settle invoices for multiple customers or bookings.
+  Future<int> createCombinedPayment({
+    required String payer,
+    required List<PaymentAllocationInput> allocations,
+    String? method,
+    DateTime? date,
+  }) async {
+    final dt = date ?? DateTime.now();
+    final totalAmount = allocations.fold<double>(0.0, (s, e) => s + e.amount);
+    final paymentId = await _db!.insert('payments', {
+      'payer': payer,
+      'amount': totalAmount,
+      'method': method,
+      'date': dt.toIso8601String(),
+    });
+    for (final alloc in allocations) {
+      await _db!.insert('payment_allocations', {
+        'paymentId': paymentId,
+        'invoiceId': alloc.invoiceId,
+        'amount': alloc.amount,
+      });
+      // Update invoice status based on total paid so far
+      final invRow = await _db!.query(
+        'invoices',
+        where: 'id = ?',
+        whereArgs: [alloc.invoiceId],
+        limit: 1,
+      );
+      if (invRow.isNotEmpty) {
+        final total = (invRow.first['total'] as num).toDouble();
+        final paid = await getPaidAmountForInvoice(alloc.invoiceId);
+        final status = paid >= total
+            ? 'paid'
+            : (paid > 0.0 ? 'partial' : 'unpaid');
+        await _db!.update(
+          'invoices',
+          {'status': status},
+          where: 'id = ?',
+          whereArgs: [alloc.invoiceId],
+        );
+      }
+    }
+    return paymentId;
+  }
+
+  // --- NEW: Query payments and allocations ---
+  Future<List<Map<String, Object?>>> getPayments({DateTime? date, String? payerQuery, String? method}) async {
+    final whereParts = <String>[];
+    final args = <Object?>[];
+    if (date != null) {
+      final isoDay = DateTime(date.year, date.month, date.day)
+          .toIso8601String()
+          .split('T')
+          .first;
+      whereParts.add('date LIKE ?');
+      args.add('$isoDay%');
+    }
+    if (payerQuery != null && payerQuery.trim().isNotEmpty) {
+      whereParts.add('payer LIKE ?');
+      args.add('%${payerQuery.trim()}%');
+    }
+    if (method != null && method.trim().isNotEmpty) {
+      whereParts.add('method = ?');
+      args.add(method.trim());
+    }
+    final whereClause = whereParts.isEmpty ? null : whereParts.join(' AND ');
+    return _db!.query(
+      'payments',
+      where: whereClause,
+      whereArgs: whereClause == null ? null : args,
+      orderBy: 'date DESC',
+    );
+  }
+
+  Future<List<Map<String, Object?>>> getAllocationsForPayment(int paymentId) async {
+    return _db!.rawQuery(
+      'SELECT pa.id, pa.invoiceId, pa.amount, i.customer, i.total, i.status FROM payment_allocations pa JOIN invoices i ON i.id = pa.invoiceId WHERE pa.paymentId = ? ORDER BY pa.id ASC',
+      [paymentId],
+    );
+  }
 
   Future<void> close() async {
     await _db?.close();
@@ -145,4 +257,9 @@ class InvoiceItemInput {
   final double price;
 
   const InvoiceItemInput({required this.name, required this.qty, required this.price});
+}
+class PaymentAllocationInput {
+  final int invoiceId;
+  final double amount;
+  const PaymentAllocationInput({required this.invoiceId, required this.amount});
 }

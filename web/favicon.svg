@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Background circle for better visibility at 16px -->
+  <circle cx="32" cy="32" r="30" fill="#eaf6ef"/>
+
+  <!-- Green ground (golf green) -->
+  <ellipse cx="34" cy="44" rx="18" ry="6" fill="#198754"/>
+
+  <!-- Flag pole -->
+  <rect x="30" y="18" width="2.6" height="20" rx="1.3" fill="#0f5132"/>
+
+  <!-- Flag -->
+  <path d="M32.6 18 L32.6 28 L47 23 Z" fill="#2aa764"/>
+
+  <!-- Golf ball on tee -->
+  <circle cx="22" cy="40" r="6" fill="#ffffff" stroke="#212529" stroke-width="1.4"/>
+  <rect x="21.2" y="44" width="1.6" height="4" rx="0.8" fill="#bf0a30"/>
+
+  <!-- Subtle shadow under ball -->
+  <ellipse cx="22" cy="48.5" rx="6" ry="1.6" fill="#0f5132" opacity="0.25"/>
+
+  <!-- Accent outline to avoid blurriness on dark tabs -->
+  <circle cx="32" cy="32" r="30" fill="none" stroke="#198754" stroke-width="1" opacity="0.6"/>
+</svg>

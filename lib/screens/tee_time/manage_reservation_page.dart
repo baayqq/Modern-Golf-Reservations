@@ -6,6 +6,7 @@ import 'package:modern_golf_reservations/services/tee_time_repository.dart';
 import 'package:go_router/go_router.dart';
 import 'package:modern_golf_reservations/services/invoice_repository.dart';
 import 'package:modern_golf_reservations/router.dart' show AppRoute;
+import 'package:modern_golf_reservations/config/fees.dart';
 
 class ManageReservationPage extends StatefulWidget {
   const ManageReservationPage({super.key});
@@ -78,7 +79,7 @@ class _ManageReservationPageState extends State<ManageReservationPage> {
         ? 'Walk-in'
         : m.playerName!.trim();
     final qty = m.playerCount ?? 1;
-    const double price = 750000; // default GREEN FEE
+    const double price = Fees.greenFeeDefault; // default GREEN FEE
     final items = [InvoiceItemInput(name: 'GREEN FEE', qty: qty, price: price)];
     await _invoiceRepo.createInvoice(customer: customer, items: items);
     if (!mounted) return;

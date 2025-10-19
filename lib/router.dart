@@ -5,6 +5,7 @@ import 'screens/login_page.dart';
 import 'screens/dashboard_page.dart';
 import 'screens/pos/pos_system_page.dart';
 import 'screens/pos/invoice_page.dart';
+import 'screens/pos/payment_history_page.dart';
 import 'screens/tee_time/booking_calendar_page.dart';
 import 'screens/tee_time/manage_reservation_page.dart';
 import 'screens/tee_time/create_tee_time_page.dart';
@@ -21,6 +22,7 @@ enum AppRoute {
   dashboard,
   pos,
   invoice,
+  payments,
   teeBooking,
   teeManage,
   teeCreate,
@@ -38,6 +40,8 @@ extension AppRoutePath on AppRoute {
         return '/pos';
       case AppRoute.invoice:
         return '/pos/invoice';
+      case AppRoute.payments:
+        return '/pos/payments';
       case AppRoute.teeBooking:
         return '/tee-time/booking';
       case AppRoute.teeManage:
@@ -138,6 +142,12 @@ GoRouter createRouter({required bool isLoggedIn}) {
             path: 'invoice',
             pageBuilder: (context, state) =>
                 _slideFromRightPage(child: const InvoicePage()),
+          ),
+          GoRoute(
+            name: AppRoute.payments.name,
+            path: 'payments',
+            pageBuilder: (context, state) =>
+                _slideFromRightPage(child: const PaymentHistoryPage()),
           ),
         ],
       ),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../app_scaffold.dart';
 import '../../services/invoice_repository.dart';
-import 'package:intl/intl.dart';
+import 'package:modern_golf_reservations/utils/currency.dart';
 
 class InvoicePage extends StatefulWidget {
   const InvoicePage({super.key});
@@ -17,6 +17,13 @@ class _InvoicePageState extends State<InvoicePage> {
   List<InvoiceLine> _selectedItems = [];
   DateTime? _filterDate;
   final TextEditingController _filterNameCtrl = TextEditingController();
+  // Combined payment state
+  final TextEditingController _payerCtrl = TextEditingController();
+  final Set<int> _selectedInvoiceIds = <int>{};
+  // Controllers untuk nominal bayar per invoice (partial/custom)
+  final Map<int, TextEditingController> _amountCtrls = {};
+  // Mode pembayaran: gabungan atau individu
+  PaymentMode _paymentMode = PaymentMode.combined;
 
   @override
   void initState() {
@@ -36,26 +43,42 @@ class _InvoicePageState extends State<InvoicePage> {
           ? null
           : _filterNameCtrl.text.trim(),
     );
-    setState(() {
-      _invoices = rows.map((e) {
-        final idVal = e['id'] as int? ?? (e['id'] as num).toInt();
-        final statusStr = (e['status'] as String?) ?? 'unpaid';
-        final status = switch (statusStr) {
-          'paid' => PaymentStatus.paid,
-          'partial' => PaymentStatus.partial,
-          _ => PaymentStatus.unpaid,
-        };
-        return InvoiceItem(
+    // Hitung outstanding (sisa tagihan) untuk setiap invoice
+    final items = <InvoiceItem>[];
+    for (final e in rows) {
+      final idVal = e['id'] as int? ?? (e['id'] as num).toInt();
+      final statusStr = (e['status'] as String?) ?? 'unpaid';
+      final status = switch (statusStr) {
+        'paid' => PaymentStatus.paid,
+        'partial' => PaymentStatus.partial,
+        _ => PaymentStatus.unpaid,
+      };
+      final total = (e['total'] is num)
+          ? (e['total'] as num).toDouble()
+          : (e['total'] as double? ?? 0.0);
+      final paid = await _repo.getPaidAmountForInvoice(idVal);
+      final outstanding = (total - paid).clamp(0.0, double.infinity);
+      items.add(
+        InvoiceItem(
           id: idVal.toString(),
           customer: (e['customer'] as String?) ?? 'Walk-in',
-          total: (e['total'] is num)
-              ? (e['total'] as num).toDouble()
-              : (e['total'] as double? ?? 0.0),
+          total: total,
           status: status,
-          date:
-              DateTime.tryParse((e['date'] as String?) ?? '') ?? DateTime.now(),
-        );
-      }).toList();
+          date: DateTime.tryParse((e['date'] as String?) ?? '') ?? DateTime.now(),
+          outstanding: outstanding,
+        ),
+      );
+    }
+    setState(() {
+      _invoices = items;
+      // Inisialisasi controller nominal per invoice dengan default sisa tagihan
+      for (final inv in _invoices) {
+        final id = int.parse(inv.id);
+        _amountCtrls.putIfAbsent(id, () => TextEditingController());
+        final ctrl = _amountCtrls[id]!;
+        final defaultText = inv.outstanding > 0 ? inv.outstanding.toStringAsFixed(0) : '';
+        ctrl.text = defaultText;
+      }
     });
   }
 
@@ -115,6 +138,17 @@ class _InvoicePageState extends State<InvoicePage> {
   }
 
   @override
+  void dispose() {
+    _filterNameCtrl.dispose();
+    _payerCtrl.dispose();
+    for (final c in _amountCtrls.values) {
+      c.dispose();
+    }
+    _repo.close();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return AppScaffold(
       title: 'Invoices',
@@ -135,6 +169,8 @@ class _InvoicePageState extends State<InvoicePage> {
             const SizedBox(height: 16),
             Expanded(child: _invoiceTable()),
             const SizedBox(height: 16),
+            _combinedPaymentBar(),
+            const SizedBox(height: 16),
             _detailsSection(),
             const SizedBox(height: 12),
             Center(
@@ -146,6 +182,177 @@ class _InvoicePageState extends State<InvoicePage> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _combinedPaymentBar() {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Nama Pembayar (contoh: Pemain A)'),
+                  const SizedBox(height: 6),
+                  SizedBox(
+                    height: 42,
+                    child: TextField(
+                      controller: _payerCtrl,
+                      decoration: const InputDecoration(hintText: 'Masukkan nama pembayar...'),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  const Text('Mode Pembayaran'),
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      ChoiceChip(
+                        label: const Text('Gabungan'),
+                        selected: _paymentMode == PaymentMode.combined,
+                        onSelected: (sel) {
+                          if (sel) {
+                            setState(() {
+                              _paymentMode = PaymentMode.combined;
+                            });
+                          }
+                        },
+                      ),
+                      ChoiceChip(
+                        label: const Text('Individu'),
+                        selected: _paymentMode == PaymentMode.individual,
+                        onSelected: (sel) {
+                          if (sel) {
+                            setState(() {
+                              _paymentMode = PaymentMode.individual;
+                              _selectedInvoiceIds.clear();
+                            });
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            SizedBox(
+              height: 42,
+              child: _paymentMode == PaymentMode.combined
+                  ? ElevatedButton(
+                      onPressed: _handleCombinedPayment,
+                      child: const Text('Terima Pembayaran Gabungan'),
+                    )
+                  : const SizedBox.shrink(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleCombinedPayment() async {
+    if (_selectedInvoiceIds.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pilih minimal satu invoice untuk dibayar')),
+      );
+      return;
+    }
+    // Ambil nominal per invoice dari input pengguna dan validasi terhadap sisa tagihan
+    final allocations = <PaymentAllocationInput>[];
+    final invalid = <String>[];
+    for (final id in _selectedInvoiceIds) {
+      final inv = _invoices.firstWhere(
+        (e) => int.tryParse(e.id) == id,
+        orElse: () => InvoiceItem(id: id.toString(), customer: '', total: 0.0, status: PaymentStatus.unpaid, date: DateTime.now(), outstanding: 0.0),
+      );
+      final ctrl = _amountCtrls[id];
+      final raw = ctrl?.text.trim() ?? '';
+      final digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
+      final amount = digits.isEmpty ? 0.0 : double.tryParse(digits) ?? 0.0;
+      if (amount <= 0) {
+        invalid.add('#${inv.id} (nominal kosong/tidak valid)');
+        continue;
+      }
+      if (amount > inv.outstanding + 0.0001) {
+        invalid.add('#${inv.id} (nominal melebihi sisa tagihan)');
+        continue;
+      }
+      allocations.add(PaymentAllocationInput(invoiceId: id, amount: amount));
+    }
+    if (invalid.isNotEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Periksa nominal: ${invalid.join(', ')}')),
+      );
+      return;
+    }
+    if (allocations.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Tidak ada nominal pembayaran yang valid')),
+      );
+      return;
+    }
+    final payer = _payerCtrl.text.trim().isEmpty ? 'Unknown Payer' : _payerCtrl.text.trim();
+    await _repo.createCombinedPayment(payer: payer, allocations: allocations, method: 'cash');
+    if (!mounted) return;
+    setState(() {
+      _selectedInvoiceIds.clear();
+    });
+    await _load();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Pembayaran gabungan berhasil diproses')),
+    );
+  }
+  Future<void> _handleIndividualPayment(InvoiceItem inv) async {
+    if (_paymentMode != PaymentMode.individual) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Aktifkan mode 'Individu' di bar atas untuk melakukan pembayaran individu")),
+      );
+      return;
+    }
+    final id = int.parse(inv.id);
+    final ctrl = _amountCtrls[id];
+    final raw = ctrl?.text.trim() ?? '';
+    final digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
+    final amount = digits.isEmpty ? 0.0 : double.tryParse(digits) ?? 0.0;
+    if (amount <= 0) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Nominal tidak valid untuk invoice #${inv.id}')),
+      );
+      return;
+    }
+    if (amount > inv.outstanding + 0.0001) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Nominal melebihi sisa tagihan untuk invoice #${inv.id}')),
+      );
+      return;
+    }
+    final payer = _payerCtrl.text.trim().isEmpty ? inv.customer : _payerCtrl.text.trim();
+
+    final confirmed = await _confirmIndividualPayment(inv: inv, amount: amount, payer: payer);
+    if (!confirmed) return;
+
+    await _repo.createCombinedPayment(
+      payer: payer,
+      allocations: [PaymentAllocationInput(invoiceId: id, amount: amount)],
+      method: 'cash',
+    );
+    if (!mounted) return;
+    await _load();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Pembayaran individu berhasil untuk invoice #${inv.id}')),
     );
   }
 
@@ -239,23 +446,25 @@ class _InvoicePageState extends State<InvoicePage> {
         builder: (context, constraints) {
           final table = Table(
             columnWidths: const {
-              0: FixedColumnWidth(140), // invoice id
-              1: FlexColumnWidth(), // customer name
-              2: FixedColumnWidth(180), // total
-              3: FixedColumnWidth(160), // status
-              4: FixedColumnWidth(200), // date
-              5: FixedColumnWidth(160), // actions
+              0: FixedColumnWidth(60), // select
+              1: FixedColumnWidth(140), // invoice id
+              2: FixedColumnWidth(220), // customer name
+              3: FixedColumnWidth(180), // total
+              4: FixedColumnWidth(220), // bayar (input + tombol)
+              5: FixedColumnWidth(160), // status
+              6: FixedColumnWidth(200), // date
             },
             border: TableBorder.all(color: Theme.of(context).colorScheme.outline),
             children: [
-              _headerRow([
-                'Invoice ID',
-                'Customer Name',
-                'Total Amount',
-                'Payment Status',
-                'Date',
-                'Actions',
-              ]),
+             _headerRow([
+               'Select',
+               'Invoice ID',
+               'Customer Name',
+               'Total Amount',
+               'Bayar (Rp)',
+               'Payment Status',
+               'Date',
+             ]),
               ..._invoices.map(_dataRow),
             ],
           );
@@ -296,8 +505,30 @@ class _InvoicePageState extends State<InvoicePage> {
   }
 
   TableRow _dataRow(InvoiceItem inv) {
+    final idInt = int.parse(inv.id);
+    final amountCtrl = _amountCtrls[idInt] ?? TextEditingController();
+    _amountCtrls[idInt] = amountCtrl;
     return TableRow(
       children: [
+        // Select checkbox
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Checkbox(
+            value: _selectedInvoiceIds.contains(int.parse(inv.id)),
+            onChanged: _paymentMode == PaymentMode.combined
+                ? (val) {
+                    setState(() {
+                      final id = int.parse(inv.id);
+                      if (val == true) {
+                        _selectedInvoiceIds.add(id);
+                      } else {
+                        _selectedInvoiceIds.remove(id);
+                      }
+                    });
+                  }
+                : null,
+          ),
+        ),
         // Invoice ID (clickable)
         InkWell(
           onTap: () => _viewDetails(inv),
@@ -314,7 +545,11 @@ class _InvoicePageState extends State<InvoicePage> {
           onTap: () => _viewDetails(inv),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: Text(inv.customer),
+            child: Text(
+              inv.customer,
+              softWrap: false,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ),
         // Total Amount
@@ -322,7 +557,51 @@ class _InvoicePageState extends State<InvoicePage> {
           onTap: () => _viewDetails(inv),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: Text(_formatCurrency(inv.total)),
+            child: Text(Formatters.idr(inv.total)),
+          ),
+        ),
+        // Bayar (Rp) - input
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          child: SizedBox(
+            height: 36,
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: amountCtrl,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      hintText: 'Sisa: ${Formatters.idr(inv.outstanding)}',
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                    ),
+                    onChanged: (v) {
+                      final digits = v.replaceAll(RegExp(r'[^0-9]'), '');
+                      if (digits != v) {
+                        amountCtrl.value = TextEditingValue(
+                          text: digits,
+                          selection: TextSelection.collapsed(offset: digits.length),
+                        );
+                      }
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                SizedBox(
+                  height: 36,
+                  child: FilledButton.tonal(
+                    onPressed: inv.outstanding <= 0 ? null : () => _handleIndividualPayment(inv),
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size(68, 36),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                    ),
+                    child: const Text('Bayar'),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
         // Payment Status (badge)
@@ -338,24 +617,7 @@ class _InvoicePageState extends State<InvoicePage> {
             child: Text(_formatDate(inv.date)),
           ),
         ),
-        // Actions: Export to PDF (dummy)
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          child: SizedBox(
-            height: 28,
-            child: FilledButton.tonal(
-              onPressed: () {
-                setState(() => _selectedInvoice = inv);
-                _exportPdf();
-              },
-              style: FilledButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.secondary,
-                foregroundColor: Theme.of(context).colorScheme.onSecondary,
-              ),
-              child: const Text('Export to PDF'),
-            ),
-          ),
-        ),
+
       ],
     );
   }
@@ -432,14 +694,14 @@ class _InvoicePageState extends State<InvoicePage> {
                               horizontal: 12,
                               vertical: 10,
                             ),
-                            child: Text(_formatCurrency(it.price)),
+                            child: Text(Formatters.idr(it.price)),
                           ),
                           Padding(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 12,
                               vertical: 10,
                             ),
-                            child: Text(_formatCurrency(it.price * it.qty)),
+                            child: Text(Formatters.idr(it.price * it.qty)),
                           ),
                         ],
                       ),
@@ -464,7 +726,7 @@ class _InvoicePageState extends State<InvoicePage> {
                             vertical: 10,
                           ),
                           child: Text(
-                            _formatCurrency(total),
+                            Formatters.idr(total),
                             style: const TextStyle(fontWeight: FontWeight.w700),
                           ),
                         ),
@@ -497,13 +759,48 @@ class _InvoicePageState extends State<InvoicePage> {
                     onPressed: _exportPdf,
                     child: const Text('Export to PDF'),
                   ),
-                ),
-              ],
+                  ),
+                ],
             ),
           ],
         ),
       ),
     );
+  }
+
+  Future<bool> _confirmIndividualPayment({required InvoiceItem inv, required double amount, required String payer}) async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              title: const Text('Konfirmasi Pembayaran Individu'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Invoice: #${inv.id}'),
+                  Text('Customer: ${inv.customer}'),
+                  const SizedBox(height: 8),
+                  Text('Nominal Bayar: ${Formatters.idr(amount)}'),
+                  Text('Sisa Tagihan Setelah Bayar: ${Formatters.idr((inv.outstanding - amount).clamp(0.0, double.infinity))}'),
+                  const SizedBox(height: 8),
+                  Text('Pembayar: $payer'),
+                  const Text('Metode: Tunai'),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Batal'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Bayar'),
+                ),
+              ],
+            );
+          },
+        ) ?? false;
   }
 
   Widget _statusBadge(PaymentStatus status) {
@@ -542,10 +839,7 @@ class _InvoicePageState extends State<InvoicePage> {
     );
   }
 
-  String _formatCurrency(double v) {
-    final format = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp', decimalDigits: 0);
-    return format.format(v);
-  }
+  
 
   String _formatDate(DateTime dt) {
     // 31/05/2025, 07:50 AM
@@ -562,6 +856,7 @@ class _InvoicePageState extends State<InvoicePage> {
 }
 
 enum PaymentStatus { unpaid, paid, partial }
+enum PaymentMode { combined, individual }
 
 class InvoiceItem {
   final String id;
@@ -569,6 +864,7 @@ class InvoiceItem {
   final double total;
   final PaymentStatus status;
   final DateTime date;
+  final double outstanding;
 
   InvoiceItem({
     required this.id,
@@ -576,6 +872,7 @@ class InvoiceItem {
     required this.total,
     required this.status,
     required this.date,
+    required this.outstanding,
   });
 }
 
