@@ -134,10 +134,31 @@ class _LoginPageState extends State<LoginPage> {
                   // Emblem/logo placeholder
                   Padding(
                     padding: const EdgeInsets.only(top: 8, bottom: 16),
-                    child: Icon(
-                      Icons.shield_outlined,
-                      size: 80,
-                      color: Colors.brown.shade300,
+                    child: Column(
+                      children: [
+                        // Gunakan ikon 192x192 agar tajam di UI
+                        Image.network(
+                          '/icons/Icon-192.png',
+                          width: 80,
+                          height: 80,
+                          errorBuilder: (context, error, stackTrace) {
+                            // Fallback jika ikon belum tersedia
+                            return Icon(
+                              Icons.flag,
+                              size: 80,
+                              color: Colors.green.shade700,
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Modern Golf Reservation',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   // Username

@@ -77,17 +77,17 @@ class _BookingCalendarPageState extends State<BookingCalendarPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    if (_error != null) {
-      return Center(child: Text('Error: $_error'));
-    }
-
     final monthTitle = DateFormat('MMMM yyyy').format(_visibleMonth);
-    return AppScaffold(
-      title: 'Tee Time Reservation',
-      body: SingleChildScrollView(
+
+    // Pastikan AppScaffold SELALU digunakan agar background konsisten
+    // untuk menghindari flicker layar putih saat transisi atau loading.
+    Widget pageBody;
+    if (_loading) {
+      pageBody = const Center(child: CircularProgressIndicator());
+    } else if (_error != null) {
+      pageBody = Center(child: Text('Error: $_error'));
+    } else {
+      pageBody = SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -186,7 +186,12 @@ class _BookingCalendarPageState extends State<BookingCalendarPage> {
 
         ],
         ),
-      ),
+      );
+    }
+
+    return AppScaffold(
+      title: 'Tee Time Reservation',
+      body: pageBody,
     );
   }
 

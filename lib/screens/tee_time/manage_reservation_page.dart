@@ -23,6 +23,32 @@ class _ManageReservationPageState extends State<ManageReservationPage> {
   DateTime? _filterDate;
   final TextEditingController _playerQueryCtrl = TextEditingController();
 
+  // Pagination state
+  int _pageSize = 20;
+  int _currentPage = 0;
+
+  List<TeeTimeModel> get _pagedItems {
+    final start = _currentPage * _pageSize;
+    if (start >= _items.length) return const [];
+    final end = (start + _pageSize).clamp(0, _items.length);
+    return _items.sublist(start, end);
+  }
+
+  int get _totalPages => (_items.length + _pageSize - 1) ~/ _pageSize;
+
+  void _goToPage(int p) {
+    setState(() {
+      _currentPage = p.clamp(0, _totalPages == 0 ? 0 : _totalPages - 1);
+    });
+  }
+
+  void _setPageSize(int size) {
+    setState(() {
+      _pageSize = size;
+      _currentPage = 0; // reset to first page when page size changes
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -42,6 +68,7 @@ class _ManageReservationPageState extends State<ManageReservationPage> {
     setState(() {
       _items = list;
       _loading = false;
+      _currentPage = 0; // reset page on new data load
     });
   }
 
@@ -180,11 +207,26 @@ class _ManageReservationPageState extends State<ManageReservationPage> {
           Expanded(
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
-                : _ReservationTable(
-                    items: _items,
-                    onEdit: _edit,
-                    onDelete: _delete,
-                    onCreateInvoice: _createInvoice,
+                : Column(
+                    children: [
+                      Expanded(
+                        child: _ReservationTable(
+                          items: _pagedItems,
+                          onEdit: _edit,
+                          onDelete: _delete,
+                          onCreateInvoice: _createInvoice,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      _PaginationBar(
+                        total: _items.length,
+                        pageSize: _pageSize,
+                        currentPage: _currentPage,
+                        onPageSizeChanged: _setPageSize,
+                        onPrev: _currentPage > 0 ? () => _goToPage(_currentPage - 1) : null,
+                        onNext: (_currentPage + 1) < _totalPages ? () => _goToPage(_currentPage + 1) : null,
+                      ),
+                    ],
                   ),
           ),
         ],
@@ -345,6 +387,60 @@ class _ReservationTable extends StatelessWidget {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _PaginationBar extends StatelessWidget {
+  final int total;
+  final int pageSize;
+  final int currentPage;
+  final ValueChanged<int> onPageSizeChanged;
+  final VoidCallback? onPrev;
+  final VoidCallback? onNext;
+  const _PaginationBar({
+    required this.total,
+    required this.pageSize,
+    required this.currentPage,
+    required this.onPageSizeChanged,
+    required this.onPrev,
+    required this.onNext,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final start = total == 0 ? 0 : (currentPage * pageSize) + 1;
+    final end = (start == 0) ? 0 : ((currentPage + 1) * pageSize).clamp(0, total);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      alignment: Alignment.centerRight,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          Text('Menampilkan $start-$end dari $total'),
+          const SizedBox(width: 12),
+          DropdownButton<int>(
+            value: pageSize,
+            items: const [10, 20, 50, 100]
+                .map((v) => DropdownMenuItem(value: v, child: Text('$v / halaman')))
+                .toList(),
+            onChanged: (v) {
+              if (v != null) onPageSizeChanged(v);
+            },
+          ),
+          const SizedBox(width: 8),
+          IconButton(
+            tooltip: 'Sebelumnya',
+            onPressed: onPrev,
+            icon: const Icon(Icons.chevron_left),
+          ),
+          IconButton(
+            tooltip: 'Berikutnya',
+            onPressed: onNext,
+            icon: const Icon(Icons.chevron_right),
+          ),
+        ],
       ),
     );
   }

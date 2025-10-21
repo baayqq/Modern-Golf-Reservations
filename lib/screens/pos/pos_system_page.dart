@@ -17,14 +17,16 @@ class _PosSystemPageState extends State<PosSystemPage> {
   final TextEditingController _searchCtrl = TextEditingController();
   final TextEditingController _customerCtrl = TextEditingController();
   // Manual item inputs (Green Fee)
-  final TextEditingController _itemNameCtrl = TextEditingController(text: 'GREEN FEE');
+  final TextEditingController _itemNameCtrl = TextEditingController(
+    text: 'GREEN FEE',
+  );
   final TextEditingController _itemQtyCtrl = TextEditingController(text: '1');
-  final TextEditingController _itemPriceCtrl = TextEditingController(text: Fees.greenFeeDefault.toStringAsFixed(0));
+  final TextEditingController _itemPriceCtrl = TextEditingController(
+    text: Fees.greenFeeDefault.toStringAsFixed(0),
+  );
 
   // Kategori yang digunakan
-  final List<String> _categories = const [
-    'GREEN FEE',
-  ];
+  final List<String> _categories = const ['GREEN FEE'];
 
   String _selectedCategory = 'GREEN FEE';
 
@@ -113,7 +115,9 @@ class _PosSystemPageState extends State<PosSystemPage> {
     final price = double.tryParse(_itemPriceCtrl.text.trim()) ?? 0.0;
     if (name.isEmpty || qty <= 0 || price <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Isi nama item, qty (>0), dan harga (>0)')),
+        const SnackBar(
+          content: Text('Isi nama item, qty (>0), dan harga (>0)'),
+        ),
       );
       return;
     }
@@ -126,10 +130,14 @@ class _PosSystemPageState extends State<PosSystemPage> {
       category: 'GREEN FEE',
       image: Icons.flag,
     );
-    final existingIdx = _cart.indexWhere((c) => c.product.name == name && (c.product.price - price).abs() < 0.0001);
+    final existingIdx = _cart.indexWhere(
+      (c) => c.product.name == name && (c.product.price - price).abs() < 0.0001,
+    );
     setState(() {
       if (existingIdx >= 0) {
-        _cart[existingIdx] = _cart[existingIdx].copyWith(qty: _cart[existingIdx].qty + qty);
+        _cart[existingIdx] = _cart[existingIdx].copyWith(
+          qty: _cart[existingIdx].qty + qty,
+        );
       } else {
         _cart.add(CartItem(product: p, qty: qty));
       }
@@ -149,14 +157,22 @@ class _PosSystemPageState extends State<PosSystemPage> {
 
   Future<void> _saveTransaction() async {
     if (_cart.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Keranjang masih kosong')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Keranjang masih kosong')));
       return;
     }
-    final customer = _customerCtrl.text.trim().isEmpty ? 'Walk-in' : _customerCtrl.text.trim();
+    final customer = _customerCtrl.text.trim().isEmpty
+        ? 'Walk-in'
+        : _customerCtrl.text.trim();
     final items = _cart
-        .map((c) => InvoiceItemInput(name: c.product.name, qty: c.qty, price: c.product.price))
+        .map(
+          (c) => InvoiceItemInput(
+            name: c.product.name,
+            qty: c.qty,
+            price: c.product.price,
+          ),
+        )
         .toList();
     await _invoiceRepo.createInvoice(customer: customer, items: items);
     if (!mounted) return;
@@ -207,10 +223,9 @@ class _PosSystemPageState extends State<PosSystemPage> {
               );
 
         // Bungkus dengan SingleChildScrollView untuk mencegah overflow vertikal
-        return SingleChildScrollView(child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: content,
-        ));
+        return SingleChildScrollView(
+          child: Padding(padding: const EdgeInsets.all(12), child: content),
+        );
       },
     );
 
@@ -227,7 +242,7 @@ class _PosSystemPageState extends State<PosSystemPage> {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
-              color: const Color(0xFF0D6EFD),
+              color: const Color(0xFF198754),
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(8),
               ),
@@ -262,14 +277,14 @@ class _PosSystemPageState extends State<PosSystemPage> {
                       style: TextStyle(
                         color: selected
                             ? Colors.white
-                            : const Color(0xFF0D6EFD),
+                            : const Color(0xFF198754),
                         fontWeight: FontWeight.w600,
                         letterSpacing: 0.3,
                       ),
                     ),
-                    selectedColor: const Color(0xFF0D6EFD),
+                    selectedColor: const Color(0xFF198754),
                     backgroundColor: Colors.white,
-                    side: const BorderSide(color: Color(0xFF0D6EFD)),
+                    side: const BorderSide(color: Color(0xFF198754)),
                   );
                 }).toList(),
               ),
@@ -328,57 +343,59 @@ class _PosSystemPageState extends State<PosSystemPage> {
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: SizedBox(
-          height: MediaQuery.of(context).size.height * 0.5, // Tinggi container untuk scrolling
+          height:
+              MediaQuery.of(context).size.height *
+              0.5, // Tinggi container untuk scrolling
           child: GridView.builder(
             shrinkWrap: false,
             physics: const AlwaysScrollableScrollPhysics(),
             itemCount: _filtered.length,
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: cols,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-            childAspectRatio: 1.0,
-          ),
-          itemBuilder: (context, index) {
-            final p = _filtered[index];
-            return InkWell(
-              onTap: () => _addToCart(p),
-              borderRadius: BorderRadius.circular(8),
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  border: Border.all(color: const Color(0xFFDEE2E6)),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Center(
-                        child: Icon(
-                          p.image,
-                          size: 80,
-                          color: Colors.brown.shade300,
+              crossAxisCount: cols,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              childAspectRatio: 1.0,
+            ),
+            itemBuilder: (context, index) {
+              final p = _filtered[index];
+              return InkWell(
+                onTap: () => _addToCart(p),
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: const Color(0xFFDEE2E6)),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Center(
+                          child: Icon(
+                            p.image,
+                            size: 80,
+                            color: Colors.brown.shade300,
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '${p.name} - ${Formatters.idr(p.price)}',
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Stock: ${p.stock}',
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                  ],
+                      const SizedBox(height: 8),
+                      Text(
+                        '${p.name} - ${Formatters.idr(p.price)}',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Stock: ${p.stock}',
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            );
-          },
+              );
+            },
           ),
         ),
       ),
@@ -393,108 +410,115 @@ class _PosSystemPageState extends State<PosSystemPage> {
         padding: const EdgeInsets.all(12),
         child: SingleChildScrollView(
           child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: const Color(0xFF198754),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: const Text(
-                'Order Summary',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
                 ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            const Text('Customer'),
-            const SizedBox(height: 6),
-            TextField(
-              controller: _customerCtrl,
-              decoration: const InputDecoration(
-                hintText: 'Enter customer name...',
-              ),
-            ),
-            const SizedBox(height: 12),
-            const Divider(),
-            const Text('Tambah Item (Green Fee)'),
-            const SizedBox(height: 6),
-            TextField(
-              controller: _itemNameCtrl,
-              decoration: const InputDecoration(
-                hintText: 'Nama item... (misal: GREEN FEE)',
-              ),
-            ),
-            const SizedBox(height: 6),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _itemQtyCtrl,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(hintText: 'Qty'),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF198754),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Text(
+                  'Order Summary',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: TextField(
-                    controller: _itemPriceCtrl,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(hintText: 'Harga'),
-                  ),
+              ),
+              const SizedBox(height: 12),
+              const Text('Customer'),
+              const SizedBox(height: 6),
+              TextField(
+                controller: _customerCtrl,
+                decoration: const InputDecoration(
+                  hintText: 'Enter customer name...',
                 ),
-                const SizedBox(width: 8),
-                SizedBox(
-                  height: 42,
-                  child: ElevatedButton(
-                    onPressed: _addManualItem,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.secondary,
-                      foregroundColor: Theme.of(context).colorScheme.onSecondary,
+              ),
+              const SizedBox(height: 12),
+              const Divider(),
+              const Text('Tambah Item (Green Fee)'),
+              const SizedBox(height: 6),
+              TextField(
+                controller: _itemNameCtrl,
+                decoration: const InputDecoration(
+                  hintText: 'Nama item... (misal: GREEN FEE)',
+                ),
+              ),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _itemQtyCtrl,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(hintText: 'Qty'),
                     ),
-                    child: const Text('Tambah'),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            const Divider(),
-            // Cart list
-            if (_cart.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Text(
-                  'No items yet',
-                  style: TextStyle(color: Colors.grey.shade600),
-                  textAlign: TextAlign.center,
-                ),
-              )
-            else
-              ..._cart.map((c) => _cartTile(c)),
-            const Divider(),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Subtotal:',
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
-                Text(Formatters.idr(_subtotal)),
-              ],
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              height: 42,
-              child: ElevatedButton(
-                onPressed: _cart.isEmpty ? null : _saveTransaction,
-                // Gunakan warna default dari ElevatedButtonTheme (primary)
-                 child: const Text('Simpan Transaksi'),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextField(
+                      controller: _itemPriceCtrl,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(hintText: 'Harga'),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  SizedBox(
+                    height: 42,
+                    child: ElevatedButton(
+                      onPressed: _addManualItem,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(
+                          context,
+                        ).colorScheme.secondary,
+                        foregroundColor: Theme.of(
+                          context,
+                        ).colorScheme.onSecondary,
+                      ),
+                      child: const Text('Tambah'),
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
+              const SizedBox(height: 12),
+              const Divider(),
+              // Cart list
+              if (_cart.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Text(
+                    'No items yet',
+                    style: TextStyle(color: Colors.grey.shade600),
+                    textAlign: TextAlign.center,
+                  ),
+                )
+              else
+                ..._cart.map((c) => _cartTile(c)),
+              const Divider(),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Subtotal:',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  Text(Formatters.idr(_subtotal)),
+                ],
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 42,
+                child: ElevatedButton(
+                  onPressed: _cart.isEmpty ? null : _saveTransaction,
+                  // Gunakan warna default dari ElevatedButtonTheme (primary)
+                  child: const Text('Simpan Transaksi'),
+                ),
+              ),
+            ],
           ),
         ),
       ),

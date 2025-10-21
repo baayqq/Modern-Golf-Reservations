@@ -29,7 +29,7 @@ class _ProfilePageState extends State<ProfilePage> {
       final prefs = await SharedPreferences.getInstance();
       final username = prefs.getString('username');
       debugPrint('Username dari SharedPreferences langsung: $username');
-      
+
       setState(() {
         _username = username;
         _isLoading = false;
@@ -84,7 +84,9 @@ class _ProfilePageState extends State<ProfilePage> {
                       ? const CircularProgressIndicator()
                       : TextFormField(
                           initialValue: _username ?? 'User',
-                          decoration: const InputDecoration(hintText: 'Username'),
+                          decoration: const InputDecoration(
+                            hintText: 'Username',
+                          ),
                           readOnly: true,
                         ),
                   const SizedBox(height: 20),
@@ -92,11 +94,6 @@ class _ProfilePageState extends State<ProfilePage> {
                     alignment: Alignment.centerLeft,
                     child: Row(
                       children: [
-                        FilledButton(
-                          onPressed: () {},
-                          child: const Text('Update Profile'),
-                        ),
-                        const SizedBox(width: 12),
                         // Tambah tombol Logout juga di Profile agar jelas dan aman
                         OutlinedButton.icon(
                           onPressed: () async {

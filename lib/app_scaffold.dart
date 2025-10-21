@@ -26,11 +26,16 @@ class AppScaffold extends StatelessWidget {
         title: Row(
           children: [
             const SizedBox(width: 12),
-            // Logo placeholder
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: Colors.white24,
-              child: Icon(Icons.park, size: 18, color: appBarFg),
+            // AppBar logo dari web/icons/Icon-192.png; ukuran kecil agar serasi dengan tinggi AppBar.
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.network(
+                '/icons/Icon-192.png',
+                width: 36,
+                height: 36,
+                fit: BoxFit.contain,
+                errorBuilder: (ctx, err, stack) => Icon(Icons.park, size: 20, color: appBarFg),
+              ),
             ),
             const SizedBox(width: 12),
             Text(
