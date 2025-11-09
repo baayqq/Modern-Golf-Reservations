@@ -338,15 +338,7 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
             ),
           ),
           const SizedBox(height: 12),
-          _FieldLabel('Catatan:'),
-          TextField(
-            controller: _notesCtrl,
-            maxLines: 3,
-            decoration: const InputDecoration(
-              hintText: 'Opsional',
-              border: OutlineInputBorder(),
-            ),
-          ),
+          // Catatan dihapus pada mode Create sesuai permintaan.
           const SizedBox(height: 16),
           SizedBox(
             width: 180,
@@ -374,9 +366,6 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
                   player4Name: _player4Ctrl.text.trim().isEmpty
                       ? null
                       : _player4Ctrl.text.trim(),
-                  notes: _notesCtrl.text.trim().isEmpty
-                      ? null
-                      : _notesCtrl.text.trim(),
                 );
                 // Tidak membuat invoice otomatis di sini untuk menghindari duplikasi.
                 // Gunakan halaman POS untuk membuat invoice dan menerima pembayaran.
