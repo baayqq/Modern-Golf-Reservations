@@ -23,6 +23,9 @@ class TeeTimeRepository {
         date TEXT NOT NULL,
         time TEXT NOT NULL,
         playerName TEXT,
+        player2Name TEXT,
+        player3Name TEXT,
+        player4Name TEXT,
         playerCount INTEGER,
         notes TEXT,
         status TEXT NOT NULL
@@ -42,6 +45,15 @@ class TeeTimeRepository {
     }
     if (!names.contains('notes')) {
       await _db!.execute("ALTER TABLE tee_times ADD COLUMN notes TEXT");
+    }
+    if (!names.contains('player2Name')) {
+      await _db!.execute("ALTER TABLE tee_times ADD COLUMN player2Name TEXT");
+    }
+    if (!names.contains('player3Name')) {
+      await _db!.execute("ALTER TABLE tee_times ADD COLUMN player3Name TEXT");
+    }
+    if (!names.contains('player4Name')) {
+      await _db!.execute("ALTER TABLE tee_times ADD COLUMN player4Name TEXT");
     }
   }
 
@@ -86,6 +98,18 @@ class TeeTimeRepository {
       'tee_times',
       where: 'date = ?',
       whereArgs: [iso],
+      orderBy: 'time ASC',
+    );
+    return rows.map((e) => TeeTimeModel.fromMap(e)).toList();
+  }
+
+  /// Get only booked slots for a specific date, ordered by time (for dashboard listing).
+  Future<List<TeeTimeModel>> getBookedForDate(DateTime date) async {
+    final iso = _iso(date);
+    final rows = await _db!.query(
+      'tee_times',
+      where: 'date = ? AND status = ?',
+      whereArgs: [iso, 'booked'],
       orderBy: 'time ASC',
     );
     return rows.map((e) => TeeTimeModel.fromMap(e)).toList();
@@ -159,6 +183,9 @@ class TeeTimeRepository {
         'date': _iso(model.date),
         'time': model.time,
         'playerName': model.playerName,
+        'player2Name': model.player2Name,
+        'player3Name': model.player3Name,
+        'player4Name': model.player4Name,
         'playerCount': model.playerCount,
         'notes': model.notes,
         'status': model.status,
@@ -178,6 +205,9 @@ class TeeTimeRepository {
     required String time,
     required String playerName,
     required int playerCount,
+    String? player2Name,
+    String? player3Name,
+    String? player4Name,
     String? notes,
   }) async {
     // Check if a row exists for this date+time
@@ -194,6 +224,9 @@ class TeeTimeRepository {
         'tee_times',
         {
           'playerName': playerName,
+          'player2Name': player2Name,
+          'player3Name': player3Name,
+          'player4Name': player4Name,
           'playerCount': playerCount,
           'notes': notes,
           'status': 'booked',
@@ -207,6 +240,9 @@ class TeeTimeRepository {
         'date': _iso(date),
         'time': time,
         'playerName': playerName,
+        'player2Name': player2Name,
+        'player3Name': player3Name,
+        'player4Name': player4Name,
         'playerCount': playerCount,
         'notes': notes,
         'status': 'booked',
@@ -233,5 +269,54 @@ class TeeTimeRepository {
       limit: 1,
     );
     return rows.isNotEmpty;
+  }
+
+  // ---- Dashboard statistics helpers ----
+  /// Sum of players on the given date (status = 'booked').
+  /// Uses playerCount if present; defaults to 1 per booked slot when null.
+  Future<int> countPlayersOnDate(DateTime date) async {
+    final iso = _iso(date);
+    final rows = await _db!.rawQuery(
+      "SELECT SUM(COALESCE(playerCount, 1)) AS c FROM tee_times WHERE date = ? AND status = 'booked'",
+      [iso],
+    );
+    final val = rows.first['c'];
+    if (val == null) return 0;
+    return (val is int) ? val : (val as num).toInt();
+  }
+
+  /// Sum of players in [start, end) date range.
+  Future<int> countPlayersInRange(DateTime startInclusive, DateTime endExclusive) async {
+    final startIso = _iso(startInclusive);
+    final endIso = _iso(endExclusive);
+    final rows = await _db!.rawQuery(
+      "SELECT SUM(COALESCE(playerCount, 1)) AS c FROM tee_times WHERE date >= ? AND date < ? AND status = 'booked'",
+      [startIso, endIso],
+    );
+    final val = rows.first['c'];
+    if (val == null) return 0;
+    return (val is int) ? val : (val as num).toInt();
+  }
+
+  Future<int> countPlayersToday() async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    return countPlayersOnDate(today);
+  }
+
+  Future<int> countPlayersThisWeek() async {
+    final now = DateTime.now();
+    // Start of week (Monday)
+    final start = DateTime(now.year, now.month, now.day)
+        .subtract(Duration(days: now.weekday - 1));
+    final end = start.add(const Duration(days: 7));
+    return countPlayersInRange(start, end);
+  }
+
+  Future<int> countPlayersThisMonth() async {
+    final now = DateTime.now();
+    final start = DateTime(now.year, now.month, 1);
+    final end = DateTime(now.year, now.month + 1, 1);
+    return countPlayersInRange(start, end);
   }
 }

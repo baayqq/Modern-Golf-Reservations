@@ -242,6 +242,8 @@ class AppScaffold extends StatelessWidget {
                                               .isLoggedInNotifier
                                               .value =
                                           false;
+                                      // Reset flag POS agar sesi baru dimulai bersih
+                                      MyAppStateBridge.posEnteredNotifier.value = false;
 
                                       // Navigasi di frame berikutnya menggunakan root context
                                       WidgetsBinding.instance.addPostFrameCallback((

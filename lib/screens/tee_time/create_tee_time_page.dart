@@ -1,3 +1,7 @@
+// Create Tee Time Page
+// Menyediakan form untuk membuat atau mengedit reservasi tee time.
+// Termasuk input tanggal, jam mulai, jumlah pemain (maks 4), dan nama pemain 1-4.
+// Posisi form pada mode create: Jumlah Pemain diletakkan sebelum Nama Pemain 1.
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:modern_golf_reservations/app_scaffold.dart';
@@ -22,6 +26,9 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
   DateTime? _createDate;
   TimeOfDay? _createTime;
   final TextEditingController _playerCtrl = TextEditingController();
+  final TextEditingController _player2Ctrl = TextEditingController();
+  final TextEditingController _player3Ctrl = TextEditingController();
+  final TextEditingController _player4Ctrl = TextEditingController();
   final TextEditingController _countCtrl = TextEditingController(text: '1');
   final TextEditingController _notesCtrl = TextEditingController();
   // Edit single reservation fields when initial is provided
@@ -60,6 +67,9 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
       _editDate = init.date;
       _editTime = _parseTime(init.time);
       _playerCtrl.text = init.playerName ?? '';
+      _player2Ctrl.text = init.player2Name ?? '';
+      _player3Ctrl.text = init.player3Name ?? '';
+      _player4Ctrl.text = init.player4Name ?? '';
       _countCtrl.text = (init.playerCount ?? 1).toString();
       _notesCtrl.text = init.notes ?? '';
       setState(() {});
@@ -90,6 +100,14 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
     if (!hasDate) return 'Tanggal wajib dipilih';
     if (!hasTime) return 'Jam mulai wajib dipilih';
     if (count == null || count <= 0) return 'Jumlah pemain wajib angka > 0';
+    if (count < 1 || count > 4) return 'Jumlah pemain maksimal 4';
+    // Validasi nama sesuai jumlah pemain
+    final p2 = _player2Ctrl.text.trim();
+    final p3 = _player3Ctrl.text.trim();
+    final p4 = _player4Ctrl.text.trim();
+    if (count >= 2 && p2.isEmpty) return 'Nama pemain 2 wajib diisi';
+    if (count >= 3 && p3.isEmpty) return 'Nama pemain 3 wajib diisi';
+    if (count >= 4 && p4.isEmpty) return 'Nama pemain 4 wajib diisi';
     return null;
   }
 
@@ -140,34 +158,61 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
               icon: Icons.access_time,
             ),
             const SizedBox(height: 12),
-            _FieldLabel('Nama Pemain:'),
+            _FieldLabel('Pemain 1'),
             TextField(
               controller: _playerCtrl,
               decoration: const InputDecoration(
-                hintText: 'Nama Pemain',
+                hintText: 'Nama Pemain 1',
                 border: OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 12),
             _FieldLabel('Jumlah Pemain:'),
+            // Dropdown jumlah pemain (maks 4)
+            DropdownButtonFormField<int>(
+              value: int.tryParse(_countCtrl.text.trim()) ?? 1,
+              items: const [1, 2, 3, 4]
+                  .map(
+                    (e) => DropdownMenuItem<int>(
+                      value: e,
+                      child: Text(e.toString()),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (v) {
+                if (v == null) return;
+                setState(() => _countCtrl.text = v.toString());
+              },
+              decoration: const InputDecoration(border: OutlineInputBorder()),
+            ),
+            const SizedBox(height: 12),
+            _FieldLabel('Pemain 2'),
             TextField(
-              controller: _countCtrl,
-              keyboardType: TextInputType.number,
+              controller: _player2Ctrl,
               decoration: const InputDecoration(
-                hintText: 'Misal: 1',
+                hintText: 'Opsional bila jumlah pemain >= 2',
                 border: OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 12),
-            _FieldLabel('Catatan:'),
+            _FieldLabel('Pemain 3'),
             TextField(
-              controller: _notesCtrl,
-              maxLines: 3,
+              controller: _player3Ctrl,
               decoration: const InputDecoration(
-                hintText: 'Opsional',
+                hintText: 'Opsional bila jumlah pemain >= 3',
                 border: OutlineInputBorder(),
               ),
             ),
+            const SizedBox(height: 12),
+            _FieldLabel('Pemain 4'),
+            TextField(
+              controller: _player4Ctrl,
+              decoration: const InputDecoration(
+                hintText: 'Opsional bila jumlah pemain >= 4',
+                border: OutlineInputBorder(),
+              ),
+            ),
+
             const SizedBox(height: 16),
             SizedBox(
               width: 180,
@@ -185,6 +230,15 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
                     date: _editDate!,
                     time: _formatTime(_editTime!),
                     playerName: _playerCtrl.text.trim(),
+                    player2Name: _player2Ctrl.text.trim().isEmpty
+                        ? null
+                        : _player2Ctrl.text.trim(),
+                    player3Name: _player3Ctrl.text.trim().isEmpty
+                        ? null
+                        : _player3Ctrl.text.trim(),
+                    player4Name: _player4Ctrl.text.trim().isEmpty
+                        ? null
+                        : _player4Ctrl.text.trim(),
                     playerCount: int.tryParse(_countCtrl.text.trim()) ?? 1,
                     notes: _notesCtrl.text.trim().isEmpty
                         ? null
@@ -229,21 +283,57 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
             icon: Icons.access_time,
           ),
           const SizedBox(height: 12),
-          _FieldLabel('Nama Pemain:'),
+          _FieldLabel('Jumlah Pemain:'),
+          // Dropdown jumlah pemain (maks 4)
+          DropdownButtonFormField<int>(
+            value: int.tryParse(_countCtrl.text.trim()) ?? 1,
+            items: const [1, 2, 3, 4]
+                .map(
+                  (e) => DropdownMenuItem<int>(
+                    value: e,
+                    child: Text(e.toString()),
+                  ),
+                )
+                .toList(),
+            onChanged: (v) {
+              if (v == null) return;
+              setState(() => _countCtrl.text = v.toString());
+            },
+            decoration: const InputDecoration(border: OutlineInputBorder()),
+          ),
+          const SizedBox(height: 12),
+          _FieldLabel('Pemain 1'),
           TextField(
             controller: _playerCtrl,
             decoration: const InputDecoration(
-              hintText: 'Nama Pemain',
+              hintText: 'Nama Pemain 1',
               border: OutlineInputBorder(),
             ),
           ),
           const SizedBox(height: 12),
-          _FieldLabel('Jumlah Pemain:'),
+          _FieldLabel('Pemain 2:'),
           TextField(
-            controller: _countCtrl,
-            keyboardType: TextInputType.number,
+            controller: _player2Ctrl,
             decoration: const InputDecoration(
-              hintText: 'Misal: 1',
+              hintText: 'Opsional bila jumlah pemain >= 2',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 12),
+          _FieldLabel('Pemain 3:'),
+          TextField(
+            controller: _player3Ctrl,
+            decoration: const InputDecoration(
+              hintText: 'Opsional bila jumlah pemain >= 3',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 12),
+          _FieldLabel('Pemain 4:'),
+          TextField(
+            controller: _player4Ctrl,
+            decoration: const InputDecoration(
+              hintText: 'Opsional bila jumlah pemain >= 4',
               border: OutlineInputBorder(),
             ),
           ),
@@ -273,26 +363,29 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
                   date: _createDate!,
                   time: _formatTime(_createTime!),
                   playerName: _playerCtrl.text.trim(),
-                  playerCount: int.tryParse(_countCtrl.text.trim()) ?? 1,
+                  playerCount: (int.tryParse(_countCtrl.text.trim()) ?? 1)
+                      .clamp(1, 4),
+                  player2Name: _player2Ctrl.text.trim().isEmpty
+                      ? null
+                      : _player2Ctrl.text.trim(),
+                  player3Name: _player3Ctrl.text.trim().isEmpty
+                      ? null
+                      : _player3Ctrl.text.trim(),
+                  player4Name: _player4Ctrl.text.trim().isEmpty
+                      ? null
+                      : _player4Ctrl.text.trim(),
                   notes: _notesCtrl.text.trim().isEmpty
                       ? null
                       : _notesCtrl.text.trim(),
                 );
-                // Auto-create an invoice with BOOKING FEE
-                final invoiceRepo = InvoiceRepository();
-                await invoiceRepo.init();
-                final customer = _playerCtrl.text.trim().isEmpty
-                    ? 'Walk-in'
-                    : _playerCtrl.text.trim();
-                await invoiceRepo.createInvoice(
-                  customer: customer,
-                  items: const [
-                    InvoiceItemInput(
-                      name: 'BOOKING FEE',
-                      qty: 1,
-                      price: Fees.bookingFee,
+                // Tidak membuat invoice otomatis di sini untuk menghindari duplikasi.
+                // Gunakan halaman POS untuk membuat invoice dan menerima pembayaran.
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'Reservasi berhasil dibuat. Silakan buka POS untuk membuat invoice/pembayaran.',
                     ),
-                  ],
+                  ),
                 );
                 if (!context.mounted) return;
                 // After saving, go to booking calendar and pre-select the created date

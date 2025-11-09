@@ -58,6 +58,12 @@ class _InvoicePageState extends State<InvoicePage> {
           : (e['total'] as double? ?? 0.0);
       final paid = await _repo.getPaidAmountForInvoice(idVal);
       final outstanding = (total - paid).clamp(0.0, double.infinity);
+      // Permintaan: jika invoice sudah dibayar, jangan tampilkan di Invoice Page.
+      // Logika yang lebih aman adalah menyembunyikan invoice dengan sisa tagihan 0
+      // (baik status-nya 'paid' maupun secara perhitungan sudah lunas).
+      if (outstanding <= 0.0) {
+        continue; // skip invoice yang sudah lunas
+      }
       items.add(
         InvoiceItem(
           id: idVal.toString(),

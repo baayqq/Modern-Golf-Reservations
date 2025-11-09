@@ -20,6 +20,11 @@ class MyAppStateBridge {
   static final ValueNotifier<bool> isLoggedInNotifier = ValueNotifier<bool>(
     false,
   );
+  // Flag sesi sederhana: bernilai true setelah pengguna memasuki halaman POS.
+  // Dipakai untuk mewajibkan alur "masuk POS dulu" sebelum ke halaman Invoice.
+  static final ValueNotifier<bool> posEnteredNotifier = ValueNotifier<bool>(
+    false,
+  );
 }
 
 class _MyAppState extends State<MyApp> {

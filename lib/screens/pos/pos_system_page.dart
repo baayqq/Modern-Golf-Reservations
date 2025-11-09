@@ -3,32 +3,43 @@ import 'package:go_router/go_router.dart';
 import '../../app_scaffold.dart';
 import '../../services/invoice_repository.dart';
 import '../../router.dart' show AppRoute;
+import '../../main.dart' show MyAppStateBridge;
 import '../../config/fees.dart';
 import 'package:modern_golf_reservations/utils/currency.dart';
+import '../../services/tee_time_repository.dart';
+import '../../models/tee_time_model.dart';
 
+/// POS System main page. If opened via redirect, optional `from` tells
+/// which page triggered the redirect (e.g. 'invoice' or 'payments').
 class PosSystemPage extends StatefulWidget {
-  const PosSystemPage({super.key});
+  // Halaman POS sebagai pusat transaksi.
+  // from: konteks asal redirect (invoice/payments/teeManage)
+  // initialCustomer & initialQty: nilai awal dari halaman Manage Reservation.
+  final String? from;
+  final String? initialCustomer;
+  final int? initialQty;
+  const PosSystemPage({super.key, this.from, this.initialCustomer, this.initialQty});
 
   @override
   State<PosSystemPage> createState() => _PosSystemPageState();
 }
 
 class _PosSystemPageState extends State<PosSystemPage> {
+  // Flag to ensure database is initialized before saving
+  bool _dbReady = false;
+  // Prevent double-submit causing duplicate invoices
+  bool _saving = false;
   final TextEditingController _searchCtrl = TextEditingController();
   final TextEditingController _customerCtrl = TextEditingController();
-  // Manual item inputs (Green Fee)
-  final TextEditingController _itemNameCtrl = TextEditingController(
-    text: 'GREEN FEE',
-  );
+  // Manual item inputs (opsional). Default dikosongkan agar tidak memaksa GREEN FEE.
+  final TextEditingController _itemNameCtrl = TextEditingController(text: '');
   final TextEditingController _itemQtyCtrl = TextEditingController(text: '1');
-  final TextEditingController _itemPriceCtrl = TextEditingController(
-    text: Fees.greenFeeDefault.toStringAsFixed(0),
-  );
+  final TextEditingController _itemPriceCtrl = TextEditingController(text: '');
 
-  // Kategori yang digunakan
-  final List<String> _categories = const ['GREEN FEE'];
+  // Kategori yang digunakan (generik)
+  final List<String> _categories = const ['SERVICES'];
 
-  String _selectedCategory = 'GREEN FEE';
+  String _selectedCategory = 'SERVICES';
 
   // Dummy product list
   late List<Product> _allProducts;
@@ -37,11 +48,33 @@ class _PosSystemPageState extends State<PosSystemPage> {
 
   // SQLite repo for invoices
   final InvoiceRepository _invoiceRepo = InvoiceRepository();
+  // Repo untuk mencari booking/pemain
+  final TeeTimeRepository _teeRepo = TeeTimeRepository();
+  // Base amount dari booking: SEWA LAPANGAN (booking fee). Tidak bergantung pada jumlah pemain.
+  int _baseQty = 0; // gunakan untuk mendeteksi ada booking terpilih
+  double get _baseAmount => _baseQty > 0 ? Fees.bookingFee : 0.0;
 
   @override
   void initState() {
     super.initState();
     _initDb();
+    // Tandai bahwa user telah memasuki POS pada sesi ini.
+    MyAppStateBridge.posEnteredNotifier.value = true;
+    // Jika halaman ini dibuka dari redirect ketika mencoba akses Invoice/Payments,
+    // tampilkan pesan bantuan ringan agar alur jelas.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final from = widget.from;
+      if (from == 'invoice' || from == 'payments') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Silakan gunakan menu POS terlebih dahulu, lalu lanjut ke ${from == 'invoice' ? 'Invoice' : 'Payment History'}',
+            ),
+          ),
+        );
+      }
+    });
     _allProducts = List.generate(20, (i) {
       final names = [
         'SCORING ADMINISTRATION',
@@ -78,10 +111,26 @@ class _PosSystemPageState extends State<PosSystemPage> {
       );
     });
     _applyFilter();
+    // Prefill dari query (jika ada)
+    if (widget.initialCustomer != null && widget.initialCustomer!.isNotEmpty) {
+      _customerCtrl.text = widget.initialCustomer!;
+    }
+    if (widget.initialQty != null && widget.initialQty! > 0) {
+      // qty dari Manage Reservation dipakai sebagai base booking qty
+      _baseQty = widget.initialQty!;
+      // tetap isi field manual agar user bisa menambah item lain bila diperlukan
+      _itemQtyCtrl.text = widget.initialQty!.toString();
+    }
   }
 
   Future<void> _initDb() async {
     await _invoiceRepo.init();
+    await _teeRepo.init();
+    if (mounted) {
+      setState(() {
+        _dbReady = true;
+      });
+    }
   }
 
   void _applyFilter() {
@@ -127,7 +176,7 @@ class _PosSystemPageState extends State<PosSystemPage> {
       name: name,
       price: price,
       stock: 9999,
-      category: 'GREEN FEE',
+      category: 'SERVICES',
       image: Icons.flag,
     );
     final existingIdx = _cart.indexWhere(
@@ -156,10 +205,13 @@ class _PosSystemPageState extends State<PosSystemPage> {
   // Format Rupiah (IDR) is centralized via Formatters.idr
 
   Future<void> _saveTransaction() async {
-    if (_cart.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Keranjang masih kosong')));
+    if (_saving) return; // guard against double tap
+    setState(() { _saving = true; });
+    if (!_dbReady) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Database belum siap, coba lagi sebentar...')),
+      );
+      setState(() { _saving = false; });
       return;
     }
     final customer = _customerCtrl.text.trim().isEmpty
@@ -174,11 +226,38 @@ class _PosSystemPageState extends State<PosSystemPage> {
           ),
         )
         .toList();
-    await _invoiceRepo.createInvoice(customer: customer, items: items);
+    // Tambahkan SEWA LAPANGAN sebagai dasar pembayaran jika ada booking terpilih.
+    if (_baseQty > 0) {
+      final hasBase = items.any((it) {
+        final n = it.name.toLowerCase();
+        return n.contains('sewa lapangan') || n.contains('booking fee');
+      });
+      if (!hasBase) {
+        items.insert(
+          0,
+          const InvoiceItemInput(
+            name: 'SEWA LAPANGAN',
+            qty: 1,
+            price: Fees.bookingFee,
+          ),
+        );
+      }
+    }
+    try {
+      await _invoiceRepo.createInvoice(customer: customer, items: items);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal menyimpan transaksi: $e')),
+      );
+      setState(() { _saving = false; });
+      return;
+    }
     if (!mounted) return;
     // Optional: clear cart after save
     setState(() {
       _cart.clear();
+      _saving = false;
     });
     GoRouter.of(context).goNamed(AppRoute.invoice.name);
   }
@@ -432,20 +511,37 @@ class _PosSystemPageState extends State<PosSystemPage> {
               const SizedBox(height: 12),
               const Text('Customer'),
               const SizedBox(height: 6),
-              TextField(
-                controller: _customerCtrl,
-                decoration: const InputDecoration(
-                  hintText: 'Enter customer name...',
-                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _customerCtrl,
+                      decoration: const InputDecoration(
+                        hintText: 'Enter customer name...',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  SizedBox(
+                    height: 42,
+                    child: OutlinedButton.icon(
+                      icon: const Icon(Icons.search),
+                      label: const Text('Cari Booking'),
+                      onPressed: _openBookingSearch,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 12),
               const Divider(),
-              const Text('Tambah Item (Green Fee)'),
+              // Item tambahan bersifat opsional. Pembayaran dasar adalah SEWA LAPANGAN
+              // berdasarkan booking yang dipilih.
+              const Text('Tambah Item (Opsional)'),
               const SizedBox(height: 6),
               TextField(
                 controller: _itemNameCtrl,
                 decoration: const InputDecoration(
-                  hintText: 'Nama item... (misal: GREEN FEE)',
+                  hintText: 'Nama item... (opsional, misal: Practice Balls)',
                 ),
               ),
               const SizedBox(height: 6),
@@ -486,6 +582,25 @@ class _PosSystemPageState extends State<PosSystemPage> {
               ),
               const SizedBox(height: 12),
               const Divider(),
+              // Tampilkan biaya SEWA LAPANGAN bila ada booking terpilih
+              if (_baseQty > 0)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'SEWA LAPANGAN',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(Formatters.idr(_baseAmount)),
+                    ],
+                  ),
+                ),
               // Cart list
               if (_cart.isEmpty)
                 Padding(
@@ -506,22 +621,114 @@ class _PosSystemPageState extends State<PosSystemPage> {
                     'Subtotal:',
                     style: TextStyle(fontWeight: FontWeight.w600),
                   ),
-                  Text(Formatters.idr(_subtotal)),
+                  Text(Formatters.idr(_baseAmount + _subtotal)),
                 ],
               ),
               const SizedBox(height: 12),
               SizedBox(
                 height: 42,
                 child: ElevatedButton(
-                  onPressed: _cart.isEmpty ? null : _saveTransaction,
+                  onPressed: (_baseQty > 0 || _cart.isNotEmpty) && !_saving ? _saveTransaction : null,
                   // Gunakan warna default dari ElevatedButtonTheme (primary)
-                  child: const Text('Simpan Transaksi'),
+                  child: _saving ? const Text('Menyimpan...') : const Text('Simpan Transaksi'),
                 ),
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  /// Buka bottom sheet untuk mencari pemain/booking.
+  /// Memudahkan memilih nama customer dan jumlah pemain (qty) dari data reservasi.
+  Future<void> _openBookingSearch() async {
+    // Ambil semua data dengan status 'booked'
+    List<TeeTimeModel> all = await _teeRepo.getAllReservations(status: 'booked');
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) {
+        final qCtrl = TextEditingController();
+        List<TeeTimeModel> filtered = List.of(all);
+        void apply() {
+          final q = qCtrl.text.trim().toLowerCase();
+          filtered = all.where((e) {
+            final name = (e.playerName ?? '').toLowerCase();
+            return q.isEmpty || name.contains(q);
+          }).toList();
+        }
+        apply();
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 16,
+                right: 16,
+                top: 16,
+                bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
+              ),
+              child: SizedBox(
+                height: MediaQuery.of(ctx).size.height * 0.7,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Cari Booking',
+                      style: Theme.of(ctx).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: qCtrl,
+                      decoration: const InputDecoration(
+                        hintText: 'Masukkan nama pemain...',
+                        prefixIcon: Icon(Icons.search),
+                      ),
+                      onChanged: (_) {
+                        setModalState(() {
+                          apply();
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    Expanded(
+                      child: filtered.isEmpty
+                          ? Center(
+                              child: Text(
+                                'Tidak ada hasil',
+                                style: TextStyle(color: Colors.grey.shade600),
+                              ),
+                            )
+                          : ListView.separated(
+                              itemCount: filtered.length,
+                              separatorBuilder: (_, __) => const Divider(height: 1),
+                              itemBuilder: (ctx, i) {
+                                final m = filtered[i];
+                                return ListTile(
+                                  title: Text(m.playerName ?? '-'),
+                                  subtitle: Text('${m.time} • ${m.date.toIso8601String().split('T').first} • pemain: ${m.playerCount ?? 1}'),
+                                  trailing: FilledButton.tonal(
+                                    onPressed: () {
+                                      _customerCtrl.text = m.playerName ?? 'Walk-in';
+                                      // gunakan jumlah pemain sebagai base booking qty
+                                      _baseQty = (m.playerCount ?? 1);
+                                      // tetap isi field manual agar sinkron dengan input opsional
+                                      _itemQtyCtrl.text = (m.playerCount ?? 1).toString();
+                                      Navigator.of(ctx).pop();
+                                    },
+                                    child: const Text('Pilih'),
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 

@@ -4,9 +4,8 @@ import 'package:modern_golf_reservations/app_scaffold.dart';
 import 'package:modern_golf_reservations/models/tee_time_model.dart';
 import 'package:modern_golf_reservations/services/tee_time_repository.dart';
 import 'package:go_router/go_router.dart';
-import 'package:modern_golf_reservations/services/invoice_repository.dart';
 import 'package:modern_golf_reservations/router.dart' show AppRoute;
-import 'package:modern_golf_reservations/config/fees.dart';
+// Fees no longer used here because invoice is created via POS.
 
 class ManageReservationPage extends StatefulWidget {
   const ManageReservationPage({super.key});
@@ -17,7 +16,6 @@ class ManageReservationPage extends StatefulWidget {
 
 class _ManageReservationPageState extends State<ManageReservationPage> {
   final _repo = TeeTimeRepository();
-  final InvoiceRepository _invoiceRepo = InvoiceRepository();
   List<TeeTimeModel> _items = [];
   bool _loading = true;
   DateTime? _filterDate;
@@ -57,7 +55,6 @@ class _ManageReservationPageState extends State<ManageReservationPage> {
 
   Future<void> _init() async {
     await _repo.init();
-    await _invoiceRepo.init();
     await _load();
   }
 
@@ -101,19 +98,21 @@ class _ManageReservationPageState extends State<ManageReservationPage> {
     }
   }
 
-  Future<void> _createInvoice(TeeTimeModel m) async {
+  /// Alihkan ke halaman POS System untuk membuat invoice.
+  /// Sesuai alur baru: invoice tidak dibuat langsung dari Manage Reservation.
+  /// Kita kirim konteks awal berupa nama customer dan jumlah pemain (qty)
+  /// agar POS dapat memudahkan input GREEN FEE, namun tidak otomatis menambahkannya.
+  void _createInvoice(TeeTimeModel m) {
     final customer = (m.playerName == null || m.playerName!.isEmpty)
         ? 'Walk-in'
         : m.playerName!.trim();
-    final qty = m.playerCount ?? 1;
-    const double price = Fees.greenFeeDefault; // default GREEN FEE
-    final items = [InvoiceItemInput(name: 'GREEN FEE', qty: qty, price: price)];
-    await _invoiceRepo.createInvoice(customer: customer, items: items);
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Invoice dibuat untuk $customer')),
-    );
-    GoRouter.of(context).goNamed(AppRoute.invoice.name);
+    final qty = (m.playerCount ?? 1).toString();
+    final qp = {
+      'from': 'teeManage',
+      'customer': customer,
+      'qty': qty,
+    };
+    GoRouter.of(context).goNamed(AppRoute.pos.name, queryParameters: qp);
   }
 
   void _delete(TeeTimeModel m) async {

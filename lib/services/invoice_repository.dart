@@ -1,16 +1,36 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart' show kIsWeb; // kIsWeb untuk perilaku khusus web
 import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 
 /// Simple repository for POS invoices and invoice items using SQLite (WASM on web).
+///
+/// Perubahan penting: gunakan koneksi database bersama (singleton) agar koneksi
+/// tidak tertutup oleh halaman lain. Di Flutter Web (SQLite WASM), menutup satu
+/// koneksi dapat menyebabkan error `DatabaseException(error database_closed)`
+/// pada instance lain. Dengan shared connection, memanggil `close()` menjadi
+/// no-op di web.
 class InvoiceRepository {
+  // Shared connection untuk seluruh aplikasi
+  static Database? _sharedDb;
+  static bool _tablesInitialized = false;
+
+  // Pegangan koneksi untuk instance ini (mengacu ke _sharedDb)
   Database? _db;
 
   Future<void> init() async {
-    final factory = databaseFactoryFfiWeb;
-    _db = await factory.openDatabase('pos.db');
-    await _createTables();
-    await _seedIfEmpty();
+    // Buka sekali, share ke semua instance
+    if (_sharedDb == null || !_sharedDb!.isOpen) {
+      final factory = databaseFactoryFfiWeb;
+      _sharedDb = await factory.openDatabase('pos.db');
+    }
+    _db = _sharedDb;
+    // Inisialisasi tabel hanya sekali
+    if (!_tablesInitialized) {
+      await _createTables();
+      await _seedIfEmpty();
+      _tablesInitialized = true;
+    }
   }
 
   Future<void> _createTables() async {
@@ -245,9 +265,19 @@ class InvoiceRepository {
     );
   }
 
+  /// Pada Flutter Web, penutupan database dapat mempengaruhi koneksi bersama
+  /// dan memicu error `database_closed` di halaman lain. Karena itu, `close()`
+  /// dibuat no-op di web. Di platform non-web, koneksi tetap ditutup.
   Future<void> close() async {
+    if (kIsWeb) {
+      // Jangan tutup koneksi di Web (WASM) untuk menjaga stabilitas.
+      _db = null; // lepaskan referensi instance, koneksi tetap hidup secara global.
+      return;
+    }
     await _db?.close();
     _db = null;
+    // Jika semua instance menutup, sharedDb bisa ditutup juga (opsional).
+    // Dalam implementasi sederhana ini kita biarkan _sharedDb tetap terbuka.
   }
 }
 

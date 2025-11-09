@@ -176,7 +176,13 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(height: 8),
                   TextField(
                     controller: _usernameCtrl,
+                    textInputAction: TextInputAction.done,
                     decoration: const InputDecoration(hintText: 'Username'),
+                    onSubmitted: (_) {
+                      // Tekan Enter pada username langsung trigger login
+                      if (_loading) return;
+                      _onLogin();
+                    },
                   ),
                   const SizedBox(height: 16),
                   // Password
@@ -194,6 +200,7 @@ class _LoginPageState extends State<LoginPage> {
                   TextField(
                     controller: _passwordCtrl,
                     obscureText: _obscure,
+                    textInputAction: TextInputAction.done,
                     decoration: InputDecoration(
                       hintText: 'Password',
                       suffixIcon: IconButton(
@@ -203,6 +210,21 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                     ),
+                    onSubmitted: (_) {
+                      // Tekan Enter untuk login jika input valid
+                      final uOk = _usernameCtrl.text.trim().isNotEmpty;
+                      final pOk = _passwordCtrl.text.isNotEmpty;
+                      if (_loading) return;
+                      if (uOk && pOk) {
+                        _onLogin();
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Username/Password tidak boleh kosong'),
+                          ),
+                        );
+                      }
+                    },
                   ),
                   const SizedBox(height: 20),
                   SizedBox(

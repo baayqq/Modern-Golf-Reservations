@@ -134,8 +134,19 @@ GoRouter createRouter({required bool isLoggedIn}) {
       GoRoute(
         name: AppRoute.pos.name,
         path: AppRoute.pos.path,
-        pageBuilder: (context, state) =>
-            _slideFromRightPage(child: const PosSystemPage()),
+        pageBuilder: (context, state) {
+          final from = state.uri.queryParameters['from'];
+          final initialCustomer = state.uri.queryParameters['customer'];
+          final qtyStr = state.uri.queryParameters['qty'];
+          final initialQty = qtyStr == null ? null : int.tryParse(qtyStr);
+          return _slideFromRightPage(
+            child: PosSystemPage(
+              from: from,
+              initialCustomer: initialCustomer,
+              initialQty: initialQty,
+            ),
+          );
+        },
         routes: [
           GoRoute(
             name: AppRoute.invoice.name,
@@ -200,6 +211,8 @@ GoRouter createRouter({required bool isLoggedIn}) {
       final atLogin = loc == AppRoute.login.path;
       final atDashboard = loc == AppRoute.dashboard.path;
       final atProfile = loc == AppRoute.profile.path;
+      final atInvoice = loc == AppRoute.invoice.path;
+      final atPayments = loc == AppRoute.payments.path;
 
       // Gunakan satu sumber kebenaran: MyAppStateBridge.isLoggedInNotifier.value
       final loggedIn = MyAppStateBridge.isLoggedInNotifier.value;
@@ -221,6 +234,19 @@ GoRouter createRouter({required bool isLoggedIn}) {
         // ignore: avoid_print
         print('[ROUTER][redirect] -> /dashboard');
         return AppRoute.dashboard.path;
+      }
+
+      // Guard: sebelum membuat/melihat invoice atau riwayat pembayaran,
+      // pengguna harus masuk ke menu POS terlebih dahulu pada sesi ini.
+      // Jika belum, arahkan ke /pos dengan query from=invoice/payments
+      if (loggedIn && (atInvoice || atPayments)) {
+        final entered = MyAppStateBridge.posEnteredNotifier.value;
+        if (!entered) {
+          final from = atInvoice ? 'invoice' : 'payments';
+          // ignore: avoid_print
+          print('[ROUTER][redirect] -> /pos?from=$from (POS not entered)');
+          return '${AppRoute.pos.path}?from=$from';
+        }
       }
       // Jangan redirect kalau sudah di tujuan yang benar untuk menghindari flicker/error
       if (loggedIn && (atDashboard || atProfile)) {
