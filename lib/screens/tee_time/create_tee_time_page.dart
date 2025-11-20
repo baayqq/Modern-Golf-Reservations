@@ -29,7 +29,8 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
   final TextEditingController _player2Ctrl = TextEditingController();
   final TextEditingController _player3Ctrl = TextEditingController();
   final TextEditingController _player4Ctrl = TextEditingController();
-  final TextEditingController _countCtrl = TextEditingController(text: '1');
+  // Jumlah pemain: default kosong agar field nama tidak muncul sebelum dipilih.
+  final TextEditingController _countCtrl = TextEditingController(text: '');
   final TextEditingController _notesCtrl = TextEditingController();
   // Edit single reservation fields when initial is provided
   DateTime? _editDate;
@@ -70,7 +71,7 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
       _player2Ctrl.text = init.player2Name ?? '';
       _player3Ctrl.text = init.player3Name ?? '';
       _player4Ctrl.text = init.player4Name ?? '';
-      _countCtrl.text = (init.playerCount ?? 1).toString();
+      _countCtrl.text = init.playerCount == null ? '' : init.playerCount!.toString();
       _notesCtrl.text = init.notes ?? '';
       setState(() {});
     }
@@ -91,20 +92,84 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
     return '$h:$m';
   }
 
+  /// Bangun field nama pemain secara dinamis berdasarkan jumlah pemain yang dipilih.
+  /// Jika jumlah pemain belum dipilih (null), tidak menampilkan field apapun.
+  List<Widget> _buildPlayerFields() {
+    final count = int.tryParse(_countCtrl.text.trim());
+    if (count == null) return const [];
+
+    final items = <Widget>[];
+    // Pemain 1 selalu muncul jika count >= 1
+    if (count >= 1) {
+      items.addAll([
+        _FieldLabel('Pemain 1'),
+        TextField(
+          controller: _playerCtrl,
+          decoration: const InputDecoration(
+            hintText: 'Nama Pemain 1',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 12),
+      ]);
+    }
+    if (count >= 2) {
+      items.addAll([
+        _FieldLabel('Pemain 2'),
+        TextField(
+          controller: _player2Ctrl,
+          decoration: const InputDecoration(
+            hintText: 'Nama Pemain 2',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 12),
+      ]);
+    }
+    if (count >= 3) {
+      items.addAll([
+        _FieldLabel('Pemain 3'),
+        TextField(
+          controller: _player3Ctrl,
+          decoration: const InputDecoration(
+            hintText: 'Nama Pemain 3',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 12),
+      ]);
+    }
+    if (count >= 4) {
+      items.addAll([
+        _FieldLabel('Pemain 4'),
+        TextField(
+          controller: _player4Ctrl,
+          decoration: const InputDecoration(
+            hintText: 'Nama Pemain 4',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 12),
+      ]);
+    }
+    return items;
+  }
+
   String? _validate({required bool editMode}) {
-    final name = _playerCtrl.text.trim();
     final count = int.tryParse(_countCtrl.text.trim());
     final hasDate = editMode ? _editDate != null : _createDate != null;
     final hasTime = editMode ? _editTime != null : _createTime != null;
-    if (name.isEmpty) return 'Nama pemain wajib diisi';
     if (!hasDate) return 'Tanggal wajib dipilih';
     if (!hasTime) return 'Jam mulai wajib dipilih';
-    if (count == null || count <= 0) return 'Jumlah pemain wajib angka > 0';
+    if (count == null) return 'Jumlah pemain wajib dipilih';
+    if (count <= 0) return 'Jumlah pemain wajib angka > 0';
     if (count < 1 || count > 4) return 'Jumlah pemain maksimal 4';
     // Validasi nama sesuai jumlah pemain
+    final name = _playerCtrl.text.trim();
     final p2 = _player2Ctrl.text.trim();
     final p3 = _player3Ctrl.text.trim();
     final p4 = _player4Ctrl.text.trim();
+    if (count >= 1 && name.isEmpty) return 'Nama pemain 1 wajib diisi';
     if (count >= 2 && p2.isEmpty) return 'Nama pemain 2 wajib diisi';
     if (count >= 3 && p3.isEmpty) return 'Nama pemain 3 wajib diisi';
     if (count >= 4 && p4.isEmpty) return 'Nama pemain 4 wajib diisi';
@@ -158,19 +223,10 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
               icon: Icons.access_time,
             ),
             const SizedBox(height: 12),
-            _FieldLabel('Pemain 1'),
-            TextField(
-              controller: _playerCtrl,
-              decoration: const InputDecoration(
-                hintText: 'Nama Pemain 1',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 12),
             _FieldLabel('Jumlah Pemain:'),
             // Dropdown jumlah pemain (maks 4)
             DropdownButtonFormField<int>(
-              value: int.tryParse(_countCtrl.text.trim()) ?? 1,
+              value: int.tryParse(_countCtrl.text.trim()),
               items: const [1, 2, 3, 4]
                   .map(
                     (e) => DropdownMenuItem<int>(
@@ -181,37 +237,21 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
                   .toList(),
               onChanged: (v) {
                 if (v == null) return;
-                setState(() => _countCtrl.text = v.toString());
+                setState(() {
+                  _countCtrl.text = v.toString();
+                  // Bersihkan field yang tidak relevan ketika jumlah dikurangi
+                  if (v < 4) _player4Ctrl.clear();
+                  if (v < 3) _player3Ctrl.clear();
+                  if (v < 2) _player2Ctrl.clear();
+                });
               },
-              decoration: const InputDecoration(border: OutlineInputBorder()),
-            ),
-            const SizedBox(height: 12),
-            _FieldLabel('Pemain 2'),
-            TextField(
-              controller: _player2Ctrl,
               decoration: const InputDecoration(
-                hintText: 'Opsional bila jumlah pemain >= 2',
                 border: OutlineInputBorder(),
+                hintText: 'Belum memilih jumlah pemain',
               ),
             ),
             const SizedBox(height: 12),
-            _FieldLabel('Pemain 3'),
-            TextField(
-              controller: _player3Ctrl,
-              decoration: const InputDecoration(
-                hintText: 'Opsional bila jumlah pemain >= 3',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 12),
-            _FieldLabel('Pemain 4'),
-            TextField(
-              controller: _player4Ctrl,
-              decoration: const InputDecoration(
-                hintText: 'Opsional bila jumlah pemain >= 4',
-                border: OutlineInputBorder(),
-              ),
-            ),
+            ..._buildPlayerFields(),
 
             const SizedBox(height: 16),
             SizedBox(
@@ -286,7 +326,7 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
           _FieldLabel('Jumlah Pemain:'),
           // Dropdown jumlah pemain (maks 4)
           DropdownButtonFormField<int>(
-            value: int.tryParse(_countCtrl.text.trim()) ?? 1,
+            value: int.tryParse(_countCtrl.text.trim()),
             items: const [1, 2, 3, 4]
                 .map(
                   (e) => DropdownMenuItem<int>(
@@ -297,46 +337,21 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
                 .toList(),
             onChanged: (v) {
               if (v == null) return;
-              setState(() => _countCtrl.text = v.toString());
+              setState(() {
+                _countCtrl.text = v.toString();
+                // Bersihkan field yang tidak relevan ketika jumlah dikurangi
+                if (v < 4) _player4Ctrl.clear();
+                if (v < 3) _player3Ctrl.clear();
+                if (v < 2) _player2Ctrl.clear();
+              });
             },
-            decoration: const InputDecoration(border: OutlineInputBorder()),
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+            hintText: 'Belum memilih jumlah pemain',
           ),
+        ),
           const SizedBox(height: 12),
-          _FieldLabel('Pemain 1'),
-          TextField(
-            controller: _playerCtrl,
-            decoration: const InputDecoration(
-              hintText: 'Nama Pemain 1',
-              border: OutlineInputBorder(),
-            ),
-          ),
-          const SizedBox(height: 12),
-          _FieldLabel('Pemain 2:'),
-          TextField(
-            controller: _player2Ctrl,
-            decoration: const InputDecoration(
-              hintText: 'Opsional bila jumlah pemain >= 2',
-              border: OutlineInputBorder(),
-            ),
-          ),
-          const SizedBox(height: 12),
-          _FieldLabel('Pemain 3:'),
-          TextField(
-            controller: _player3Ctrl,
-            decoration: const InputDecoration(
-              hintText: 'Opsional bila jumlah pemain >= 3',
-              border: OutlineInputBorder(),
-            ),
-          ),
-          const SizedBox(height: 12),
-          _FieldLabel('Pemain 4:'),
-          TextField(
-            controller: _player4Ctrl,
-            decoration: const InputDecoration(
-              hintText: 'Opsional bila jumlah pemain >= 4',
-              border: OutlineInputBorder(),
-            ),
-          ),
+          ..._buildPlayerFields(),
           const SizedBox(height: 12),
           // Catatan dihapus pada mode Create sesuai permintaan.
           const SizedBox(height: 16),

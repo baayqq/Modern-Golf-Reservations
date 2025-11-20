@@ -11,13 +11,14 @@ class AppScaffold extends StatelessWidget {
   final String title;
   const AppScaffold({super.key, required this.body, this.title = 'Dashboard'});
 
-
   @override
   Widget build(BuildContext context) {
     // Contoh penempatan action Logout pada AppBar/Overflow menu:
     // Jika file Anda sudah memiliki AppBar/menus, Anda bisa memindahkan IconButton ini ke sana.
     final isWide = MediaQuery.of(context).size.width >= 900;
-    final appBarFg = Theme.of(context).appBarTheme.foregroundColor ?? Theme.of(context).colorScheme.onPrimary;
+    final appBarFg =
+        Theme.of(context).appBarTheme.foregroundColor ??
+        Theme.of(context).colorScheme.onPrimary;
     final appBarFgSubtle = appBarFg.withValues(alpha: 0.7);
 
     return Scaffold(
@@ -34,20 +35,17 @@ class AppScaffold extends StatelessWidget {
                 width: 36,
                 height: 36,
                 fit: BoxFit.contain,
-                errorBuilder: (ctx, err, stack) => Icon(Icons.park, size: 20, color: appBarFg),
+                errorBuilder: (ctx, err, stack) =>
+                    Icon(Icons.park, size: 20, color: appBarFg),
               ),
             ),
             const SizedBox(width: 12),
             Text(
               'Modern Golf Reservations',
-              style: TextStyle(
-                color: appBarFg,
-                fontWeight: FontWeight.w600,
-              ),
+              style: TextStyle(color: appBarFg, fontWeight: FontWeight.w600),
             ),
             const SizedBox(width: 24),
-            if (isWide)
-              Text(title, style: TextStyle(color: appBarFgSubtle)),
+            if (isWide) Text(title, style: TextStyle(color: appBarFgSubtle)),
           ],
         ),
         actions: [
@@ -243,7 +241,10 @@ class AppScaffold extends StatelessWidget {
                                               .value =
                                           false;
                                       // Reset flag POS agar sesi baru dimulai bersih
-                                      MyAppStateBridge.posEnteredNotifier.value = false;
+                                      MyAppStateBridge
+                                              .posEnteredNotifier
+                                              .value =
+                                          false;
 
                                       // Navigasi di frame berikutnya menggunakan root context
                                       WidgetsBinding.instance.addPostFrameCallback((
@@ -304,11 +305,12 @@ class AppScaffold extends StatelessWidget {
                       child: FutureBuilder<String?>(
                         future: SessionStorage().getUsername(),
                         builder: (context, snapshot) {
-                          String username = snapshot.data?.isNotEmpty == true ? snapshot.data! : "User";
+                          String username = snapshot.data?.isNotEmpty == true
+                              ? snapshot.data!
+                              : "User";
                           return Text(
                             'Welcome, $username ▾',
                             style: TextStyle(color: appBarFgSubtle),
-
                           );
                         },
                       ),
@@ -342,16 +344,15 @@ class _TopLink extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final appBarFg = Theme.of(context).appBarTheme.foregroundColor ?? Theme.of(context).colorScheme.onPrimary;
+    final appBarFg =
+        Theme.of(context).appBarTheme.foregroundColor ??
+        Theme.of(context).colorScheme.onPrimary;
     final appBarFgSubtle = appBarFg.withValues(alpha: 0.7);
     return TextButton.icon(
       onPressed: onTap,
       icon: Icon(icon, size: 18, color: appBarFgSubtle),
       label: Text(label, style: TextStyle(color: appBarFgSubtle)),
       style: TextButton.styleFrom(foregroundColor: appBarFg),
-
-
-
     );
   }
 }
@@ -370,7 +371,9 @@ class _TopMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final appBarFg = Theme.of(context).appBarTheme.foregroundColor ?? Theme.of(context).colorScheme.onPrimary;
+    final appBarFg =
+        Theme.of(context).appBarTheme.foregroundColor ??
+        Theme.of(context).colorScheme.onPrimary;
     final appBarFgSubtle = appBarFg.withValues(alpha: 0.7);
     // Gunakan onTapDown + showMenu manual agar kita bisa menutup menu terlebih dulu
     // sebelum melakukan navigasi. Ini mencegah penggunaan context yang ter-deactivated.
@@ -421,8 +424,6 @@ class _TopMenu extends StatelessWidget {
             onPressed: null,
             icon: Icon(icon, size: 18, color: appBarFgSubtle),
             label: Text(label, style: TextStyle(color: appBarFgSubtle)),
-
-
           ),
         );
       },
