@@ -45,7 +45,6 @@ class _MyAppState extends State<MyApp> {
     return prefs.getBool('isLoggedIn') ?? false;
   }
 
-
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<bool>(
@@ -80,7 +79,9 @@ class _MyAppState extends State<MyApp> {
                 onError: Colors.white,
                 surface: Colors.white,
                 onSurface: const Color(0xFF212529),
-                surfaceContainerHighest: const Color(0xFFF1F8E9), // Light green background
+                surfaceContainerHighest: const Color(
+                  0xFFF1F8E9,
+                ), // Light green background
                 outline: const Color(0xFFC7D3C0), // Soft greenish outline
                 tertiary: const Color(0xFF1E88E5), // Sky blue accent
                 onTertiary: Colors.white,
@@ -135,7 +136,9 @@ class _MyAppState extends State<MyApp> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF2E7D32),
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
               ),
             ),
@@ -163,7 +166,9 @@ class _MyAppState extends State<MyApp> {
               onError: Colors.white,
               surface: Colors.white,
               onSurface: const Color(0xFF212529),
-              surfaceContainerHighest: const Color(0xFFF1F8E9), // Light green background
+              surfaceContainerHighest: const Color(
+                0xFFF1F8E9,
+              ), // Light green background
               outline: const Color(0xFFC7D3C0), // Soft greenish outline
               tertiary: const Color(0xFF1E88E5), // Sky blue accent
               onTertiary: Colors.white,
@@ -218,7 +223,9 @@ class _MyAppState extends State<MyApp> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF2E7D32),
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
             ),
           ),

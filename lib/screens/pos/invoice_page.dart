@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../app_scaffold.dart';
 import '../../services/invoice_repository.dart';
 import 'package:modern_golf_reservations/utils/currency.dart';
+import 'package:printing/printing.dart';
+import '../../services/invoice_pdf.dart' as pdfsvc;
 
 class InvoicePage extends StatefulWidget {
   const InvoicePage({super.key});
@@ -80,7 +82,8 @@ class _InvoicePageState extends State<InvoicePage> {
           customer: (e['customer'] as String?) ?? 'Walk-in',
           total: total,
           status: status,
-          date: DateTime.tryParse((e['date'] as String?) ?? '') ?? DateTime.now(),
+          date:
+              DateTime.tryParse((e['date'] as String?) ?? '') ?? DateTime.now(),
           outstanding: outstanding,
         ),
       );
@@ -92,7 +95,9 @@ class _InvoicePageState extends State<InvoicePage> {
         final id = int.parse(inv.id);
         _amountCtrls.putIfAbsent(id, () => TextEditingController());
         final ctrl = _amountCtrls[id]!;
-        final defaultText = inv.outstanding > 0 ? inv.outstanding.toStringAsFixed(0) : '';
+        final defaultText = inv.outstanding > 0
+            ? inv.outstanding.toStringAsFixed(0)
+            : '';
         ctrl.text = defaultText;
       }
     });
@@ -118,20 +123,61 @@ class _InvoicePageState extends State<InvoicePage> {
     });
   }
 
-  void _exportPdf() {
-    if (_selectedInvoice == null) {
+  Future<void> _exportPdf() async {
+    // Dapatkan invoice yang akan dicetak:
+    // - Prioritaskan _selectedInvoice
+    // - Jika tidak ada, tetapi ada tepat satu checkbox terpilih, gunakan itu
+    InvoiceItem? targetInv = _selectedInvoice;
+    if (targetInv == null && _selectedInvoiceIds.length == 1) {
+      final id = _selectedInvoiceIds.first;
+      final matches = _invoices.where((e) => int.tryParse(e.id) == id);
+      targetInv = matches.isNotEmpty ? matches.first : null;
+    }
+
+    if (targetInv == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pilih invoice terlebih dahulu')),
+        const SnackBar(content: Text('Pilih tepat satu invoice terlebih dahulu')),
       );
       return;
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Exported invoice #${_selectedInvoice!.id} to PDF (dummy)',
-        ),
+
+    // Pastikan detail item untuk invoice tersebut tersedia
+    List<InvoiceLine> items = _selectedItems;
+    if (_selectedInvoice == null || _selectedInvoice!.id != targetInv!.id) {
+      // Detail belum dimuat untuk invoice target; muat dari repository
+      final rows = await _repo.getItemsForInvoice(int.parse(targetInv!.id));
+      items = rows.map((e) {
+        final name = (e['name'] as String?) ?? '';
+        final qty = (e['qty'] as int?) ??
+            (e['qty'] is num ? (e['qty'] as num).toInt() : 0);
+        final price = (e['price'] is num)
+            ? (e['price'] as num).toDouble()
+            : (e['price'] as double? ?? 0.0);
+        return InvoiceLine(name: name, qty: qty, price: price);
+      }).toList();
+    }
+
+    final pdfItems = items
+        .map((it) => pdfsvc.InvoiceItem(
+              productName: it.name,
+              quantity: it.qty,
+              unitPrice: it.price,
+            ))
+        .toList();
+
+    Printing.layoutPdf(
+      onLayout: (format) => pdfsvc.generateInvoicePdf(
+        invoiceDate: targetInv!.date,
+        customerName: targetInv!.customer,
+        items: pdfItems,
       ),
-    );
+    ).catchError((Object e) {
+      if (!mounted) return false;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal membuka dialog print: $e')),
+      );
+      return false;
+    });
   }
 
   Future<void> _pickFilterDate() async {
@@ -163,8 +209,12 @@ class _InvoicePageState extends State<InvoicePage> {
       final rows = results[i];
       next[ids[i]] = rows.map((e) {
         final name = (e['name'] as String?) ?? '';
-        final qty = (e['qty'] as int?) ?? (e['qty'] is num ? (e['qty'] as num).toInt() : 0);
-        final price = (e['price'] is num) ? (e['price'] as num).toDouble() : (e['price'] as double? ?? 0.0);
+        final qty =
+            (e['qty'] as int?) ??
+            (e['qty'] is num ? (e['qty'] as num).toInt() : 0);
+        final price = (e['price'] is num)
+            ? (e['price'] as num).toDouble()
+            : (e['price'] as double? ?? 0.0);
         return InvoiceLine(name: name, qty: qty, price: price);
       }).toList();
     }
@@ -197,7 +247,10 @@ class _InvoicePageState extends State<InvoicePage> {
           builder: (context, constraints) {
             // Gunakan scroll vertikal agar konten panjang tidak overflow.
             // Tabel invoice punya scroll internal sehingga aman.
-            final tableHeight = (constraints.maxHeight * 0.5).clamp(320.0, 560.0);
+            final tableHeight = (constraints.maxHeight * 0.5).clamp(
+              320.0,
+              560.0,
+            );
             return SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -205,19 +258,22 @@ class _InvoicePageState extends State<InvoicePage> {
                   const SizedBox(height: 8),
                   Text(
                     'Invoice List',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   _filters(),
                   const SizedBox(height: 16),
-                  SizedBox(height: tableHeight, child: _invoiceTable()),
-                  const SizedBox(height: 16),
-                  if (_paymentMode == PaymentMode.combined && _selectedInvoiceIds.isNotEmpty)
-                    _combinedDetailsSection(),
-                  const SizedBox(height: 16),
-                  _detailsSection(),
+            SizedBox(height: tableHeight, child: _invoiceTable()),
+            const SizedBox(height: 16),
+            _printActionBar(),
+            const SizedBox(height: 16),
+            if (_paymentMode == PaymentMode.combined &&
+                _selectedInvoiceIds.isNotEmpty)
+              _combinedDetailsSection(),
+            const SizedBox(height: 16),
+            _detailsSection(),
                   const SizedBox(height: 16),
                   _combinedPaymentBar(),
                   const SizedBox(height: 12),
@@ -236,6 +292,33 @@ class _InvoicePageState extends State<InvoicePage> {
     );
   }
 
+  // Action bar untuk cetak invoice berdasarkan pilihan checkbox.
+  Widget _printActionBar() {
+    if (_selectedInvoiceIds.isEmpty && _selectedInvoice == null) {
+      return const SizedBox.shrink();
+    }
+    final canPrintSingle =
+        _selectedInvoice != null || _selectedInvoiceIds.length == 1;
+    return Row(
+      children: [
+        SizedBox(
+          height: 42,
+          child: ElevatedButton(
+            onPressed: canPrintSingle ? () => _exportPdf() : null,
+            child: const Text('Print Invoice Terpilih'),
+          ),
+        ),
+        if (!canPrintSingle) ...[
+          const SizedBox(width: 12),
+          Text(
+            'Pilih tepat satu invoice untuk mencetak PDF',
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+          ),
+        ],
+      ],
+    );
+  }
+
   Widget _combinedPaymentBar() {
     return Card(
       elevation: 0,
@@ -251,7 +334,9 @@ class _InvoicePageState extends State<InvoicePage> {
               height: 42,
               child: TextField(
                 controller: _payerCtrl,
-                decoration: const InputDecoration(hintText: 'Masukkan nama pembayar...'),
+                decoration: const InputDecoration(
+                  hintText: 'Masukkan nama pembayar...',
+                ),
               ),
             ),
             const SizedBox(height: 12),
@@ -339,7 +424,11 @@ class _InvoicePageState extends State<InvoicePage> {
                   onPressed: () async {
                     if (_selectedInvoice == null) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Pilih invoice terlebih dahulu (klik ID/Nama/Tanggal)')),
+                        const SnackBar(
+                          content: Text(
+                            'Pilih invoice terlebih dahulu (klik ID/Nama/Tanggal)',
+                          ),
+                        ),
                       );
                       return;
                     }
@@ -357,7 +446,9 @@ class _InvoicePageState extends State<InvoicePage> {
   Future<void> _handleCombinedPayment() async {
     if (_selectedInvoiceIds.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pilih minimal satu invoice untuk dibayar')),
+        const SnackBar(
+          content: Text('Pilih minimal satu invoice untuk dibayar'),
+        ),
       );
       return;
     }
@@ -367,7 +458,14 @@ class _InvoicePageState extends State<InvoicePage> {
     for (final id in _selectedInvoiceIds) {
       final inv = _invoices.firstWhere(
         (e) => int.tryParse(e.id) == id,
-        orElse: () => InvoiceItem(id: id.toString(), customer: '', total: 0.0, status: PaymentStatus.unpaid, date: DateTime.now(), outstanding: 0.0),
+        orElse: () => InvoiceItem(
+          id: id.toString(),
+          customer: '',
+          total: 0.0,
+          status: PaymentStatus.unpaid,
+          date: DateTime.now(),
+          outstanding: 0.0,
+        ),
       );
       final ctrl = _amountCtrls[id];
       final raw = ctrl?.text.trim() ?? '';
@@ -393,12 +491,20 @@ class _InvoicePageState extends State<InvoicePage> {
     if (allocations.isEmpty) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Tidak ada nominal pembayaran yang valid')),
+        const SnackBar(
+          content: Text('Tidak ada nominal pembayaran yang valid'),
+        ),
       );
       return;
     }
-    final payer = _payerCtrl.text.trim().isEmpty ? 'Unknown Payer' : _payerCtrl.text.trim();
-    await _repo.createCombinedPayment(payer: payer, allocations: allocations, method: _paymentMethod);
+    final payer = _payerCtrl.text.trim().isEmpty
+        ? 'Unknown Payer'
+        : _payerCtrl.text.trim();
+    await _repo.createCombinedPayment(
+      payer: payer,
+      allocations: allocations,
+      method: _paymentMethod,
+    );
     if (!mounted) return;
     setState(() {
       _selectedInvoiceIds.clear();
@@ -409,11 +515,16 @@ class _InvoicePageState extends State<InvoicePage> {
       const SnackBar(content: Text('Pembayaran gabungan berhasil diproses')),
     );
   }
+
   Future<void> _handleIndividualPayment(InvoiceItem inv) async {
     if (_paymentMode != PaymentMode.individual) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Aktifkan mode 'Individu' di bar atas untuk melakukan pembayaran individu")),
+        const SnackBar(
+          content: Text(
+            "Aktifkan mode 'Individu' di bar atas untuk melakukan pembayaran individu",
+          ),
+        ),
       );
       return;
     }
@@ -432,13 +543,23 @@ class _InvoicePageState extends State<InvoicePage> {
     if (amount > inv.outstanding + 0.0001) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Nominal melebihi sisa tagihan untuk invoice #${inv.id}')),
+        SnackBar(
+          content: Text(
+            'Nominal melebihi sisa tagihan untuk invoice #${inv.id}',
+          ),
+        ),
       );
       return;
     }
-    final payer = _payerCtrl.text.trim().isEmpty ? inv.customer : _payerCtrl.text.trim();
+    final payer = _payerCtrl.text.trim().isEmpty
+        ? inv.customer
+        : _payerCtrl.text.trim();
 
-    final confirmed = await _confirmIndividualPayment(inv: inv, amount: amount, payer: payer);
+    final confirmed = await _confirmIndividualPayment(
+      inv: inv,
+      amount: amount,
+      payer: payer,
+    );
     if (!confirmed) return;
 
     await _repo.createCombinedPayment(
@@ -450,7 +571,9 @@ class _InvoicePageState extends State<InvoicePage> {
     await _load();
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Pembayaran individu berhasil untuk invoice #${inv.id}')),
+      SnackBar(
+        content: Text('Pembayaran individu berhasil untuk invoice #${inv.id}'),
+      ),
     );
   }
 
@@ -476,7 +599,9 @@ class _InvoicePageState extends State<InvoicePage> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         decoration: BoxDecoration(
-                          border: Border.all(color: Theme.of(context).colorScheme.outline),
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.outline,
+                          ),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         alignment: Alignment.centerLeft,
@@ -553,17 +678,19 @@ class _InvoicePageState extends State<InvoicePage> {
               5: FlexColumnWidth(1), // status
               6: FlexColumnWidth(1.2), // date
             },
-            border: TableBorder.all(color: Theme.of(context).colorScheme.outline),
+            border: TableBorder.all(
+              color: Theme.of(context).colorScheme.outline,
+            ),
             children: [
-             _headerRow([
-               'Select',
-               'Invoice ID',
-               'Customer Name',
-               'Total Amount',
-               'Bayar (Rp)',
-               'Payment Status',
-               'Date',
-             ]),
+              _headerRow([
+                'Select',
+                'Invoice ID',
+                'Customer Name',
+                'Total Amount',
+                'Bayar (Rp)',
+                'Payment Status',
+                'Date',
+              ]),
               ..._invoices.map(_dataRow),
             ],
           );
@@ -585,7 +712,9 @@ class _InvoicePageState extends State<InvoicePage> {
 
   TableRow _headerRow(List<String> headers) {
     return TableRow(
-      decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      ),
       children: headers
           .map(
             (h) => Padding(
@@ -707,13 +836,9 @@ class _InvoicePageState extends State<InvoicePage> {
           onTap: () => _viewDetails(inv),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: Text(
-              _formatDate(inv.date),
-              softWrap: true,
-            ),
+            child: Text(_formatDate(inv.date), softWrap: true),
           ),
         ),
-
       ],
     );
   }
@@ -727,7 +852,9 @@ class _InvoicePageState extends State<InvoicePage> {
           padding: const EdgeInsets.all(12),
           child: Text(
             'Klik salah satu invoice untuk melihat detail item transaksi.',
-            style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ),
         ),
       );
@@ -765,7 +892,9 @@ class _InvoicePageState extends State<InvoicePage> {
                     2: FixedColumnWidth(160),
                     3: FixedColumnWidth(180),
                   },
-                  border: TableBorder.all(color: Theme.of(context).colorScheme.outline),
+                  border: TableBorder.all(
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
                   children: [
                     _headerRow(['Item', 'Qty', 'Price', 'Subtotal']),
                     ..._selectedItems.map(
@@ -852,11 +981,11 @@ class _InvoicePageState extends State<InvoicePage> {
                 SizedBox(
                   height: 36,
                   child: ElevatedButton(
-                    onPressed: _exportPdf,
+      onPressed: () => _exportPdf(),
                     child: const Text('Export to PDF'),
                   ),
-                  ),
-                ],
+                ),
+              ],
             ),
           ],
         ),
@@ -880,26 +1009,40 @@ class _InvoicePageState extends State<InvoicePage> {
               2: FixedColumnWidth(160),
               3: FixedColumnWidth(180),
             },
-            border: TableBorder.all(color: Theme.of(context).colorScheme.outline),
+            border: TableBorder.all(
+              color: Theme.of(context).colorScheme.outline,
+            ),
             children: [
               _headerRow(['Item', 'Qty', 'Price', 'Subtotal']),
               ...items.map(
                 (it) => TableRow(
                   children: [
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
                       child: Text(it.name),
                     ),
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
                       child: Text('${it.qty}'),
                     ),
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
                       child: Text(Formatters.idr(it.price)),
                     ),
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
                       child: Text(Formatters.idr(it.price * it.qty)),
                     ),
                   ],
@@ -911,10 +1054,16 @@ class _InvoicePageState extends State<InvoicePage> {
                   const SizedBox.shrink(),
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    child: Text('Total', style: TextStyle(fontWeight: FontWeight.w700)),
+                    child: Text(
+                      'Total',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
                     child: Text(
                       Formatters.idr(total),
                       style: const TextStyle(fontWeight: FontWeight.w700),
@@ -947,7 +1096,9 @@ class _InvoicePageState extends State<InvoicePage> {
           children: [
             Text(
               'Detail Invoice (Gabungan)',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 8),
             ...ids.map((id) {
@@ -978,7 +1129,11 @@ class _InvoicePageState extends State<InvoicePage> {
     );
   }
 
-  Future<bool> _confirmIndividualPayment({required InvoiceItem inv, required double amount, required String payer}) async {
+  Future<bool> _confirmIndividualPayment({
+    required InvoiceItem inv,
+    required double amount,
+    required String payer,
+  }) async {
     return await showDialog<bool>(
           context: context,
           builder: (context) {
@@ -992,10 +1147,14 @@ class _InvoicePageState extends State<InvoicePage> {
                   Text('Customer: ${inv.customer}'),
                   const SizedBox(height: 8),
                   Text('Nominal Bayar: ${Formatters.idr(amount)}'),
-                  Text('Sisa Tagihan Setelah Bayar: ${Formatters.idr((inv.outstanding - amount).clamp(0.0, double.infinity))}'),
+                  Text(
+                    'Sisa Tagihan Setelah Bayar: ${Formatters.idr((inv.outstanding - amount).clamp(0.0, double.infinity))}',
+                  ),
                   const SizedBox(height: 8),
                   Text('Pembayar: $payer'),
-                  Text('Metode: ${_methodLabels[_paymentMethod] ?? _paymentMethod}'),
+                  Text(
+                    'Metode: ${_methodLabels[_paymentMethod] ?? _paymentMethod}',
+                  ),
                 ],
               ),
               actions: [
@@ -1010,7 +1169,8 @@ class _InvoicePageState extends State<InvoicePage> {
               ],
             );
           },
-        ) ?? false;
+        ) ??
+        false;
   }
 
   Widget _statusBadge(PaymentStatus status) {
@@ -1049,8 +1209,6 @@ class _InvoicePageState extends State<InvoicePage> {
     );
   }
 
-  
-
   String _formatDate(DateTime dt) {
     // 31/05/2025, 07:50 AM
     final d = _two(dt.day);
@@ -1066,6 +1224,7 @@ class _InvoicePageState extends State<InvoicePage> {
 }
 
 enum PaymentStatus { unpaid, paid, partial }
+
 enum PaymentMode { combined, individual }
 
 class InvoiceItem {

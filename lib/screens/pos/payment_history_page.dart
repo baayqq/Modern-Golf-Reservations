@@ -34,7 +34,9 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
   Future<void> _load() async {
     final rows = await _repo.getPayments(
       date: _filterDate,
-      payerQuery: _payerCtrl.text.trim().isEmpty ? null : _payerCtrl.text.trim(),
+      payerQuery: _payerCtrl.text.trim().isEmpty
+          ? null
+          : _payerCtrl.text.trim(),
       method: _methodFilter,
     );
     final items = rows.map((e) {
@@ -44,8 +46,15 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
           ? (e['amount'] as num).toDouble()
           : (e['amount'] as double? ?? 0.0);
       final method = e['method'] as String?;
-      final date = DateTime.tryParse((e['date'] as String?) ?? '') ?? DateTime.now();
-      return PaymentRecord(id: id, payer: payer, amount: amount, method: method, date: date);
+      final date =
+          DateTime.tryParse((e['date'] as String?) ?? '') ?? DateTime.now();
+      return PaymentRecord(
+        id: id,
+        payer: payer,
+        amount: amount,
+        method: method,
+        date: date,
+      );
     }).toList();
     setState(() {
       _payments = items;
@@ -63,7 +72,8 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
     setState(() {
       _allocations = rows.map((e) {
         final id = (e['id'] as int?) ?? (e['id'] as num).toInt();
-        final invoiceId = (e['invoiceId'] as int?) ?? (e['invoiceId'] as num).toInt();
+        final invoiceId =
+            (e['invoiceId'] as int?) ?? (e['invoiceId'] as num).toInt();
         final amount = (e['amount'] is num)
             ? (e['amount'] as num).toDouble()
             : (e['amount'] as double? ?? 0.0);
@@ -123,7 +133,9 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
             const SizedBox(height: 8),
             Text(
               'Payment History',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 12),
             _filters(),
@@ -166,7 +178,9 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         decoration: BoxDecoration(
-                          border: Border.all(color: Theme.of(context).colorScheme.outline),
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.outline,
+                          ),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         alignment: Alignment.centerLeft,
@@ -212,15 +226,26 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
                       value: _methodFilter,
                       items: const [
                         DropdownMenuItem(value: 'cash', child: Text('Cash')),
-                        DropdownMenuItem(value: 'credit', child: Text('Kartu Kredit')),
+                        DropdownMenuItem(
+                          value: 'credit',
+                          child: Text('Kartu Kredit'),
+                        ),
                         DropdownMenuItem(value: 'debit', child: Text('Debit')),
                         DropdownMenuItem(value: 'qris', child: Text('QRIS')),
                         // Legacy values for backward compatibility
-                        DropdownMenuItem(value: 'card', child: Text('Card (Legacy)')),
-                        DropdownMenuItem(value: 'transfer', child: Text('Transfer (Legacy)')),
+                        DropdownMenuItem(
+                          value: 'card',
+                          child: Text('Card (Legacy)'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'transfer',
+                          child: Text('Transfer (Legacy)'),
+                        ),
                       ],
                       onChanged: (v) => setState(() => _methodFilter = v),
-                      decoration: const InputDecoration(hintText: 'Pilih metode'),
+                      decoration: const InputDecoration(
+                        hintText: 'Pilih metode',
+                      ),
                     ),
                   ),
                 ],
@@ -267,7 +292,9 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
               4: FixedColumnWidth(200), // date
               5: FixedColumnWidth(160), // actions
             },
-            border: TableBorder.all(color: Theme.of(context).colorScheme.outline),
+            border: TableBorder.all(
+              color: Theme.of(context).colorScheme.outline,
+            ),
             children: [
               _headerRow([
                 'Payment ID',
@@ -300,12 +327,17 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
 
   TableRow _headerRow(List<String> headers) {
     return TableRow(
-      decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      ),
       children: headers
           .map(
             (h) => Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              child: Text(h, style: const TextStyle(fontWeight: FontWeight.w700)),
+              child: Text(
+                h,
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
             ),
           )
           .toList(),
@@ -333,7 +365,9 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          child: Text('${_two(p.date.day)}/${_two(p.date.month)}/${p.date.year}'),
+          child: Text(
+            '${_two(p.date.day)}/${_two(p.date.month)}/${p.date.year}',
+          ),
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -363,7 +397,9 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
               _selectedPayment == null
                   ? 'Select a payment to view allocations'
                   : 'Allocations for Payment #${_selectedPayment!.id} (${_selectedPayment!.payer})',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 12),
             if (_allocations.isEmpty)
@@ -377,31 +413,58 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
                   3: FixedColumnWidth(160), // invoice total
                   4: FixedColumnWidth(140), // status
                 },
-                border: TableBorder.all(color: Theme.of(context).colorScheme.outline),
+                border: TableBorder.all(
+                  color: Theme.of(context).colorScheme.outline,
+                ),
                 children: [
-                  _headerRow(['Invoice ID', 'Customer', 'Allocated Amount', 'Invoice Total', 'Status']),
-                  ..._allocations.map((a) => TableRow(children: [
+                  _headerRow([
+                    'Invoice ID',
+                    'Customer',
+                    'Allocated Amount',
+                    'Invoice Total',
+                    'Status',
+                  ]),
+                  ..._allocations.map(
+                    (a) => TableRow(
+                      children: [
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
                           child: Text('#${a.invoiceId}'),
                         ),
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
                           child: Text(a.customer),
                         ),
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
                           child: Text(Formatters.idr(a.amount)),
                         ),
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
                           child: Text(Formatters.idr(a.invoiceTotal)),
                         ),
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
                           child: _statusChip(a.status),
                         ),
-                      ])),
+                      ],
+                    ),
+                  ),
                 ],
               ),
           ],
@@ -424,8 +487,14 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
-      child: Text(status.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.w600)),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        status.toUpperCase(),
+        style: const TextStyle(fontWeight: FontWeight.w600),
+      ),
     );
   }
 
@@ -438,7 +507,13 @@ class PaymentRecord {
   final double amount;
   final String? method;
   final DateTime date;
-  PaymentRecord({required this.id, required this.payer, required this.amount, required this.method, required this.date});
+  PaymentRecord({
+    required this.id,
+    required this.payer,
+    required this.amount,
+    required this.method,
+    required this.date,
+  });
 }
 
 class AllocationRecord {
@@ -448,5 +523,12 @@ class AllocationRecord {
   final String customer;
   final double invoiceTotal;
   final String status;
-  AllocationRecord({required this.id, required this.invoiceId, required this.amount, required this.customer, required this.invoiceTotal, required this.status});
+  AllocationRecord({
+    required this.id,
+    required this.invoiceId,
+    required this.amount,
+    required this.customer,
+    required this.invoiceTotal,
+    required this.status,
+  });
 }
