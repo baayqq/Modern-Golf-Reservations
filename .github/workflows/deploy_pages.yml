@@ -1,0 +1,40 @@
+name: Deploy Flutter Web to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+# Izinkan action menulis ke repo (untuk mendorong cabang gh-pages)
+permissions:
+  contents: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Flutter packages
+        run: flutter pub get
+
+      - name: Build Flutter Web (hash routing friendly)
+        # Penting untuk GitHub Pages: base-href harus diarahkan ke nama repo.
+        # Jika nama repo berbeda, ubah "/Modern-Golf-Reservations/" sesuai nama repo Anda.
+        run: flutter build web --release --base-href /Modern-Golf-Reservations/
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: build/web
+          force_orphan: true

@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_web_plugins/url_strategy.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:go_router/go_router.dart';
 import 'router.dart';
 
 void main() {
+  // Gunakan hash routing agar URL kompatibel di hosting statis (tanpa rewrite).
+  // Ini memudahkan demo online pada Netlify/Vercel/GitHub Pages.
+  setUrlStrategy(const HashUrlStrategy());
   runApp(const MyApp());
 }
 
