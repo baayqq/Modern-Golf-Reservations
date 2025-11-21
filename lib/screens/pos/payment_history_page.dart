@@ -295,7 +295,7 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
               2: FixedColumnWidth(180), // amount
               3: FixedColumnWidth(160), // method
               4: FixedColumnWidth(200), // date
-              5: FixedColumnWidth(160), // actions
+              5: FixedColumnWidth(240), // actions (dua tombol)
             },
             border: TableBorder.all(
               color: Theme.of(context).colorScheme.outline,
@@ -378,12 +378,12 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           child: Row(
             children: [
-              FilledButton.tonal(
+              ElevatedButton(
                 onPressed: () => _viewAllocations(p),
                 child: const Text('View Detail'),
               ),
               const SizedBox(width: 8),
-              FilledButton.tonal(
+              ElevatedButton(
                 onPressed: () => _printPayment(p),
                 child: const Text('Print'),
               ),
@@ -411,6 +411,16 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
                 context,
               ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
             ),
+            const SizedBox(height: 8),
+            if (_selectedPayment != null)
+              Row(
+                children: [
+                  ElevatedButton(
+                    onPressed: () => _printPayment(_selectedPayment!),
+                    child: const Text('Print'),
+                  ),
+                ],
+              ),
             const SizedBox(height: 12),
             if (_allocations.isEmpty)
               const Text('No allocations for the selected payment')
