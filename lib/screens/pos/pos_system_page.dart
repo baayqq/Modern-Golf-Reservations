@@ -31,18 +31,14 @@ class _PosSystemPageState extends State<PosSystemPage> {
   bool _saving = false;
   final TextEditingController _searchCtrl = TextEditingController();
   final TextEditingController _customerCtrl = TextEditingController();
-  // Manual item inputs (opsional). Default dikosongkan agar tidak memaksa GREEN FEE.
-  final TextEditingController _itemNameCtrl = TextEditingController(text: '');
-  final TextEditingController _itemQtyCtrl = TextEditingController(text: '1');
-  final TextEditingController _itemPriceCtrl = TextEditingController(text: '');
+  // Manual item inputs dihapus (tidak digunakan lagi).
 
-  // Kategori yang digunakan (generik)
-  final List<String> _categories = const ['SERVICES'];
-
-  String _selectedCategory = 'SERVICES';
-
-  // Dummy product list
-  late List<Product> _allProducts;
+  // Daftar harga sewa: dipisahkan WEEKDAY & WEEKEND (bukan barang belanja).
+  late List<Product> _weekdayFees;
+  late List<Product> _weekendFees;
+  // Tab kategori seperti UI sebelumnya
+  final List<String> _categories = const ['WEEKDAY', 'WEEKEND'];
+  String _selectedCategory = 'WEEKDAY';
   List<Product> _filtered = [];
   final List<CartItem> _cart = [];
 
@@ -50,9 +46,7 @@ class _PosSystemPageState extends State<PosSystemPage> {
   final InvoiceRepository _invoiceRepo = InvoiceRepository();
   // Repo untuk mencari booking/pemain
   final TeeTimeRepository _teeRepo = TeeTimeRepository();
-  // Base amount dari booking: SEWA LAPANGAN (booking fee). Tidak bergantung pada jumlah pemain.
-  int _baseQty = 0; // gunakan untuk mendeteksi ada booking terpilih
-  double get _baseAmount => _baseQty > 0 ? Fees.bookingFee : 0.0;
+  // Tidak ada auto SEWA LAPANGAN dari booking. Kasir akan input manual.
 
   @override
   void initState() {
@@ -75,52 +69,81 @@ class _PosSystemPageState extends State<PosSystemPage> {
         );
       }
     });
-    _allProducts = List.generate(20, (i) {
-      final names = [
-        'SCORING ADMINISTRATION',
-        'FORE CADDY',
-        'Deductable Insurance Charge',
-        'Extra Caddy',
-        'Practice Balls',
-        'Premium Gloves',
-        'Divot Tool',
-        'Spikeless Shoes',
-        'Cart Fee',
-        'Locker Fee',
-      ];
-      final cats = _categories;
-      return Product(
-        id: 'P$i',
-        name: names[i % names.length],
-        price: [
-          750000,
-          300000,
-          1000000,
-          300000,
-          100000,
-          250000,
-          50000,
-          150000,
-          200000,
-          50000,
-        ][i % 10].toDouble(),
-        stock: [19, 18, 299, 500, 120, 60, 999, 42, 75, 31][i % 10],
-        category: cats[i % cats.length],
-        // emblem placeholder
-        image: Icons.verified, // using an icon as placeholder
-      );
-    });
+    // Inisialisasi list harga sewa (POS mengganti list barang menjadi fee):
+    _weekdayFees = [
+      Product(
+        id: 'WD-1',
+        name: 'Member Fee',
+        price: 1600000,
+        stock: 9999,
+        category: 'WEEKDAY',
+        image: Icons.attach_money,
+      ),
+      Product(
+        id: 'WD-2',
+        name: 'Visitor Fee',
+        price: 3000000,
+        stock: 9999,
+        category: 'WEEKDAY',
+        image: Icons.attach_money,
+      ),
+      Product(
+        id: 'WD-3',
+        name: 'Caddy Fee',
+        price: 300000,
+        stock: 9999,
+        category: 'WEEKDAY',
+        image: Icons.attach_money,
+      ),
+      Product(
+        id: 'WD-4',
+        name: 'Buggy Fee',
+        price: 300000,
+        stock: 9999,
+        category: 'WEEKDAY',
+        image: Icons.attach_money,
+      ),
+    ];
+    _weekendFees = [
+      Product(
+        id: 'WE-1',
+        name: 'Member Fee',
+        price: 3500000,
+        stock: 9999,
+        category: 'WEEKEND',
+        image: Icons.attach_money,
+      ),
+      Product(
+        id: 'WE-2',
+        name: 'Visitor Fee',
+        price: 5000000,
+        stock: 9999,
+        category: 'WEEKEND',
+        image: Icons.attach_money,
+      ),
+      Product(
+        id: 'WE-3',
+        name: 'Caddy Fee',
+        price: 300000,
+        stock: 9999,
+        category: 'WEEKEND',
+        image: Icons.attach_money,
+      ),
+      Product(
+        id: 'WE-4',
+        name: 'Buggy Fee',
+        price: 300000,
+        stock: 9999,
+        category: 'WEEKEND',
+        image: Icons.attach_money,
+      ),
+    ];
     _applyFilter();
     // Prefill dari query (jika ada)
     if (widget.initialCustomer != null && widget.initialCustomer!.isNotEmpty) {
       _customerCtrl.text = widget.initialCustomer!;
     }
-    if (widget.initialQty != null && widget.initialQty! > 0) {
-      // qty dari Manage Reservation dipakai sebagai base booking qty
-      _baseQty = widget.initialQty!;
-      // tetap isi field manual agar user bisa menambah item lain bila diperlukan
-      _itemQtyCtrl.text = widget.initialQty!.toString();
-    }
+    // Tidak ada auto-qty SEWA LAPANGAN; kasir akan set manual.
   }
 
   Future<void> _initDb() async {
@@ -136,14 +159,10 @@ class _PosSystemPageState extends State<PosSystemPage> {
   void _applyFilter() {
     final q = _searchCtrl.text.trim().toLowerCase();
     setState(() {
-      _filtered = _allProducts.where((p) {
-        final catOk = p.category == _selectedCategory;
-        final queryOk =
-            q.isEmpty ||
-            p.name.toLowerCase().contains(q) ||
-            p.id.toLowerCase().contains(q);
-        return catOk && queryOk;
-      }).toList();
+      // Tanpa search bar: tampilkan sesuai tab terpilih.
+      _filtered = _selectedCategory == 'WEEKDAY'
+          ? List<Product>.from(_weekdayFees)
+          : List<Product>.from(_weekendFees);
     });
   }
 
@@ -158,40 +177,7 @@ class _PosSystemPageState extends State<PosSystemPage> {
     });
   }
 
-  void _addManualItem() {
-    final name = _itemNameCtrl.text.trim();
-    final qty = int.tryParse(_itemQtyCtrl.text.trim()) ?? 0;
-    final price = double.tryParse(_itemPriceCtrl.text.trim()) ?? 0.0;
-    if (name.isEmpty || qty <= 0 || price <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Isi nama item, qty (>0), dan harga (>0)'),
-        ),
-      );
-      return;
-    }
-    final id = 'M${DateTime.now().microsecondsSinceEpoch}';
-    final p = Product(
-      id: id,
-      name: name,
-      price: price,
-      stock: 9999,
-      category: 'SERVICES',
-      image: Icons.flag,
-    );
-    final existingIdx = _cart.indexWhere(
-      (c) => c.product.name == name && (c.product.price - price).abs() < 0.0001,
-    );
-    setState(() {
-      if (existingIdx >= 0) {
-        _cart[existingIdx] = _cart[existingIdx].copyWith(
-          qty: _cart[existingIdx].qty + qty,
-        );
-      } else {
-        _cart.add(CartItem(product: p, qty: qty));
-      }
-    });
-  }
+  // Fitur tambah item manual dihapus.
 
   void _removeFromCart(String productId) {
     setState(() {
@@ -226,23 +212,7 @@ class _PosSystemPageState extends State<PosSystemPage> {
           ),
         )
         .toList();
-    // Tambahkan SEWA LAPANGAN sebagai dasar pembayaran jika ada booking terpilih.
-    if (_baseQty > 0) {
-      final hasBase = items.any((it) {
-        final n = it.name.toLowerCase();
-        return n.contains('sewa lapangan') || n.contains('booking fee');
-      });
-      if (!hasBase) {
-        items.insert(
-          0,
-          const InvoiceItemInput(
-            name: 'SEWA LAPANGAN',
-            qty: 1,
-            price: Fees.bookingFee,
-          ),
-        );
-      }
-    }
+    // Tidak menambahkan SEWA LAPANGAN otomatis; kasir memasukkan manual.
     try {
       await _invoiceRepo.createInvoice(customer: customer, items: items);
     } catch (e) {
@@ -268,8 +238,8 @@ class _PosSystemPageState extends State<PosSystemPage> {
       builder: (context, constraints) {
         final isNarrow = constraints.maxWidth < 900;
         final content = isNarrow
-            ? Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            ? ListView(
+                padding: const EdgeInsets.all(12),
                 children: [
                   _categoriesSection(),
                   const SizedBox(height: 12),
@@ -283,9 +253,10 @@ class _PosSystemPageState extends State<PosSystemPage> {
             : Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Left content
+                  // Left content scrollable
                   Expanded(
-                    child: Column(
+                    child: ListView(
+                      padding: const EdgeInsets.all(12),
                       children: [
                         _categoriesSection(),
                         const SizedBox(height: 12),
@@ -296,21 +267,19 @@ class _PosSystemPageState extends State<PosSystemPage> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  // Right sidebar: Order Summary
+                  // Right sidebar: Order Summary (tetap)
                   SizedBox(width: 320, child: _orderSummary()),
                 ],
               );
 
-        // Bungkus dengan SingleChildScrollView untuk mencegah overflow vertikal
-        return SingleChildScrollView(
-          child: Padding(padding: const EdgeInsets.all(12), child: content),
-        );
+        return content;
       },
     );
 
     return AppScaffold(title: 'POS System', body: body);
   }
 
+  // Kategori UI seperti sebelumnya: chip untuk memilih Weekday/Weekend
   Widget _categoriesSection() {
     return Card(
       elevation: 0,
@@ -346,9 +315,7 @@ class _PosSystemPageState extends State<PosSystemPage> {
                   return ChoiceChip(
                     selected: selected,
                     onSelected: (_) {
-                      setState(() {
-                        _selectedCategory = c;
-                      });
+                      setState(() { _selectedCategory = c; });
                       _applyFilter();
                     },
                     label: Text(
@@ -375,6 +342,7 @@ class _PosSystemPageState extends State<PosSystemPage> {
   }
 
   Widget _productsHeader() {
+    // Hapus search bar; pertahankan header kiri seperti sebelumnya
     return Row(
       children: [
         Expanded(
@@ -393,27 +361,12 @@ class _PosSystemPageState extends State<PosSystemPage> {
             ),
           ),
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: SizedBox(
-            height: 42,
-            child: TextField(
-              controller: _searchCtrl,
-              onChanged: (_) => _applyFilter(),
-              decoration: InputDecoration(
-                hintText: 'Search...',
-                prefixIcon: const Icon(Icons.search),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-              ),
-            ),
-          ),
-        ),
       ],
     );
   }
 
   Widget _productGrid() {
-    // 4 columns on wide screens, 2 on narrow
+    // Grid seperti sebelumnya: berdasarkan tab terpilih
     final width = MediaQuery.of(context).size.width;
     final cols = width >= 1100 ? 4 : 2;
     return Card(
@@ -421,61 +374,59 @@ class _PosSystemPageState extends State<PosSystemPage> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       child: Padding(
         padding: const EdgeInsets.all(12),
-        child: SizedBox(
-          height:
-              MediaQuery.of(context).size.height *
-              0.5, // Tinggi container untuk scrolling
-          child: GridView.builder(
-            shrinkWrap: false,
-            physics: const AlwaysScrollableScrollPhysics(),
-            itemCount: _filtered.length,
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: cols,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              childAspectRatio: 1.0,
-            ),
-            itemBuilder: (context, index) {
-              final p = _filtered[index];
-              return InkWell(
-                onTap: () => _addToCart(p),
-                borderRadius: BorderRadius.circular(8),
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: const Color(0xFFDEE2E6)),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Center(
-                          child: Icon(
-                            p.image,
-                            size: 80,
-                            color: Colors.brown.shade300,
+        child: GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: _filtered.length,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: cols,
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
+            childAspectRatio: 1.2,
+          ),
+          itemBuilder: (context, index) {
+            final p = _filtered[index];
+            return InkWell(
+              onTap: () => _addToCart(p),
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  border: Border.all(color: const Color(0xFFDEE2E6)),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(p.image, size: 20, color: Colors.grey.shade600),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            p.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontWeight: FontWeight.w600),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '${p.name} - ${Formatters.idr(p.price)}',
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'Stock: ${p.stock}',
-                        style: const TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      Formatters.idr(p.price),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            color: const Color(0xFF198754),
+                          ) ?? const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                    ),
+                  ],
                 ),
-              );
-            },
-          ),
+              ),
+            );
+          },
         ),
       ),
     );
@@ -534,73 +485,8 @@ class _PosSystemPageState extends State<PosSystemPage> {
               ),
               const SizedBox(height: 12),
               const Divider(),
-              // Item tambahan bersifat opsional. Pembayaran dasar adalah SEWA LAPANGAN
-              // berdasarkan booking yang dipilih.
-              const Text('Tambah Item (Opsional)'),
-              const SizedBox(height: 6),
-              TextField(
-                controller: _itemNameCtrl,
-                decoration: const InputDecoration(
-                  hintText: 'Nama item... (opsional, misal: Practice Balls)',
-                ),
-              ),
-              const SizedBox(height: 6),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _itemQtyCtrl,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(hintText: 'Qty'),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: TextField(
-                      controller: _itemPriceCtrl,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(hintText: 'Harga'),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  SizedBox(
-                    height: 42,
-                    child: ElevatedButton(
-                      onPressed: _addManualItem,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(
-                          context,
-                        ).colorScheme.secondary,
-                        foregroundColor: Theme.of(
-                          context,
-                        ).colorScheme.onSecondary,
-                      ),
-                      child: const Text('Tambah'),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
               const Divider(),
-              // Tampilkan biaya SEWA LAPANGAN bila ada booking terpilih
-              if (_baseQty > 0)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'SEWA LAPANGAN',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(Formatters.idr(_baseAmount)),
-                    ],
-                  ),
-                ),
+              // Tidak ada SEWA LAPANGAN default. Kasir menambahkan manual bila perlu.
               // Cart list
               if (_cart.isEmpty)
                 Padding(
@@ -621,14 +507,14 @@ class _PosSystemPageState extends State<PosSystemPage> {
                     'Subtotal:',
                     style: TextStyle(fontWeight: FontWeight.w600),
                   ),
-                  Text(Formatters.idr(_baseAmount + _subtotal)),
+                  Text(Formatters.idr(_subtotal)),
                 ],
               ),
               const SizedBox(height: 12),
               SizedBox(
                 height: 42,
                 child: ElevatedButton(
-                  onPressed: (_baseQty > 0 || _cart.isNotEmpty) && !_saving ? _saveTransaction : null,
+                  onPressed: _cart.isNotEmpty && !_saving ? _saveTransaction : null,
                   // Gunakan warna default dari ElevatedButtonTheme (primary)
                   child: _saving ? const Text('Menyimpan...') : const Text('Simpan Transaksi'),
                 ),
@@ -710,10 +596,7 @@ class _PosSystemPageState extends State<PosSystemPage> {
                                   trailing: FilledButton.tonal(
                                     onPressed: () {
                                       _customerCtrl.text = m.playerName ?? 'Walk-in';
-                                      // gunakan jumlah pemain sebagai base booking qty
-                                      _baseQty = (m.playerCount ?? 1);
-                                      // tetap isi field manual agar sinkron dengan input opsional
-                                      _itemQtyCtrl.text = (m.playerCount ?? 1).toString();
+                                      // Tidak menambahkan item otomatis dari booking.
                                       Navigator.of(ctx).pop();
                                     },
                                     child: const Text('Pilih'),

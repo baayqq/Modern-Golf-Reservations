@@ -25,6 +25,8 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
   // Create form fields
   DateTime? _createDate;
   TimeOfDay? _createTime;
+  // Menyimpan pilihan tee box untuk create (1 atau 10)
+  String? _createTeeBox;
   final TextEditingController _playerCtrl = TextEditingController();
   final TextEditingController _player2Ctrl = TextEditingController();
   final TextEditingController _player3Ctrl = TextEditingController();
@@ -48,11 +50,75 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
   }
 
   Future<void> _pickCreateTime() async {
-    final res = await showTimePicker(
+    // Dialog waktu: dua bagian, Tee Box 1 dan Tee Box 10.
+    // Gunakan jam standar dari repository agar konsisten dengan Booking Calendar.
+    final slotStrings = TeeTimeRepository.standardSlotTimes();
+    final slotTOD = slotStrings.map(_parseTime).toList();
+    final itemsBox1 = slotTOD;
+    final itemsBox10 = slotTOD;
+
+    await showDialog(
       context: context,
-      initialTime: _createTime ?? const TimeOfDay(hour: 7, minute: 0),
+      builder: (ctx) {
+        return AlertDialog(
+          title: const Text('Pilih jam (07:00–14:00)'),
+          content: SizedBox(
+            width: 520,
+            height: 520,
+            child: DefaultTabController(
+              length: 2,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  TabBar(
+                    labelColor: Theme.of(context).colorScheme.primary,
+                    tabs: const [
+                      Tab(text: 'Tee Box 1'),
+                      Tab(text: 'Tee Box 10'),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Expanded(
+                    child: TabBarView(
+                      children: [
+                        _TimeList(
+                          boxLabel: '1',
+                          times: itemsBox1,
+                          onPick: (tod) {
+                            setState(() {
+                              _createTime = tod;
+                              _createTeeBox = '1';
+                            });
+                            Navigator.of(ctx).pop();
+                          },
+                        ),
+                        _TimeList(
+                          boxLabel: '10',
+                          times: itemsBox10,
+                          onPick: (tod) {
+                            setState(() {
+                              _createTime = tod;
+                              _createTeeBox = '10';
+                            });
+                            Navigator.of(ctx).pop();
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Batal'),
+            ),
+          ],
+        );
+      },
     );
-    if (res != null) setState(() => _createTime = res);
   }
 
   @override
@@ -77,7 +143,12 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
     }
   }
 
-  String _timeLabel(TimeOfDay? t) => t == null ? '--:--' : t.format(context);
+  String _timeLabel(TimeOfDay? t) {
+    if (t == null) return '--:--';
+    final h = t.hour.toString().padLeft(2, '0');
+    final m = t.minute.toString().padLeft(2, '0');
+    return '$h:$m';
+  }
 
   TimeOfDay _parseTime(String hhmm) {
     final parts = hhmm.split(':');
@@ -99,10 +170,9 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
     if (count == null) return const [];
 
     final items = <Widget>[];
-    // Pemain 1 selalu muncul jika count >= 1
     if (count >= 1) {
       items.addAll([
-        _FieldLabel('Pemain 1'),
+        const _FieldLabel('Pemain 1'),
         TextField(
           controller: _playerCtrl,
           decoration: const InputDecoration(
@@ -115,7 +185,7 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
     }
     if (count >= 2) {
       items.addAll([
-        _FieldLabel('Pemain 2'),
+        const _FieldLabel('Pemain 2'),
         TextField(
           controller: _player2Ctrl,
           decoration: const InputDecoration(
@@ -128,7 +198,7 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
     }
     if (count >= 3) {
       items.addAll([
-        _FieldLabel('Pemain 3'),
+        const _FieldLabel('Pemain 3'),
         TextField(
           controller: _player3Ctrl,
           decoration: const InputDecoration(
@@ -141,7 +211,7 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
     }
     if (count >= 4) {
       items.addAll([
-        _FieldLabel('Pemain 4'),
+        const _FieldLabel('Pemain 4'),
         TextField(
           controller: _player4Ctrl,
           decoration: const InputDecoration(
@@ -164,7 +234,6 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
     if (count == null) return 'Jumlah pemain wajib dipilih';
     if (count <= 0) return 'Jumlah pemain wajib angka > 0';
     if (count < 1 || count > 4) return 'Jumlah pemain maksimal 4';
-    // Validasi nama sesuai jumlah pemain
     final name = _playerCtrl.text.trim();
     final p2 = _player2Ctrl.text.trim();
     final p3 = _player3Ctrl.text.trim();
@@ -185,17 +254,13 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
           if (widget.initial != null) ...[
             Text(
               'Edit Tee Time Reservation',
-              style: Theme.of(
-                context,
-              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w600),
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 12),
-            _FieldLabel('Tanggal:'),
+            const _FieldLabel('Tanggal:'),
             _DateField(
               hint: 'dd/mm/yyyy',
-              value: _editDate == null
-                  ? ''
-                  : DateFormat('dd/MM/yyyy').format(_editDate!),
+              value: _editDate == null ? '' : DateFormat('dd/MM/yyyy').format(_editDate!),
               onTap: () async {
                 final now = DateTime.now();
                 final res = await showDatePicker(
@@ -209,7 +274,7 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
               icon: Icons.calendar_today,
             ),
             const SizedBox(height: 12),
-            _FieldLabel('Jam Mulai:'),
+            const _FieldLabel('Jam Mulai:'),
             _DateField(
               hint: '--:--',
               value: _timeLabel(_editTime),
@@ -223,23 +288,16 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
               icon: Icons.access_time,
             ),
             const SizedBox(height: 12),
-            _FieldLabel('Jumlah Pemain:'),
-            // Dropdown jumlah pemain (maks 4)
+            const _FieldLabel('Jumlah Pemain:'),
             DropdownButtonFormField<int>(
               value: int.tryParse(_countCtrl.text.trim()),
               items: const [1, 2, 3, 4]
-                  .map(
-                    (e) => DropdownMenuItem<int>(
-                      value: e,
-                      child: Text(e.toString()),
-                    ),
-                  )
+                  .map((e) => DropdownMenuItem<int>(value: e, child: Text(e.toString())))
                   .toList(),
               onChanged: (v) {
                 if (v == null) return;
                 setState(() {
                   _countCtrl.text = v.toString();
-                  // Bersihkan field yang tidak relevan ketika jumlah dikurangi
                   if (v < 4) _player4Ctrl.clear();
                   if (v < 3) _player3Ctrl.clear();
                   if (v < 2) _player2Ctrl.clear();
@@ -252,7 +310,6 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
             ),
             const SizedBox(height: 12),
             ..._buildPlayerFields(),
-
             const SizedBox(height: 16),
             SizedBox(
               width: 180,
@@ -269,20 +326,13 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
                     id: widget.initial!.id,
                     date: _editDate!,
                     time: _formatTime(_editTime!),
+                    teeBox: widget.initial!.teeBox,
                     playerName: _playerCtrl.text.trim(),
-                    player2Name: _player2Ctrl.text.trim().isEmpty
-                        ? null
-                        : _player2Ctrl.text.trim(),
-                    player3Name: _player3Ctrl.text.trim().isEmpty
-                        ? null
-                        : _player3Ctrl.text.trim(),
-                    player4Name: _player4Ctrl.text.trim().isEmpty
-                        ? null
-                        : _player4Ctrl.text.trim(),
+                    player2Name: _player2Ctrl.text.trim().isEmpty ? null : _player2Ctrl.text.trim(),
+                    player3Name: _player3Ctrl.text.trim().isEmpty ? null : _player3Ctrl.text.trim(),
+                    player4Name: _player4Ctrl.text.trim().isEmpty ? null : _player4Ctrl.text.trim(),
                     playerCount: int.tryParse(_countCtrl.text.trim()) ?? 1,
-                    notes: _notesCtrl.text.trim().isEmpty
-                        ? null
-                        : _notesCtrl.text.trim(),
+                    notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
                     status: widget.initial!.status,
                   );
                   await _repo.updateReservation(updated);
@@ -300,60 +350,50 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
           ],
           Text(
             'Create Tee Time Reservation',
-            style: Theme.of(
-              context,
-            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w600),
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 16),
-          _FieldLabel('Tanggal:'),
+          const _FieldLabel('Tanggal:'),
           _DateField(
             hint: 'dd/mm/yyyy',
-            value: _createDate == null
-                ? ''
-                : DateFormat('dd/MM/yyyy').format(_createDate!),
+            value: _createDate == null ? '' : DateFormat('dd/MM/yyyy').format(_createDate!),
             onTap: _pickCreateDate,
             icon: Icons.calendar_today,
           ),
           const SizedBox(height: 12),
-          _FieldLabel('Jam Mulai:'),
+          const _FieldLabel('Jam Mulai:'),
           _DateField(
             hint: '--:--',
-            value: _timeLabel(_createTime),
+            value: _createTime == null
+                ? _timeLabel(_createTime)
+                : '${_timeLabel(_createTime)} (Tee Box ${_createTeeBox ?? '-'})',
             onTap: _pickCreateTime,
             icon: Icons.access_time,
           ),
           const SizedBox(height: 12),
-          _FieldLabel('Jumlah Pemain:'),
-          // Dropdown jumlah pemain (maks 4)
+          const _FieldLabel('Jumlah Pemain:'),
           DropdownButtonFormField<int>(
             value: int.tryParse(_countCtrl.text.trim()),
             items: const [1, 2, 3, 4]
-                .map(
-                  (e) => DropdownMenuItem<int>(
-                    value: e,
-                    child: Text(e.toString()),
-                  ),
-                )
+                .map((e) => DropdownMenuItem<int>(value: e, child: Text(e.toString())))
                 .toList(),
             onChanged: (v) {
               if (v == null) return;
               setState(() {
                 _countCtrl.text = v.toString();
-                // Bersihkan field yang tidak relevan ketika jumlah dikurangi
                 if (v < 4) _player4Ctrl.clear();
                 if (v < 3) _player3Ctrl.clear();
                 if (v < 2) _player2Ctrl.clear();
               });
             },
-          decoration: const InputDecoration(
-            border: OutlineInputBorder(),
-            hintText: 'Belum memilih jumlah pemain',
+            decoration: const InputDecoration(
+              border: OutlineInputBorder(),
+              hintText: 'Belum memilih jumlah pemain',
+            ),
           ),
-        ),
           const SizedBox(height: 12),
           ..._buildPlayerFields(),
           const SizedBox(height: 12),
-          // Catatan dihapus pada mode Create sesuai permintaan.
           const SizedBox(height: 16),
           SizedBox(
             width: 180,
@@ -361,45 +401,29 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
               onPressed: () async {
                 final err = _validate(editMode: false);
                 if (err != null) {
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text(err)));
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
                   return;
                 }
                 await _repo.createOrBookSlot(
                   date: _createDate!,
                   time: _formatTime(_createTime!),
+                  teeBox: int.tryParse(_createTeeBox ?? '') ?? 1,
                   playerName: _playerCtrl.text.trim(),
-                  playerCount: (int.tryParse(_countCtrl.text.trim()) ?? 1)
-                      .clamp(1, 4),
-                  player2Name: _player2Ctrl.text.trim().isEmpty
-                      ? null
-                      : _player2Ctrl.text.trim(),
-                  player3Name: _player3Ctrl.text.trim().isEmpty
-                      ? null
-                      : _player3Ctrl.text.trim(),
-                  player4Name: _player4Ctrl.text.trim().isEmpty
-                      ? null
-                      : _player4Ctrl.text.trim(),
+                  playerCount: (int.tryParse(_countCtrl.text.trim()) ?? 1).clamp(1, 4),
+                  player2Name: _player2Ctrl.text.trim().isEmpty ? null : _player2Ctrl.text.trim(),
+                  player3Name: _player3Ctrl.text.trim().isEmpty ? null : _player3Ctrl.text.trim(),
+                  player4Name: _player4Ctrl.text.trim().isEmpty ? null : _player4Ctrl.text.trim(),
+                  notes: _createTeeBox == null ? null : 'Tee Box ${_createTeeBox}',
                 );
-                // Tidak membuat invoice otomatis di sini untuk menghindari duplikasi.
-                // Gunakan halaman POS untuk membuat invoice dan menerima pembayaran.
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text(
-                      'Reservasi berhasil dibuat. Silakan buka POS untuk membuat invoice/pembayaran.',
-                    ),
+                    content: Text('Reservasi berhasil dibuat. Silakan buka POS untuk membuat invoice/pembayaran.'),
                   ),
                 );
                 if (!context.mounted) return;
-                // After saving, go to booking calendar and pre-select the created date
                 GoRouter.of(context).goNamed(
                   AppRoute.teeBooking.name,
-                  extra: DateTime(
-                    _createDate!.year,
-                    _createDate!.month,
-                    _createDate!.day,
-                  ),
+                  extra: DateTime(_createDate!.year, _createDate!.month, _createDate!.day),
                 );
               },
               style: FilledButton.styleFrom(
@@ -411,13 +435,71 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
           ),
           const SizedBox(height: 40),
           Center(
-            child: Text(
-              '© 2025 | Fitri Dwi Astuti.',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
+            child: Text('© 2025 | Fitri Dwi Astuti.', style: Theme.of(context).textTheme.bodySmall),
           ),
         ],
       ),
+    );
+  }
+}
+
+// Widget list waktu untuk dialog (lebih ringan dan reusable)
+class _TimeList extends StatelessWidget {
+  final String boxLabel;
+  final List<TimeOfDay> times;
+  final ValueChanged<TimeOfDay> onPick;
+
+  const _TimeList({
+    super.key,
+    required this.boxLabel,
+    required this.times,
+    required this.onPick,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      itemCount: times.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 6),
+      itemBuilder: (_, i) {
+        final tod = times[i];
+        return InkWell(
+          borderRadius: BorderRadius.circular(6),
+          onTap: () => onPick(tod),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              border: Border.all(color: Theme.of(context).colorScheme.outline),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.access_time, size: 18),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '${tod.hour.toString().padLeft(2, '0')}:${tod.minute.toString().padLeft(2, '0')}',
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.secondaryContainer,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    'Tee Box $boxLabel',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).colorScheme.onSecondaryContainer,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

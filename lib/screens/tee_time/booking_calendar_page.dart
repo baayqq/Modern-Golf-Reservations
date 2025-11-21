@@ -457,30 +457,13 @@ class _SlotsPanel extends StatelessWidget {
       return const Center(child: CircularProgressIndicator());
     }
 
-    // Bangun slot waktu dengan jeda 10 menit: 07:00–08:30 dan 11:30–14:00
-    List<String> buildRange(int sh, int sm, int eh, int em) {
-      final start = DateTime(2000, 1, 1, sh, sm);
-      final end = DateTime(2000, 1, 1, eh, em);
-      final out = <String>[];
-      var t = start;
-      while (!t.isAfter(end)) {
-        final hh = t.hour.toString().padLeft(2, '0');
-        final mm = t.minute.toString().padLeft(2, '0');
-        out.add('$hh:$mm');
-        t = t.add(const Duration(minutes: 10));
-      }
-      return out;
-    }
+    // Gunakan jam standar dari repository agar konsisten dengan Create Tee Time
+    final slotTimes = TeeTimeRepository.standardSlotTimes();
 
-    final slotTimes = [
-      ...buildRange(7, 0, 8, 30),
-      ...buildRange(11, 30, 14, 0),
-    ];
+    bool isReserved(String time, int teeBox) =>
+        slots.any((s) => s.time == time && s.teeBox == teeBox && s.status == 'booked');
 
-    bool isReserved(String time) =>
-        slots.any((s) => s.time == time && s.status == 'booked');
-
-    Widget buildBox(String title, {required bool scrollable}) {
+    Widget buildBox(String title, int teeBox, {required bool scrollable}) {
       return Card(
         elevation: 1,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -508,7 +491,7 @@ class _SlotsPanel extends StatelessWidget {
                     separatorBuilder: (_, __) => const SizedBox(height: 6),
                     itemBuilder: (ctx, i) {
                       final t = slotTimes[i];
-                      final reserved = isReserved(t);
+                      final reserved = isReserved(t, teeBox);
                       final cs = Theme.of(context).colorScheme;
                       final bg = reserved
                           ? cs.errorContainer
@@ -521,6 +504,7 @@ class _SlotsPanel extends StatelessWidget {
                           TeeTimeModel(
                             date: date,
                             time: t,
+                            teeBox: teeBox,
                             status: reserved ? 'booked' : 'available',
                           ),
                         ),
@@ -564,11 +548,12 @@ class _SlotsPanel extends StatelessWidget {
                     for (var i = 0; i < slotTimes.length; i++) ...[
                       _SlotRow(
                         time: slotTimes[i],
-                        reserved: isReserved(slotTimes[i]),
+                        reserved: isReserved(slotTimes[i], teeBox),
                         onTap: (t, reserved) => onTapSlot(
                           TeeTimeModel(
                             date: date,
                             time: t,
+                            teeBox: teeBox,
                             status: reserved ? 'booked' : 'available',
                           ),
                         ),
@@ -598,12 +583,13 @@ class _SlotsPanel extends StatelessWidget {
               return Row(
                 children: [
                   Expanded(
-                    child: buildBox('Tee Box 1 (Holes 1–9)', scrollable: false),
+                    child: buildBox('Tee Box 1 (Holes 1–9)', 1, scrollable: false),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: buildBox(
-                      'Tee Box 2 (Holes 10–18)',
+                      'Tee Box 10 (Holes 10–18)',
+                      10,
                       scrollable: false,
                     ),
                   ),
@@ -613,9 +599,9 @@ class _SlotsPanel extends StatelessWidget {
             // Mobile / sempit: susun vertikal
             return Column(
               children: [
-                buildBox('Tee Box 1 (Holes 1–9)', scrollable: false),
+                buildBox('Tee Box 1 (Holes 1–9)', 1, scrollable: false),
                 const SizedBox(height: 8),
-                buildBox('Tee Box 2 (Holes 10–18)', scrollable: false),
+                buildBox('Tee Box 10 (Holes 10–18)', 10, scrollable: false),
               ],
             );
           },

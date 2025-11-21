@@ -24,6 +24,16 @@ class _InvoicePageState extends State<InvoicePage> {
   final Map<int, TextEditingController> _amountCtrls = {};
   // Mode pembayaran: gabungan atau individu
   PaymentMode _paymentMode = PaymentMode.combined;
+  // Metode pembayaran: cash, credit, debit, qris
+  String _paymentMethod = 'cash';
+  static const Map<String, String> _methodLabels = {
+    'cash': 'Cash',
+    'credit': 'Kartu Kredit',
+    'debit': 'Debit',
+    'qris': 'QRIS',
+  };
+  // Detail item untuk pilihan gabungan: invoiceId -> daftar item
+  final Map<int, List<InvoiceLine>> _combinedSelectedItems = {};
 
   @override
   void initState() {
@@ -143,6 +153,29 @@ class _InvoicePageState extends State<InvoicePage> {
     _load();
   }
 
+  Future<void> _loadCombinedDetails() async {
+    // Muat detail untuk semua invoice yang dipilih (mode gabungan), paralel agar UI tidak macet
+    final ids = _selectedInvoiceIds.toList();
+    final futures = ids.map((id) => _repo.getItemsForInvoice(id)).toList();
+    final results = await Future.wait(futures);
+    final Map<int, List<InvoiceLine>> next = {};
+    for (var i = 0; i < ids.length; i++) {
+      final rows = results[i];
+      next[ids[i]] = rows.map((e) {
+        final name = (e['name'] as String?) ?? '';
+        final qty = (e['qty'] as int?) ?? (e['qty'] is num ? (e['qty'] as num).toInt() : 0);
+        final price = (e['price'] is num) ? (e['price'] as num).toDouble() : (e['price'] as double? ?? 0.0);
+        return InvoiceLine(name: name, qty: qty, price: price);
+      }).toList();
+    }
+    if (!mounted) return;
+    setState(() {
+      _combinedSelectedItems
+        ..clear()
+        ..addAll(next);
+    });
+  }
+
   @override
   void dispose() {
     _filterNameCtrl.dispose();
@@ -160,32 +193,44 @@ class _InvoicePageState extends State<InvoicePage> {
       title: 'Invoices',
       body: Padding(
         padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 8),
-            Text(
-              'Invoice List',
-              style: Theme.of(
-                context,
-              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 12),
-            _filters(),
-            const SizedBox(height: 16),
-            Expanded(child: _invoiceTable()),
-            const SizedBox(height: 16),
-            _combinedPaymentBar(),
-            const SizedBox(height: 16),
-            _detailsSection(),
-            const SizedBox(height: 12),
-            Center(
-              child: Text(
-                '© 2025 | Fitri Dwi Astuti.',
-                style: TextStyle(color: Colors.grey.shade700),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // Gunakan scroll vertikal agar konten panjang tidak overflow.
+            // Tabel invoice punya scroll internal sehingga aman.
+            final tableHeight = (constraints.maxHeight * 0.5).clamp(320.0, 560.0);
+            return SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 8),
+                  Text(
+                    'Invoice List',
+                    style: Theme.of(
+                      context,
+                    ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 12),
+                  _filters(),
+                  const SizedBox(height: 16),
+                  SizedBox(height: tableHeight, child: _invoiceTable()),
+                  const SizedBox(height: 16),
+                  if (_paymentMode == PaymentMode.combined && _selectedInvoiceIds.isNotEmpty)
+                    _combinedDetailsSection(),
+                  const SizedBox(height: 16),
+                  _detailsSection(),
+                  const SizedBox(height: 16),
+                  _combinedPaymentBar(),
+                  const SizedBox(height: 12),
+                  Center(
+                    child: Text(
+                      '© 2025 | Fitri Dwi Astuti.',
+                      style: TextStyle(color: Colors.grey.shade700),
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
+            );
+          },
         ),
       ),
     );
@@ -197,65 +242,112 @@ class _InvoicePageState extends State<InvoicePage> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       child: Padding(
         padding: const EdgeInsets.all(12),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Nama Pembayar (contoh: Pemain A)'),
-                  const SizedBox(height: 6),
-                  SizedBox(
-                    height: 42,
-                    child: TextField(
-                      controller: _payerCtrl,
-                      decoration: const InputDecoration(hintText: 'Masukkan nama pembayar...'),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  const Text('Mode Pembayaran'),
-                  const SizedBox(height: 6),
-                  Wrap(
-                    spacing: 8,
-                    children: [
-                      ChoiceChip(
-                        label: const Text('Gabungan'),
-                        selected: _paymentMode == PaymentMode.combined,
-                        onSelected: (sel) {
-                          if (sel) {
-                            setState(() {
-                              _paymentMode = PaymentMode.combined;
-                            });
-                          }
-                        },
-                      ),
-                      ChoiceChip(
-                        label: const Text('Individu'),
-                        selected: _paymentMode == PaymentMode.individual,
-                        onSelected: (sel) {
-                          if (sel) {
-                            setState(() {
-                              _paymentMode = PaymentMode.individual;
-                              _selectedInvoiceIds.clear();
-                            });
-                          }
-                        },
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
+            const Text('Nama Pembayar (contoh: Pemain A)'),
+            const SizedBox(height: 6),
             SizedBox(
               height: 42,
-              child: _paymentMode == PaymentMode.combined
-                  ? ElevatedButton(
-                      onPressed: _handleCombinedPayment,
-                      child: const Text('Terima Pembayaran Gabungan'),
-                    )
-                  : const SizedBox.shrink(),
+              child: TextField(
+                controller: _payerCtrl,
+                decoration: const InputDecoration(hintText: 'Masukkan nama pembayar...'),
+              ),
             ),
+            const SizedBox(height: 12),
+            const Text('Mode Pembayaran'),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 8,
+              children: [
+                ChoiceChip(
+                  label: const Text('Gabungan'),
+                  selected: _paymentMode == PaymentMode.combined,
+                  onSelected: (sel) {
+                    if (sel) {
+                      setState(() {
+                        _paymentMode = PaymentMode.combined;
+                      });
+                    }
+                  },
+                ),
+                ChoiceChip(
+                  label: const Text('Individu'),
+                  selected: _paymentMode == PaymentMode.individual,
+                  onSelected: (sel) {
+                    if (sel) {
+                      setState(() {
+                        _paymentMode = PaymentMode.individual;
+                        _selectedInvoiceIds.clear();
+                        _combinedSelectedItems.clear();
+                      });
+                    }
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            const Text('Metode Pembayaran'),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              children: [
+                ChoiceChip(
+                  label: const Text('Cash'),
+                  selected: _paymentMethod == 'cash',
+                  onSelected: (sel) {
+                    if (sel) setState(() => _paymentMethod = 'cash');
+                  },
+                ),
+                ChoiceChip(
+                  label: const Text('Kartu Kredit'),
+                  selected: _paymentMethod == 'credit',
+                  onSelected: (sel) {
+                    if (sel) setState(() => _paymentMethod = 'credit');
+                  },
+                ),
+                ChoiceChip(
+                  label: const Text('Debit'),
+                  selected: _paymentMethod == 'debit',
+                  onSelected: (sel) {
+                    if (sel) setState(() => _paymentMethod = 'debit');
+                  },
+                ),
+                ChoiceChip(
+                  label: const Text('QRIS'),
+                  selected: _paymentMethod == 'qris',
+                  onSelected: (sel) {
+                    if (sel) setState(() => _paymentMethod = 'qris');
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            if (_paymentMode == PaymentMode.combined)
+              SizedBox(
+                height: 42,
+                child: ElevatedButton(
+                  onPressed: _handleCombinedPayment,
+                  child: const Text('Terima Pembayaran Gabungan'),
+                ),
+              )
+            else
+              SizedBox(
+                height: 42,
+                child: ElevatedButton(
+                  onPressed: () async {
+                    if (_selectedInvoice == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Pilih invoice terlebih dahulu (klik ID/Nama/Tanggal)')),
+                      );
+                      return;
+                    }
+                    await _handleIndividualPayment(_selectedInvoice!);
+                  },
+                  child: const Text('Bayar Invoice Terpilih'),
+                ),
+              ),
           ],
         ),
       ),
@@ -306,7 +398,7 @@ class _InvoicePageState extends State<InvoicePage> {
       return;
     }
     final payer = _payerCtrl.text.trim().isEmpty ? 'Unknown Payer' : _payerCtrl.text.trim();
-    await _repo.createCombinedPayment(payer: payer, allocations: allocations, method: 'cash');
+    await _repo.createCombinedPayment(payer: payer, allocations: allocations, method: _paymentMethod);
     if (!mounted) return;
     setState(() {
       _selectedInvoiceIds.clear();
@@ -352,7 +444,7 @@ class _InvoicePageState extends State<InvoicePage> {
     await _repo.createCombinedPayment(
       payer: payer,
       allocations: [PaymentAllocationInput(invoiceId: id, amount: amount)],
-      method: 'cash',
+      method: _paymentMethod,
     );
     if (!mounted) return;
     await _load();
@@ -451,14 +543,15 @@ class _InvoicePageState extends State<InvoicePage> {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final table = Table(
+            // Gunakan FlexColumnWidth agar tabel mengisi lebar kontainer tanpa perlu scroll horizontal
             columnWidths: const {
-              0: FixedColumnWidth(60), // select
-              1: FixedColumnWidth(140), // invoice id
-              2: FixedColumnWidth(220), // customer name
-              3: FixedColumnWidth(180), // total
-              4: FixedColumnWidth(220), // bayar (input + tombol)
-              5: FixedColumnWidth(160), // status
-              6: FixedColumnWidth(200), // date
+              0: FixedColumnWidth(56), // select
+              1: FlexColumnWidth(1), // invoice id
+              2: FlexColumnWidth(2), // customer name
+              3: FlexColumnWidth(1.4), // total
+              4: FlexColumnWidth(1.6), // bayar (input)
+              5: FlexColumnWidth(1), // status
+              6: FlexColumnWidth(1.2), // date
             },
             border: TableBorder.all(color: Theme.of(context).colorScheme.outline),
             children: [
@@ -475,16 +568,13 @@ class _InvoicePageState extends State<InvoicePage> {
             ],
           );
 
-          // Scroll vertikal & horizontal untuk mencegah overflow
+          // Hanya scroll vertikal; lebar tabel mengikuti lebar kontainer
           return Scrollbar(
             child: SingleChildScrollView(
               scrollDirection: Axis.vertical,
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(minWidth: constraints.maxWidth),
-                  child: table,
-                ),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                child: table,
               ),
             ),
           );
@@ -521,18 +611,34 @@ class _InvoicePageState extends State<InvoicePage> {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           child: Checkbox(
             value: _selectedInvoiceIds.contains(int.parse(inv.id)),
-            onChanged: _paymentMode == PaymentMode.combined
-                ? (val) {
-                    setState(() {
-                      final id = int.parse(inv.id);
-                      if (val == true) {
-                        _selectedInvoiceIds.add(id);
-                      } else {
-                        _selectedInvoiceIds.remove(id);
-                      }
-                    });
+            onChanged: (val) async {
+              final id = int.parse(inv.id);
+              if (_paymentMode == PaymentMode.combined) {
+                setState(() {
+                  if (val == true) {
+                    _selectedInvoiceIds.add(id);
+                  } else {
+                    _selectedInvoiceIds.remove(id);
+                    _combinedSelectedItems.remove(id);
                   }
-                : null,
+                });
+                await _loadCombinedDetails();
+              } else {
+                // Mode individu: pilih satu invoice via checkbox
+                setState(() {
+                  if (val == true) {
+                    _selectedInvoiceIds
+                      ..clear()
+                      ..add(id);
+                  } else {
+                    _selectedInvoiceIds.remove(id);
+                  }
+                });
+                if (val == true) {
+                  await _viewDetails(inv);
+                }
+              }
+            },
           ),
         ),
         // Invoice ID (clickable)
@@ -571,42 +677,23 @@ class _InvoicePageState extends State<InvoicePage> {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           child: SizedBox(
             height: 36,
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: amountCtrl,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      hintText: 'Sisa: ${Formatters.idr(inv.outstanding)}',
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-                    ),
-                    onChanged: (v) {
-                      final digits = v.replaceAll(RegExp(r'[^0-9]'), '');
-                      if (digits != v) {
-                        amountCtrl.value = TextEditingValue(
-                          text: digits,
-                          selection: TextSelection.collapsed(offset: digits.length),
-                        );
-                      }
-                    },
-                  ),
-                ),
-                const SizedBox(width: 8),
-                SizedBox(
-                  height: 36,
-                  child: FilledButton.tonal(
-                    onPressed: inv.outstanding <= 0 ? null : () => _handleIndividualPayment(inv),
-                    style: FilledButton.styleFrom(
-                      minimumSize: const Size(68, 36),
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                    ),
-                    child: const Text('Bayar'),
-                  ),
-                ),
-              ],
+            child: TextField(
+              controller: amountCtrl,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                hintText: 'Sisa: ${Formatters.idr(inv.outstanding)}',
+                contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+              ),
+              onChanged: (v) {
+                final digits = v.replaceAll(RegExp(r'[^0-9]'), '');
+                if (digits != v) {
+                  amountCtrl.value = TextEditingValue(
+                    text: digits,
+                    selection: TextSelection.collapsed(offset: digits.length),
+                  );
+                }
+              },
+              onTap: () => _viewDetails(inv),
             ),
           ),
         ),
@@ -620,7 +707,10 @@ class _InvoicePageState extends State<InvoicePage> {
           onTap: () => _viewDetails(inv),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: Text(_formatDate(inv.date)),
+            child: Text(
+              _formatDate(inv.date),
+              softWrap: true,
+            ),
           ),
         ),
 
@@ -774,6 +864,120 @@ class _InvoicePageState extends State<InvoicePage> {
     );
   }
 
+  // Menampilkan detail untuk semua invoice yang dipilih saat mode gabungan
+  Widget _combinedDetailsSection() {
+    final ids = _selectedInvoiceIds.toList();
+    if (ids.isEmpty) return const SizedBox.shrink();
+
+    Widget buildItemsTable(List<InvoiceLine> items) {
+      final total = items.fold<double>(0.0, (s, e) => s + e.qty * e.price);
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          final table = Table(
+            columnWidths: const {
+              0: FixedColumnWidth(220),
+              1: FixedColumnWidth(80),
+              2: FixedColumnWidth(160),
+              3: FixedColumnWidth(180),
+            },
+            border: TableBorder.all(color: Theme.of(context).colorScheme.outline),
+            children: [
+              _headerRow(['Item', 'Qty', 'Price', 'Subtotal']),
+              ...items.map(
+                (it) => TableRow(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      child: Text(it.name),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      child: Text('${it.qty}'),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      child: Text(Formatters.idr(it.price)),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      child: Text(Formatters.idr(it.price * it.qty)),
+                    ),
+                  ],
+                ),
+              ),
+              TableRow(
+                children: [
+                  const SizedBox.shrink(),
+                  const SizedBox.shrink(),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    child: Text('Total', style: TextStyle(fontWeight: FontWeight.w700)),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    child: Text(
+                      Formatters.idr(total),
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          );
+          return Scrollbar(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                child: table,
+              ),
+            ),
+          );
+        },
+      );
+    }
+
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Detail Invoice (Gabungan)',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 8),
+            ...ids.map((id) {
+              final inv = _invoices.firstWhere(
+                (e) => int.tryParse(e.id) == id,
+                orElse: () => _selectedInvoice ?? _invoices.first,
+              );
+              final items = _combinedSelectedItems[id] ?? const <InvoiceLine>[];
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Invoice #${inv.id} - ${inv.customer}',
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    Text('Tanggal: ${_formatDate(inv.date)}'),
+                    const SizedBox(height: 8),
+                    buildItemsTable(items),
+                  ],
+                ),
+              );
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<bool> _confirmIndividualPayment({required InvoiceItem inv, required double amount, required String payer}) async {
     return await showDialog<bool>(
           context: context,
@@ -791,7 +995,7 @@ class _InvoicePageState extends State<InvoicePage> {
                   Text('Sisa Tagihan Setelah Bayar: ${Formatters.idr((inv.outstanding - amount).clamp(0.0, double.infinity))}'),
                   const SizedBox(height: 8),
                   Text('Pembayar: $payer'),
-                  const Text('Metode: Tunai'),
+                  Text('Metode: ${_methodLabels[_paymentMethod] ?? _paymentMethod}'),
                 ],
               ),
               actions: [

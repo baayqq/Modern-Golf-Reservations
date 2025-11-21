@@ -22,6 +22,7 @@ class TeeTimeRepository {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         date TEXT NOT NULL,
         time TEXT NOT NULL,
+        teeBox INTEGER,
         playerName TEXT,
         player2Name TEXT,
         player3Name TEXT,
@@ -34,6 +35,9 @@ class TeeTimeRepository {
     // Index to speed up per-day queries
     await _db!.execute(
       'CREATE INDEX IF NOT EXISTS idx_tee_times_date ON tee_times(date);',
+    );
+    await _db!.execute(
+      'CREATE INDEX IF NOT EXISTS idx_tee_times_date_box ON tee_times(date, teeBox);',
     );
   }
 
@@ -55,6 +59,9 @@ class TeeTimeRepository {
     if (!names.contains('player4Name')) {
       await _db!.execute("ALTER TABLE tee_times ADD COLUMN player4Name TEXT");
     }
+    if (!names.contains('teeBox')) {
+      await _db!.execute("ALTER TABLE tee_times ADD COLUMN teeBox INTEGER");
+    }
   }
 
   Future<void> _seedIfEmpty() async {
@@ -65,7 +72,7 @@ class TeeTimeRepository {
     final now = DateTime.now();
     final start = DateTime(now.year, now.month, now.day);
     final daysToSeed = 21; // 3 weeks of sample data
-    final times = <String>['06:30','07:30','08:30','09:30','10:30','11:30','12:30','13:30','14:30','15:30','16:30'];
+    final times = TeeTimeRepository.standardSlotTimes();
 
     final batch = _db!.batch();
     for (var d = 0; d < daysToSeed; d++) {
@@ -73,17 +80,31 @@ class TeeTimeRepository {
       final dayIso = _iso(day);
       for (var i = 0; i < times.length; i++) {
         final time = times[i];
-        // deterministic demo: mark some slots booked
-        final booked = ((d + i) % 5 == 0); // approx 20% booked
+        // Demo seed: start ALL slots as available for BOTH tee boxes.
+        // This ensures when user books Tee Box 1, only that box becomes reserved.
         batch.insert(
           'tee_times',
           {
             'date': dayIso,
             'time': time,
-            'playerName': booked ? 'Demo Player ${d + 1}' : null,
-            'playerCount': booked ? 1 : null,
-            'notes': null,
-            'status': booked ? 'booked' : 'available',
+            'teeBox': 1,
+            'playerName': null,
+            'playerCount': null,
+            'notes': 'Tee Box 1',
+            'status': 'available',
+          },
+          conflictAlgorithm: ConflictAlgorithm.ignore,
+        );
+        batch.insert(
+          'tee_times',
+          {
+            'date': dayIso,
+            'time': time,
+            'teeBox': 10,
+            'playerName': null,
+            'playerCount': null,
+            'notes': 'Tee Box 10',
+            'status': 'available',
           },
           conflictAlgorithm: ConflictAlgorithm.ignore,
         );
@@ -182,6 +203,7 @@ class TeeTimeRepository {
       {
         'date': _iso(model.date),
         'time': model.time,
+        'teeBox': model.teeBox,
         'playerName': model.playerName,
         'player2Name': model.player2Name,
         'player3Name': model.player3Name,
@@ -203,6 +225,7 @@ class TeeTimeRepository {
   Future<void> createOrBookSlot({
     required DateTime date,
     required String time,
+    required int teeBox,
     required String playerName,
     required int playerCount,
     String? player2Name,
@@ -213,8 +236,8 @@ class TeeTimeRepository {
     // Check if a row exists for this date+time
     final rows = await _db!.query(
       'tee_times',
-      where: 'date = ? AND time = ?',
-      whereArgs: [_iso(date), time],
+      where: 'date = ? AND time = ? AND teeBox = ?',
+      whereArgs: [_iso(date), time, teeBox],
       limit: 1,
     );
     if (rows.isNotEmpty) {
@@ -239,6 +262,7 @@ class TeeTimeRepository {
       await _db!.insert('tee_times', {
         'date': _iso(date),
         'time': time,
+        'teeBox': teeBox,
         'playerName': playerName,
         'player2Name': player2Name,
         'player3Name': player3Name,
@@ -318,5 +342,30 @@ class TeeTimeRepository {
     final start = DateTime(now.year, now.month, 1);
     final end = DateTime(now.year, now.month + 1, 1);
     return countPlayersInRange(start, end);
+  }
+
+  // ---- Standard slot time helpers (shared by UI pages) ----
+  /// Returns standard tee time slots in Indonesian HH:mm format.
+  /// Applies 10-minute intervals with a break between 08:30 and 11:30.
+  /// Ranges: 07:00–08:30 and 11:30–14:00.
+  static List<String> standardSlotTimes() {
+    List<String> buildRange(int sh, int sm, int eh, int em) {
+      final start = DateTime(2000, 1, 1, sh, sm);
+      final end = DateTime(2000, 1, 1, eh, em);
+      final out = <String>[];
+      var t = start;
+      while (!t.isAfter(end)) {
+        final hh = t.hour.toString().padLeft(2, '0');
+        final mm = t.minute.toString().padLeft(2, '0');
+        out.add('$hh:$mm');
+        t = t.add(const Duration(minutes: 10));
+      }
+      return out;
+    }
+
+    return [
+      ...buildRange(7, 0, 8, 30),
+      ...buildRange(11, 30, 14, 0),
+    ];
   }
 }

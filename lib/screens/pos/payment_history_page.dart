@@ -212,8 +212,12 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
                       value: _methodFilter,
                       items: const [
                         DropdownMenuItem(value: 'cash', child: Text('Cash')),
-                        DropdownMenuItem(value: 'card', child: Text('Card')),
-                        DropdownMenuItem(value: 'transfer', child: Text('Transfer')),
+                        DropdownMenuItem(value: 'credit', child: Text('Kartu Kredit')),
+                        DropdownMenuItem(value: 'debit', child: Text('Debit')),
+                        DropdownMenuItem(value: 'qris', child: Text('QRIS')),
+                        // Legacy values for backward compatibility
+                        DropdownMenuItem(value: 'card', child: Text('Card (Legacy)')),
+                        DropdownMenuItem(value: 'transfer', child: Text('Transfer (Legacy)')),
                       ],
                       onChanged: (v) => setState(() => _methodFilter = v),
                       decoration: const InputDecoration(hintText: 'Pilih metode'),
