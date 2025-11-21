@@ -1,6 +1,11 @@
+// Screen: Payment History page
+// Tampilkan daftar pembayaran dan alokasinya.
+// Menambahkan tombol Print untuk mencetak kwitansi pembayaran sebagai PDF.
 import 'package:flutter/material.dart';
 import '../../app_scaffold.dart';
 import '../../services/invoice_repository.dart';
+import 'package:printing/printing.dart';
+import '../../services/payment_pdf.dart' as paypdf;
 import 'package:modern_golf_reservations/utils/currency.dart';
 
 class PaymentHistoryPage extends StatefulWidget {
@@ -377,6 +382,11 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
                 onPressed: () => _viewAllocations(p),
                 child: const Text('View Detail'),
               ),
+              const SizedBox(width: 8),
+              FilledButton.tonal(
+                onPressed: () => _printPayment(p),
+                child: const Text('Print'),
+              ),
             ],
           ),
         ),
@@ -499,6 +509,64 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
   }
 
   String _two(int n) => n.toString().padLeft(2, '0');
+
+  Future<void> _printPayment(PaymentRecord p) async {
+    // Pastikan data allocasi tersedia untuk payment ini.
+    List<AllocationRecord> allocs = _allocations;
+    if (_selectedPayment == null || _selectedPayment!.id != p.id) {
+      final rows = await _repo.getAllocationsForPayment(p.id);
+      allocs = rows.map((e) {
+        final id = (e['id'] as int?) ?? (e['id'] as num).toInt();
+        final invoiceId =
+            (e['invoiceId'] as int?) ?? (e['invoiceId'] as num).toInt();
+        final amount = (e['amount'] is num)
+            ? (e['amount'] as num).toDouble()
+            : (e['amount'] as double? ?? 0.0);
+        final customer = (e['customer'] as String?) ?? 'Walk-in';
+        final total = (e['total'] is num)
+            ? (e['total'] as num).toDouble()
+            : (e['total'] as double? ?? 0.0);
+        final status = (e['status'] as String?) ?? 'unpaid';
+        return AllocationRecord(
+          id: id,
+          invoiceId: invoiceId,
+          amount: amount,
+          customer: customer,
+          invoiceTotal: total,
+          status: status,
+        );
+      }).toList();
+    }
+
+    // Konversi ke struktur service untuk PDF.
+    final pdfAllocations = allocs
+        .map((a) => paypdf.PaymentAllocation(
+              invoiceId: a.invoiceId,
+              customer: a.customer,
+              amount: a.amount,
+              invoiceTotal: a.invoiceTotal,
+              status: a.status,
+            ))
+        .toList();
+
+    // Cetak PDF tanpa memblok UI; tangani error secara non-blocking.
+    Printing.layoutPdf(
+      onLayout: (format) => paypdf.generatePaymentPdf(
+        paymentId: p.id,
+        date: p.date,
+        payer: p.payer,
+        method: p.method ?? '-',
+        amount: p.amount,
+        allocations: pdfAllocations,
+      ),
+    ).catchError((Object e) {
+      if (!mounted) return false;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal membuka dialog print: $e')),
+      );
+      return false;
+    });
+  }
 }
 
 class PaymentRecord {
