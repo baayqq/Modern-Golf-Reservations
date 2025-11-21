@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Penjelasan Website Modern Golf Reservations</title>
+  <style>
+    :root {
+      --text: #212529;
+      --primary: #198754; /* hijau */
+      --accent: #0f5132;  /* hijau gelap */
+    }
+    html, body { height: 100%; }
+    body {
+      margin: 0; padding: 24px; color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+        Ubuntu, Cantarell, 'Helvetica Neue', Arial, 'Noto Sans', 'Apple Color Emoji',
+        'Segoe UI Emoji', 'Segoe UI Symbol';
+      line-height: 1.6;
+      background: #f8f9fa;
+    }
+    .container { max-width: 960px; margin: 0 auto; background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+    .content { padding: 24px; }
+    h1 { margin: 0; font-size: 28px; color: var(--accent); }
+    h2 { margin-top: 24px; color: var(--accent); font-size: 20px; }
+    hr { border: none; border-top: 1px solid #dee2e6; margin: 16px 0; }
+    ul, ol { margin-top: 8px; }
+    .header { padding: 20px 24px; border-bottom: 1px solid #e9ecef; background: #eaf6ef; border-radius: 12px 12px 0 0; }
+    .muted { color: #6c757d; font-size: 13px; }
+    .print-btn { position: fixed; right: 24px; bottom: 24px; background: var(--primary); color: #fff; border: none; border-radius: 10px; padding: 12px 16px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.15); }
+    .print-btn:hover { filter: brightness(1.05); }
+    @media print { .print-btn { display: none; } .container { box-shadow: none; } body { background: #fff; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Penjelasan Website Modern Golf Reservations</h1>
+      <div class="muted">Ringkasan cara kerja sistem (alur, fitur, kelebihan, kekurangan)</div>
+    </div>
+    <div class="content">
+
+      <h2>Gambaran Umum</h2>
+      <ul>
+        <li>Sistem reservasi golf dengan modul POS (Point of Sale) untuk penagihan dan pembayaran.</li>
+        <li>Dibangun dengan Flutter, sehingga dapat berjalan di Web, Desktop, dan Mobile.</li>
+        <li>Menyimpan data invoice dan pembayaran secara lokal (SQLite/WebAssembly), cepat dan dapat bekerja tanpa server.</li>
+      </ul>
+
+      <h2>Alur Kerja Utama</h2>
+      <ol>
+        <li><strong>Login & Navigasi</strong>: Masuk ke sistem, akses Dashboard, Tee Time Reservation, dan POS.</li>
+        <li><strong>Invoices (POS)</strong>:
+          <ul>
+            <li>Filter berdasar tanggal dan nama pemain.</li>
+            <li>Mode pembayaran <em>Gabungan</em> (beberapa invoice sekaligus) atau <em>Individu</em> (satu invoice).</li>
+            <li>Nama Pembayar sebagai identitas transaksi.</li>
+            <li>Kolom “Bayar (Rp)” berisi input nominal + tombol “Bayar”.</li>
+            <li>Panel detail invoice menampilkan item transaksi dan tombol “Export to PDF”.</li>
+          </ul>
+        </li>
+        <li><strong>Payment History</strong>: Riwayat transaksi beserta alokasi pembayaran ke masing-masing invoice.</li>
+        <li><strong>Tee Time Reservation</strong>: Mengelola jadwal tee time dan menghasilkan invoice untuk POS.</li>
+        <li><strong>Dashboard</strong>: Ringkasan operasional (booking, tagihan, pembayaran).</li>
+      </ol>
+
+      <h2>Cara Kerja di Balik Layar (Ringkas)</h2>
+      <ul>
+        <li><strong>Tabel data</strong>: <code>invoices</code>, <code>payments</code>, <code>payment_allocations</code>.</li>
+        <li><strong>Status</strong>: <em>unpaid</em>, <em>partial</em>, <em>paid</em> dihitung dari total vs jumlah pembayaran teralokasi.</li>
+        <li><strong>Validasi</strong>: Nominal hanya angka, tidak boleh melebihi sisa, tombol “Bayar” nonaktif jika sudah lunas.</li>
+      </ul>
+
+      <h2>Fitur Utama</h2>
+      <ul>
+        <li>Filter invoice, mode Gabungan & Individu, nama pembayar global.</li>
+        <li>Pembayaran per invoice dengan dialog konfirmasi.</li>
+        <li>Alokasi pembayaran otomatis ke invoice (Gabungan).</li>
+        <li>Status tagihan realtime (unpaid/partial/paid).</li>
+        <li>Detail invoice + Export ke PDF.</li>
+        <li>Riwayat pembayaran dengan alokasi.</li>
+      </ul>
+
+      <h2>Kelebihan</h2>
+      <ul>
+        <li>Alur pembayaran jelas, mendukung skenario lapangan (cepat untuk individu, ringkas untuk gabungan).</li>
+        <li>Audit trail rapi melalui alokasi pembayaran.</li>
+        <li>UX ringkas: tombol “Bayar” di kolom nominal, Export PDF di detail.</li>
+        <li>Performa baik dengan penyimpanan lokal; cross-platform via Flutter.</li>
+      </ul>
+
+      <h2>Kekurangan</h2>
+      <ul>
+        <li>Belum ada sinkronisasi multi-user atau backend terpusat.</li>
+        <li>Metode pembayaran terbatas (default Tunai).</li>
+        <li>Belum ada struk digital otomatis (email/WhatsApp).</li>
+        <li>Belum ada refund/void & laporan keuangan mendalam.</li>
+        <li>Skalabilitas tabel: perlu pagination/infinite scroll untuk data besar.</li>
+      </ul>
+
+      <h2>Saran Pengembangan</h2>
+      <ul>
+        <li>Tambah pilihan metode pembayaran (Transfer/QRIS/EDC) pada dialog konfirmasi.</li>
+        <li>Pagination/infinite scroll untuk daftar invoice.</li>
+        <li>Sinkronisasi multi-user (backend API + role-based auth).</li>
+        <li>Struk digital & notifikasi otomatis.</li>
+        <li>Refund/void dan laporan harian/per kasir/per metode bayar.</li>
+      </ul>
+
+      <hr />
+      <p><strong>Simpan sebagai PDF:</strong> klik tombol di kanan bawah atau tekan <kbd>Ctrl</kbd>+<kbd>P</kbd>, lalu pilih "Save as PDF".</p>
+    </div>
+  </div>
+
+  <button class="print-btn" onclick="window.print()">Cetak sebagai PDF</button>
+</body>
+</html>

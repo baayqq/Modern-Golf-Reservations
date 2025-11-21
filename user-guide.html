@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Modern Golf Reservations — Panduan Pengguna</title>
+    <style>
+      :root {
+        --brand: #1b5e20; /* hijau utama */
+        --brand-light: #2e7d32;
+        --bg: #f1f8e9; /* hijau sangat muda */
+        --text: #1f2937;
+        --muted: #6b7280;
+        --border: #cbd5e1;
+      }
+      html, body { margin: 0; padding: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji"; color: var(--text); background: var(--bg); }
+      header { background: var(--brand); color: #fff; padding: 20px; }
+      header h1 { margin: 0 0 4px; font-size: 22px; }
+      header p { margin: 0; font-size: 14px; opacity: 0.9; }
+      main { max-width: 940px; margin: 24px auto; padding: 0 16px; }
+      nav.toc { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; }
+      nav.toc h2 { font-size: 16px; margin: 0 0 8px; }
+      nav.toc ul { margin: 0; padding-left: 16px; }
+      nav.toc li { margin: 6px 0; }
+      section { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-top: 16px; }
+      section h2 { margin-top: 0; font-size: 18px; color: var(--brand-light); }
+      section h3 { font-size: 16px; margin-bottom: 4px; }
+      .muted { color: var(--muted); }
+      .kbd { background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 4px; padding: 1px 4px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+      .note { background: #fef9c3; border: 1px solid #fde68a; padding: 10px; border-radius: 6px; }
+      footer { text-align: center; padding: 24px 0; color: var(--muted); }
+      a { color: var(--brand-light); text-decoration: none; }
+      a:hover { text-decoration: underline; }
+      ul { line-height: 1.6; }
+      ol { line-height: 1.6; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Modern Golf Reservations</h1>
+      <p>Panduan Pengguna — fitur, alur, dan cara penggunaan aplikasi</p>
+    </header>
+    <main>
+      <nav class="toc">
+        <h2>Daftar Isi</h2>
+        <ul>
+          <li><a href="#ringkasan">Ringkasan Aplikasi</a></li>
+          <li><a href="#fitur">Fitur Utama</a></li>
+          <li><a href="#alur">Alur Penggunaan (Step by Step)</a></li>
+          <li><a href="#detail-form">Detail Form Tee Time</a></li>
+          <li><a href="#dashboard">Dashboard & Daftar Pemain</a></li>
+          <li><a href="#manage-reservation">Manage Reservation</a></li>
+          <li><a href="#pos">POS/Invoice</a></li>
+          <li><a href="#tips">Tips & Troubleshooting</a></li>
+          <li><a href="#faq">FAQ</a></li>
+          <li><a href="#teknis">Catatan Teknis</a></li>
+        </ul>
+      </nav>
+
+      <section id="ringkasan">
+        <h2>Ringkasan Aplikasi</h2>
+        <p>Modern Golf Reservations adalah aplikasi berbasis web untuk mengelola reservasi <em>tee time</em> dan pembayaran di lapangan golf. Aplikasi dirancang sederhana, responsif, dan mudah digunakan untuk kebutuhan operasional harian.</p>
+        <ul>
+          <li>Antarmuka: <strong>Dashboard</strong>, <strong>Tee Time Reservation</strong> (Create & Manage), <strong>Manage POS</strong>, dan <strong>Profile</strong>.</li>
+          <li>Data disimpan lokal melalui SQLite (web menggunakan <span class="kbd">sqlite3.wasm</span>).</li>
+          <li>Form reservasi mendukung hingga <strong>4 pemain</strong> dengan ketua sewa sebagai pemain pertama.</li>
+          <li>Tampilan daftar pemain ditunjukkan di Dashboard dengan tabel bertepi kotak rapi.</li>
+        </ul>
+      </section>
+
+      <section id="fitur">
+        <h2>Fitur Utama</h2>
+        <h3>1) Login</h3>
+        <ul>
+          <li>Autentikasi sederhana untuk mengakses fitur reservasi dan POS.</li>
+          <li>Menyimpan sesi pengguna agar tetap masuk hingga logout.</li>
+        </ul>
+        <h3>2) Tee Time Reservation — Create</h3>
+        <ul>
+          <li>Membuat reservasi dengan tanggal, jam mulai, jumlah pemain (dropdown 1–4), dan nama pemain 1–4.</li>
+          <li>Validasi otomatis: jumlah pemain maksimal 4; nama pemain 2–4 wajib diisi bila jumlah ≥ 2/3/4.</li>
+          <li>Catatan opsional untuk detail tambahan.</li>
+        </ul>
+        <h3>3) Tee Time Reservation — Manage Reservation</h3>
+        <ul>
+          <li>Meninjau, mengedit, atau membatalkan reservasi yang sudah dibuat.</li>
+          <li><strong>Gerbang pembayaran</strong>: dari sini, Anda dapat melanjutkan ke POS untuk membuat invoice dan mencatat pembayaran.</li>
+        </ul>
+        <h3>4) Dashboard</h3>
+        <ul>
+          <li>Melihat daftar reservasi terbaru dengan tabel bergaris (<em>boxed grid</em>).</li>
+          <li>Menampilkan <strong>Nama Pemain 1–4</strong> per reservasi.</li>
+        </ul>
+        <h3>5) Manage POS (Invoice)</h3>
+        <ul>
+          <li>Membuat invoice terkait reservasi dan mencatat pembayaran (diakses dari Manage Reservation).</li>
+          <li>Biaya mengacu pada konfigurasi di <span class="kbd">lib/config/fees.dart</span> (mis. green fee, cart, caddie, dll).</li>
+        </ul>
+      </section>
+
+      <section id="alur">
+        <h2>Alur Penggunaan (Step by Step)</h2>
+        <h3>A. Login</h3>
+        <ol>
+          <li>Buka aplikasi web Modern Golf Reservations.</li>
+          <li>Masukkan kredensial (username dan password) pada halaman Login.</li>
+          <li>Klik <strong>Login</strong>. Jika berhasil, Anda akan dibawa ke Dashboard.</li>
+        </ol>
+
+        <h3>B. Membuat Pesanan (Create Tee Time)</h3>
+        <ol>
+          <li>Buka menu <strong>Tee Time Reservation</strong> kemudian pilih <strong>Create</strong>.</li>
+          <li>Pilih <strong>Tanggal</strong> menggunakan pemilih tanggal.</li>
+          <li>Pilih <strong>Jam Mulai</strong> menggunakan pemilih waktu.</li>
+          <li>Pilih <strong>Jumlah Pemain</strong> dari dropdown (1–4). Jumlah ini menentukan wajib/tidaknya kolom nama pemain 2–4.</li>
+          <li>Isi <strong>Nama Pemain 1 (Ketua Sewa)</strong>. Wajib diisi.</li>
+          <li>Jika jumlah pemain ≥ 2, isi <strong>Nama Pemain 2</strong>. Demikian pula untuk pemain 3 dan 4 bila jumlah ≥ 3/4.</li>
+          <li>Isi <strong>Catatan</strong> bila diperlukan (opsional).</li>
+          <li>Klik <strong>Save</strong>. Jika valid, reservasi tersimpan dan aplikasi akan kembali ke kalender booking dengan tanggal yang dipilih.</li>
+        </ol>
+        <div class="note">
+          <strong>Catatan:</strong> Jika ada kesalahan (mis. jumlah pemain di luar 1–4 atau nama pemain kurang), sistem menampilkan pesan validasi yang jelas.
+        </div>
+
+        <h3>C. Kelola Reservasi (Manage Reservation)</h3>
+        <ol>
+          <li>Buka menu <strong>Tee Time Reservation</strong> lalu pilih <strong>Manage</strong> (kelola reservasi).</li>
+          <li>Cari reservasi yang ingin diproses. Anda bisa meninjau detail, mengubah, atau membatalkan jika diperlukan.</li>
+          <li>Untuk melakukan pembayaran, pilih aksi <strong>Proses Pembayaran / Buat Invoice</strong>. Sistem akan mengarahkan Anda ke <strong>POS/Invoice</strong>.</li>
+        </ol>
+
+        <h3>D. Pembayaran melalui POS/Invoice (via Manage Reservation)</h3>
+        <ol>
+          <li>Dari halaman <strong>Manage Reservation</strong>, Anda akan diarahkan ke <strong>Manage POS</strong> untuk reservasi yang dipilih.</li>
+          <li>Buat <strong>invoice</strong> dengan menambahkan item biaya sesuai konfigurasi <span class="kbd">fees.dart</span> (green fee, cart, caddie, dll).</li>
+          <li>Setel <strong>qty</strong> mengikuti jumlah pemain pada reservasi.</li>
+          <li>Simpan invoice, lalu pilih <strong>Bayar</strong> untuk mencatat pembayaran. Pilih metode pembayaran yang tersedia (tunai, transfer, dsb sesuai kebutuhan aplikasi).</li>
+          <li>Setelah pembayaran dicatat, status invoice berubah menjadi <strong>Lunas</strong>. Simpan atau cetak invoice bila diperlukan.</li>
+        </ol>
+      </section>
+
+      <section id="detail-form">
+        <h2>Detail Form Tee Time</h2>
+        <ul>
+          <li><strong>Tanggal</strong>: format dd/mm/yyyy, dipilih via <em>DatePicker</em>.</li>
+          <li><strong>Jam Mulai</strong>: format HH:mm (24 jam), dipilih via <em>TimePicker</em>.</li>
+          <li><strong>Jumlah Pemain</strong>: dropdown 1–4.</li>
+          <li><strong>Nama Pemain 1 (Ketua Sewa)</strong>: wajib diisi.</li>
+          <li><strong>Nama Pemain 2–4</strong>: wajib bila jumlah pemain ≥ 2/3/4.</li>
+          <li><strong>Catatan</strong>: opsional.</li>
+        </ul>
+        <p class="muted">Validasi dilakukan sebelum simpan: jumlah maksimal 4, serta nama pemain yang diperlukan harus terisi.</p>
+      </section>
+
+      <section id="dashboard">
+        <h2>Dashboard & Daftar Pemain</h2>
+        <p>Dashboard menampilkan daftar reservasi dengan tampilan tabel bertepi kotak rapi. Kolom nama pemain 1–4 akan terisi sesuai data di reservasi. Tampilan mendukung scroll untuk data banyak dan tetap responsif.</p>
+      </section>
+
+      <section id="manage-reservation">
+        <h2>Manage Reservation</h2>
+        <p>Halaman ini adalah pusat pengelolaan reservasi yang sudah dibuat. Gunakan untuk:</p>
+        <ul>
+          <li><strong>Review</strong> — melihat detail reservasi (tanggal, jam, jumlah pemain, nama pemain).</li>
+          <li><strong>Edit</strong> — memperbarui data bila terjadi perubahan.</li>
+          <li><strong>Cancel</strong> — membatalkan reservasi bila perlu.</li>
+          <li><strong>Proses Pembayaran</strong> — mengarahkan ke <strong>Manage POS</strong> untuk membuat invoice dan menyelesaikan pembayaran.</li>
+        </ul>
+        <p>Dengan alur ini, semua transaksi pembayaran dimulai dari <strong>Manage Reservation</strong> agar terhubung dengan reservasi yang valid.</p>
+      </section>
+
+      <section id="pos">
+        <h2>POS/Invoice</h2>
+        <p>Aplikasi menyediakan halaman <strong>Manage POS</strong> untuk membuat dan mengelola invoice terkait reservasi. Aksesnya berasal dari <strong>Manage Reservation</strong> untuk menjamin konsistensi data.</p>
+        <ul>
+          <li>Biaya standar didefinisikan di <span class="kbd">lib/config/fees.dart</span>.</li>
+          <li>Gunakan jumlah pemain sebagai acuan kuantitas item biaya.</li>
+          <li>Status invoice berubah sesuai aksi pembayaran (mis. <em>Draft</em> → <em>Lunas</em>).</li>
+        </ul>
+      </section>
+
+      <section id="tips">
+        <h2>Tips & Troubleshooting</h2>
+        <ul>
+          <li><strong>Validasi gagal:</strong> Periksa kembali jumlah pemain dan kelengkapan nama pemain sesuai jumlah.</li>
+          <li><strong>Nama pemain tidak muncul di Dashboard:</strong> Pastikan simpan berhasil dan refresh halaman Dashboard.</li>
+          <li><strong>Mulai pembayaran:</strong> Pastikan Anda memulainya dari <strong>Manage Reservation</strong> agar reservasi terhubung ke invoice.</li>
+          <li><strong>Browser mobile:</strong> Gunakan mode portrait untuk kenyamanan input; tabel akan otomatis bisa di-scroll.</li>
+          <li><strong>Cetak invoice:</strong> Gunakan fitur cetak browser dari halaman invoice.</li>
+        </ul>
+      </section>
+
+      <section id="faq">
+        <h2>FAQ</h2>
+        <p><strong>Kenapa maksimal 4 pemain?</strong> Karena setiap slot tee time umumnya dibatasi 4 orang untuk menjaga alur permainan.</p>
+        <p><strong>Bisakah menambah lebih dari 4?</strong> Tidak. Sistem membatasi input pada dropdown jumlah pemain 1–4.</p>
+        <p><strong>Bagaimana jika saya hanya punya 2 pemain?</strong> Pilih jumlah 2, isi nama pemain 1 dan 2. Kolom 3–4 boleh dibiarkan kosong.</p>
+      </section>
+
+      <section id="teknis">
+        <h2>Catatan Teknis</h2>
+        <ul>
+          <li><strong>Arsitektur</strong>: UI di folder <span class="kbd">lib/screens/</span>, model di <span class="kbd">lib/models/</span>, layanan database di <span class="kbd">lib/services/</span>.</li>
+          <li><strong>Model Tee Time</strong>: menyimpan <em>playerName</em> (ketua sewa) serta <em>player2Name</em>, <em>player3Name</em>, <em>player4Name</em>, dan <em>playerCount</em>.</li>
+          <li><strong>SQLite</strong>: tabel <span class="kbd">tee_times</span> berisi kolom untuk nama pemain 1–4 dan jumlah pemain.</li>
+        </ul>
+      </section>
+
+      <footer>
+        <p>© 2025 | Panduan Pengguna Modern Golf Reservations.</p>
+      </footer>
+    </main>
+  </body>
+</html>
