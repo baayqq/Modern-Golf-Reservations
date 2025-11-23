@@ -1,3 +1,6 @@
+// Screen: POS System page
+// Tujuan: Pusat transaksi kasir untuk membuat invoice (weekday/weekend fees) dan memilih customer dari booking.
+// Catatan: Dipindahkan ke folder pos_system_folder untuk struktur yang rapi.
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../app_scaffold.dart';
@@ -8,6 +11,11 @@ import '../../config/fees.dart';
 import 'package:modern_golf_reservations/utils/currency.dart';
 import '../../services/tee_time_repository.dart';
 import '../../models/tee_time_model.dart';
+import '../../models/pos_models.dart';
+import 'pos_system_folder/categories_section.dart';
+import 'pos_system_folder/products_header.dart';
+import 'pos_system_folder/product_grid.dart';
+import 'pos_system_folder/order_summary.dart';
 
 /// POS System main page. If opened via redirect, optional `from` tells
 /// which page triggered the redirect (e.g. 'invoice' or 'payments').
@@ -36,11 +44,15 @@ class _PosSystemPageState extends State<PosSystemPage> {
   // Daftar harga sewa: dipisahkan WEEKDAY & WEEKEND (bukan barang belanja).
   late List<Product> _weekdayFees;
   late List<Product> _weekendFees;
-  // Tab kategori seperti UI sebelumnya
-  final List<String> _categories = const ['WEEKDAY', 'WEEKEND'];
-  String _selectedCategory = 'WEEKDAY';
+  // Kategori menggunakan model Category yang reusable
+  final List<Category> _categories = const [
+    Category(id: 'WEEKDAY', name: 'Weekday'),
+    Category(id: 'WEEKEND', name: 'Weekend'),
+  ];
+  String? _selectedCategoryId = 'WEEKDAY';
   List<Product> _filtered = [];
-  final List<CartItem> _cart = [];
+  final List<OrderItem> _cart = [];
+  String _sortBy = 'name_asc';
 
   // SQLite repo for invoices
   final InvoiceRepository _invoiceRepo = InvoiceRepository();
@@ -70,73 +82,17 @@ class _PosSystemPageState extends State<PosSystemPage> {
       }
     });
     // Inisialisasi list harga sewa (POS mengganti list barang menjadi fee):
-    _weekdayFees = [
-      Product(
-        id: 'WD-1',
-        name: 'Member Fee',
-        price: 1600000,
-        stock: 9999,
-        category: 'WEEKDAY',
-        image: Icons.attach_money,
-      ),
-      Product(
-        id: 'WD-2',
-        name: 'Visitor Fee',
-        price: 3000000,
-        stock: 9999,
-        category: 'WEEKDAY',
-        image: Icons.attach_money,
-      ),
-      Product(
-        id: 'WD-3',
-        name: 'Caddy Fee',
-        price: 300000,
-        stock: 9999,
-        category: 'WEEKDAY',
-        image: Icons.attach_money,
-      ),
-      Product(
-        id: 'WD-4',
-        name: 'Buggy Fee',
-        price: 300000,
-        stock: 9999,
-        category: 'WEEKDAY',
-        image: Icons.attach_money,
-      ),
+    _weekdayFees = const [
+      Product(id: 'WD-1', name: 'Member Fee', price: 1600000, categoryId: 'WEEKDAY'),
+      Product(id: 'WD-2', name: 'Visitor Fee', price: 3000000, categoryId: 'WEEKDAY'),
+      Product(id: 'WD-3', name: 'Caddy Fee', price: 300000, categoryId: 'WEEKDAY'),
+      Product(id: 'WD-4', name: 'Buggy Fee', price: 300000, categoryId: 'WEEKDAY'),
     ];
-    _weekendFees = [
-      Product(
-        id: 'WE-1',
-        name: 'Member Fee',
-        price: 3500000,
-        stock: 9999,
-        category: 'WEEKEND',
-        image: Icons.attach_money,
-      ),
-      Product(
-        id: 'WE-2',
-        name: 'Visitor Fee',
-        price: 5000000,
-        stock: 9999,
-        category: 'WEEKEND',
-        image: Icons.attach_money,
-      ),
-      Product(
-        id: 'WE-3',
-        name: 'Caddy Fee',
-        price: 300000,
-        stock: 9999,
-        category: 'WEEKEND',
-        image: Icons.attach_money,
-      ),
-      Product(
-        id: 'WE-4',
-        name: 'Buggy Fee',
-        price: 300000,
-        stock: 9999,
-        category: 'WEEKEND',
-        image: Icons.attach_money,
-      ),
+    _weekendFees = const [
+      Product(id: 'WE-1', name: 'Member Fee', price: 3500000, categoryId: 'WEEKEND'),
+      Product(id: 'WE-2', name: 'Visitor Fee', price: 5000000, categoryId: 'WEEKEND'),
+      Product(id: 'WE-3', name: 'Caddy Fee', price: 300000, categoryId: 'WEEKEND'),
+      Product(id: 'WE-4', name: 'Buggy Fee', price: 300000, categoryId: 'WEEKEND'),
     ];
     _applyFilter();
     // Prefill dari query (jika ada)
@@ -158,11 +114,30 @@ class _PosSystemPageState extends State<PosSystemPage> {
 
   void _applyFilter() {
     final q = _searchCtrl.text.trim().toLowerCase();
+    List<Product> base = _selectedCategoryId == 'WEEKDAY'
+        ? List<Product>.from(_weekdayFees)
+        : List<Product>.from(_weekendFees);
+    // Search by name
+    if (q.isNotEmpty) {
+      base = base.where((p) => p.name.toLowerCase().contains(q)).toList();
+    }
+    // Sort
+    switch (_sortBy) {
+      case 'name_asc':
+        base.sort((a, b) => a.name.compareTo(b.name));
+        break;
+      case 'name_desc':
+        base.sort((a, b) => b.name.compareTo(a.name));
+        break;
+      case 'price_low':
+        base.sort((a, b) => a.price.compareTo(b.price));
+        break;
+      case 'price_high':
+        base.sort((a, b) => b.price.compareTo(a.price));
+        break;
+    }
     setState(() {
-      // Tanpa search bar: tampilkan sesuai tab terpilih.
-      _filtered = _selectedCategory == 'WEEKDAY'
-          ? List<Product>.from(_weekdayFees)
-          : List<Product>.from(_weekendFees);
+      _filtered = base;
     });
   }
 
@@ -170,9 +145,9 @@ class _PosSystemPageState extends State<PosSystemPage> {
     final idx = _cart.indexWhere((c) => c.product.id == p.id);
     setState(() {
       if (idx >= 0) {
-        _cart[idx] = _cart[idx].copyWith(qty: _cart[idx].qty + 1);
+        _cart[idx].quantity++;
       } else {
-        _cart.add(CartItem(product: p, qty: 1));
+        _cart.add(OrderItem(product: p, quantity: 1));
       }
     });
   }
@@ -185,8 +160,25 @@ class _PosSystemPageState extends State<PosSystemPage> {
     });
   }
 
-  double get _subtotal =>
-      _cart.fold(0.0, (s, e) => s + e.product.price * e.qty);
+  void _incrementItem(OrderItem it) {
+    setState(() { it.quantity++; });
+  }
+
+  void _decrementItem(OrderItem it) {
+    setState(() {
+      if (it.quantity > 1) {
+        it.quantity--;
+      } else {
+        _cart.remove(it);
+      }
+    });
+  }
+
+  void _removeItem(OrderItem it) {
+    setState(() { _cart.remove(it); });
+  }
+
+  double get _subtotal => OrderSummaryHelper.total(_cart);
 
   // Format Rupiah (IDR) is centralized via Formatters.idr
 
@@ -207,7 +199,7 @@ class _PosSystemPageState extends State<PosSystemPage> {
         .map(
           (c) => InvoiceItemInput(
             name: c.product.name,
-            qty: c.qty,
+            qty: c.quantity,
             price: c.product.price,
           ),
         )
@@ -237,17 +229,52 @@ class _PosSystemPageState extends State<PosSystemPage> {
     final body = LayoutBuilder(
       builder: (context, constraints) {
         final isNarrow = constraints.maxWidth < 900;
+        final categoriesCard = Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF198754),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+                ),
+                child: const Text('Categories', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: CategoriesSection(
+                  categories: _categories,
+                  selectedCategoryId: _selectedCategoryId,
+                  onSelectCategory: (id) {
+                    setState(() { _selectedCategoryId = id ?? 'WEEKDAY'; });
+                    _applyFilter();
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+
         final content = isNarrow
             ? ListView(
                 padding: const EdgeInsets.all(12),
                 children: [
-                  _categoriesSection(),
+                  categoriesCard,
                   const SizedBox(height: 12),
-                  _productsHeader(),
+                  ProductsHeader(
+                    searchController: _searchCtrl,
+                    onSearchChanged: (_) => _applyFilter(),
+                    sortBy: _sortBy,
+                    onSortChanged: (v) { setState(() { _sortBy = v ?? 'name_asc'; }); _applyFilter(); },
+                  ),
                   const SizedBox(height: 8),
-                  _productGrid(),
+                  ProductGrid(products: _filtered, onAddToCart: _addToCart),
                   const SizedBox(height: 12),
-                  _orderSummary(),
+                  _customerAndSummary(),
                 ],
               )
             : Row(
@@ -258,17 +285,22 @@ class _PosSystemPageState extends State<PosSystemPage> {
                     child: ListView(
                       padding: const EdgeInsets.all(12),
                       children: [
-                        _categoriesSection(),
+                        categoriesCard,
                         const SizedBox(height: 12),
-                        _productsHeader(),
+                        ProductsHeader(
+                          searchController: _searchCtrl,
+                          onSearchChanged: (_) => _applyFilter(),
+                          sortBy: _sortBy,
+                          onSortChanged: (v) { setState(() { _sortBy = v ?? 'name_asc'; }); _applyFilter(); },
+                        ),
                         const SizedBox(height: 8),
-                        _productGrid(),
+                        ProductGrid(products: _filtered, onAddToCart: _addToCart),
                       ],
                     ),
                   ),
                   const SizedBox(width: 12),
                   // Right sidebar: Order Summary (tetap)
-                  SizedBox(width: 320, child: _orderSummary()),
+                  SizedBox(width: 360, child: _customerAndSummary()),
                 ],
               );
 
@@ -278,251 +310,55 @@ class _PosSystemPageState extends State<PosSystemPage> {
 
     return AppScaffold(title: 'POS System', body: body);
   }
-
-  // Kategori UI seperti sebelumnya: chip untuk memilih Weekday/Weekend
-  Widget _categoriesSection() {
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      child: Column(
-        children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: BoxDecoration(
-              color: const Color(0xFF198754),
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(8),
-              ),
-            ),
-            child: const Text(
-              'Categories',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          Padding(
+  // Customer section + reusable OrderSummary (keranjang)
+  Widget _customerAndSummary() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          child: Padding(
             padding: const EdgeInsets.all(12),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: _categories.map((c) {
-                  final selected = _selectedCategory == c;
-                  return ChoiceChip(
-                    selected: selected,
-                    onSelected: (_) {
-                      setState(() { _selectedCategory = c; });
-                      _applyFilter();
-                    },
-                    label: Text(
-                      c,
-                      style: TextStyle(
-                        color: selected
-                            ? Colors.white
-                            : const Color(0xFF198754),
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.3,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text('Customer'),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _customerCtrl,
+                        decoration: const InputDecoration(
+                          hintText: 'Enter customer name...',
+                        ),
                       ),
                     ),
-                    selectedColor: const Color(0xFF198754),
-                    backgroundColor: Colors.white,
-                    side: const BorderSide(color: Color(0xFF198754)),
-                  );
-                }).toList(),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _productsHeader() {
-    // Hapus search bar; pertahankan header kiri seperti sebelumnya
-    return Row(
-      children: [
-        Expanded(
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: BoxDecoration(
-              color: const Color(0xFF6C757D),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: const Text(
-              'Products / Services',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _productGrid() {
-    // Grid seperti sebelumnya: berdasarkan tab terpilih
-    final width = MediaQuery.of(context).size.width;
-    final cols = width >= 1100 ? 4 : 2;
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: _filtered.length,
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: cols,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-            childAspectRatio: 1.2,
-          ),
-          itemBuilder: (context, index) {
-            final p = _filtered[index];
-            return InkWell(
-              onTap: () => _addToCart(p),
-              borderRadius: BorderRadius.circular(8),
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  border: Border.all(color: const Color(0xFFDEE2E6)),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(p.image, size: 20, color: Colors.grey.shade600),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            p.name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      Formatters.idr(p.price),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w800,
-                            color: const Color(0xFF198754),
-                          ) ?? const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                    const SizedBox(width: 8),
+                    SizedBox(
+                      height: 42,
+                      child: OutlinedButton.icon(
+                        icon: const Icon(Icons.search),
+                        label: const Text('Cari Booking'),
+                        onPressed: _openBookingSearch,
+                      ),
                     ),
                   ],
                 ),
-              ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _orderSummary() {
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF198754),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: const Text(
-                  'Order Summary',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              const Text('Customer'),
-              const SizedBox(height: 6),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _customerCtrl,
-                      decoration: const InputDecoration(
-                        hintText: 'Enter customer name...',
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  SizedBox(
-                    height: 42,
-                    child: OutlinedButton.icon(
-                      icon: const Icon(Icons.search),
-                      label: const Text('Cari Booking'),
-                      onPressed: _openBookingSearch,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              const Divider(),
-              const Divider(),
-              // Tidak ada SEWA LAPANGAN default. Kasir menambahkan manual bila perlu.
-              // Cart list
-              if (_cart.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: Text(
-                    'No items yet',
-                    style: TextStyle(color: Colors.grey.shade600),
-                    textAlign: TextAlign.center,
-                  ),
-                )
-              else
-                ..._cart.map((c) => _cartTile(c)),
-              const Divider(),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Subtotal:',
-                    style: TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  Text(Formatters.idr(_subtotal)),
-                ],
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                height: 42,
-                child: ElevatedButton(
-                  onPressed: _cart.isNotEmpty && !_saving ? _saveTransaction : null,
-                  // Gunakan warna default dari ElevatedButtonTheme (primary)
-                  child: _saving ? const Text('Menyimpan...') : const Text('Simpan Transaksi'),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
-      ),
+        const SizedBox(height: 12),
+        OrderSummary(
+          items: _cart,
+          onIncrement: _incrementItem,
+          onDecrement: _decrementItem,
+          onRemove: _removeItem,
+          onCheckout: _cart.isNotEmpty && !_saving ? _saveTransaction : () {},
+        ),
+      ],
     );
   }
 
@@ -615,55 +451,4 @@ class _PosSystemPageState extends State<PosSystemPage> {
     );
   }
 
-  Widget _cartTile(CartItem c) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              '${c.product.name} x${c.qty}',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(Formatters.idr(c.product.price * c.qty)),
-          IconButton(
-            tooltip: 'Remove',
-            onPressed: () => _removeFromCart(c.product.id),
-            icon: const Icon(Icons.close, size: 18),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class Product {
-  final String id;
-  final String name;
-  final double price;
-  final int stock;
-  final String category;
-  final IconData image;
-
-  Product({
-    required this.id,
-    required this.name,
-    required this.price,
-    required this.stock,
-    required this.category,
-    required this.image,
-  });
-}
-
-class CartItem {
-  final Product product;
-  final int qty;
-
-  CartItem({required this.product, required this.qty});
-
-  CartItem copyWith({Product? product, int? qty}) =>
-      CartItem(product: product ?? this.product, qty: qty ?? this.qty);
 }

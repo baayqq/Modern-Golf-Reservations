@@ -11,6 +11,10 @@ import 'package:go_router/go_router.dart';
 import 'package:modern_golf_reservations/router.dart';
 import 'package:modern_golf_reservations/services/invoice_repository.dart';
 import 'package:modern_golf_reservations/config/fees.dart';
+import 'create_tee_time_folder/field_label.dart';
+import 'create_tee_time_folder/date_field.dart';
+import 'create_tee_time_folder/time_list.dart';
+import 'create_tee_time_folder/player_fields.dart';
 
 class CreateTeeTimePage extends StatefulWidget {
   final TeeTimeModel? initial;
@@ -81,7 +85,7 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
                   Expanded(
                     child: TabBarView(
                       children: [
-                        _TimeList(
+                        TimeList(
                           boxLabel: '1',
                           times: itemsBox1,
                           onPick: (tod) {
@@ -92,7 +96,7 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
                             Navigator.of(ctx).pop();
                           },
                         ),
-                        _TimeList(
+                        TimeList(
                           boxLabel: '10',
                           times: itemsBox10,
                           onPick: (tod) {
@@ -163,67 +167,7 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
     return '$h:$m';
   }
 
-  /// Bangun field nama pemain secara dinamis berdasarkan jumlah pemain yang dipilih.
-  /// Jika jumlah pemain belum dipilih (null), tidak menampilkan field apapun.
-  List<Widget> _buildPlayerFields() {
-    final count = int.tryParse(_countCtrl.text.trim());
-    if (count == null) return const [];
-
-    final items = <Widget>[];
-    if (count >= 1) {
-      items.addAll([
-        const _FieldLabel('Pemain 1'),
-        TextField(
-          controller: _playerCtrl,
-          decoration: const InputDecoration(
-            hintText: 'Nama Pemain 1',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        const SizedBox(height: 12),
-      ]);
-    }
-    if (count >= 2) {
-      items.addAll([
-        const _FieldLabel('Pemain 2'),
-        TextField(
-          controller: _player2Ctrl,
-          decoration: const InputDecoration(
-            hintText: 'Nama Pemain 2',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        const SizedBox(height: 12),
-      ]);
-    }
-    if (count >= 3) {
-      items.addAll([
-        const _FieldLabel('Pemain 3'),
-        TextField(
-          controller: _player3Ctrl,
-          decoration: const InputDecoration(
-            hintText: 'Nama Pemain 3',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        const SizedBox(height: 12),
-      ]);
-    }
-    if (count >= 4) {
-      items.addAll([
-        const _FieldLabel('Pemain 4'),
-        TextField(
-          controller: _player4Ctrl,
-          decoration: const InputDecoration(
-            hintText: 'Nama Pemain 4',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        const SizedBox(height: 12),
-      ]);
-    }
-    return items;
-  }
+  // Field nama pemain kini ditangani oleh widget PlayerFields (modular & reusable).
 
   String? _validate({required bool editMode}) {
     final count = int.tryParse(_countCtrl.text.trim());
@@ -257,8 +201,8 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 12),
-            const _FieldLabel('Tanggal:'),
-            _DateField(
+            const FieldLabel('Tanggal:'),
+            DateField(
               hint: 'dd/mm/yyyy',
               value: _editDate == null ? '' : DateFormat('dd/MM/yyyy').format(_editDate!),
               onTap: () async {
@@ -274,8 +218,8 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
               icon: Icons.calendar_today,
             ),
             const SizedBox(height: 12),
-            const _FieldLabel('Jam Mulai:'),
-            _DateField(
+            const FieldLabel('Jam Mulai:'),
+            DateField(
               hint: '--:--',
               value: _timeLabel(_editTime),
               onTap: () async {
@@ -288,7 +232,7 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
               icon: Icons.access_time,
             ),
             const SizedBox(height: 12),
-            const _FieldLabel('Jumlah Pemain:'),
+            const FieldLabel('Jumlah Pemain:'),
             DropdownButtonFormField<int>(
               value: int.tryParse(_countCtrl.text.trim()),
               items: const [1, 2, 3, 4]
@@ -309,7 +253,13 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
               ),
             ),
             const SizedBox(height: 12),
-            ..._buildPlayerFields(),
+            PlayerFields(
+              count: int.tryParse(_countCtrl.text.trim()),
+              playerCtrl: _playerCtrl,
+              player2Ctrl: _player2Ctrl,
+              player3Ctrl: _player3Ctrl,
+              player4Ctrl: _player4Ctrl,
+            ),
             const SizedBox(height: 16),
             SizedBox(
               width: 180,
@@ -353,16 +303,16 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 16),
-          const _FieldLabel('Tanggal:'),
-          _DateField(
+          const FieldLabel('Tanggal:'),
+          DateField(
             hint: 'dd/mm/yyyy',
             value: _createDate == null ? '' : DateFormat('dd/MM/yyyy').format(_createDate!),
             onTap: _pickCreateDate,
             icon: Icons.calendar_today,
           ),
           const SizedBox(height: 12),
-          const _FieldLabel('Jam Mulai:'),
-          _DateField(
+          const FieldLabel('Jam Mulai:'),
+          DateField(
             hint: '--:--',
             value: _createTime == null
                 ? _timeLabel(_createTime)
@@ -371,7 +321,7 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
             icon: Icons.access_time,
           ),
           const SizedBox(height: 12),
-          const _FieldLabel('Jumlah Pemain:'),
+          const FieldLabel('Jumlah Pemain:'),
           DropdownButtonFormField<int>(
             value: int.tryParse(_countCtrl.text.trim()),
             items: const [1, 2, 3, 4]
@@ -392,7 +342,13 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
             ),
           ),
           const SizedBox(height: 12),
-          ..._buildPlayerFields(),
+          PlayerFields(
+            count: int.tryParse(_countCtrl.text.trim()),
+            playerCtrl: _playerCtrl,
+            player2Ctrl: _player2Ctrl,
+            player3Ctrl: _player3Ctrl,
+            player4Ctrl: _player4Ctrl,
+          ),
           const SizedBox(height: 12),
           const SizedBox(height: 16),
           SizedBox(
@@ -443,106 +399,5 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
   }
 }
 
-// Widget list waktu untuk dialog (lebih ringan dan reusable)
-class _TimeList extends StatelessWidget {
-  final String boxLabel;
-  final List<TimeOfDay> times;
-  final ValueChanged<TimeOfDay> onPick;
-
-  const _TimeList({
-    super.key,
-    required this.boxLabel,
-    required this.times,
-    required this.onPick,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView.separated(
-      itemCount: times.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 6),
-      itemBuilder: (_, i) {
-        final tod = times[i];
-        return InkWell(
-          borderRadius: BorderRadius.circular(6),
-          onTap: () => onPick(tod),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(
-              border: Border.all(color: Theme.of(context).colorScheme.outline),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.access_time, size: 18),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    '${tod.hour.toString().padLeft(2, '0')}:${tod.minute.toString().padLeft(2, '0')}',
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.secondaryContainer,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    'Tee Box $boxLabel',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Theme.of(context).colorScheme.onSecondaryContainer,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _FieldLabel extends StatelessWidget {
-  final String text;
-  const _FieldLabel(this.text);
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Text(text, style: Theme.of(context).textTheme.bodyMedium),
-    );
-  }
-}
-
-class _DateField extends StatelessWidget {
-  final String hint;
-  final String value;
-  final VoidCallback onTap;
-  final IconData icon;
-  const _DateField({
-    required this.hint,
-    required this.value,
-    required this.onTap,
-    required this.icon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 44,
-      child: InkWell(
-        onTap: onTap,
-        child: InputDecorator(
-          decoration: InputDecoration(
-            hintText: hint,
-            suffixIcon: Icon(icon, size: 18),
-          ),
-          child: Text(value.isEmpty ? hint : value),
-        ),
-      ),
-    );
-  }
-}
+// Widget duplikat (TimeList, FieldLabel, DateField) telah dipindah ke
+// folder create_tee_time_folder agar lebih modular dan reusable.

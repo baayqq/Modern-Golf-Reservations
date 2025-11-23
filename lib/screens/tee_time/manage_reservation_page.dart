@@ -5,6 +5,8 @@ import 'package:modern_golf_reservations/models/tee_time_model.dart';
 import 'package:modern_golf_reservations/services/tee_time_repository.dart';
 import 'package:go_router/go_router.dart';
 import 'package:modern_golf_reservations/router.dart' show AppRoute;
+import 'package:modern_golf_reservations/screens/tee_time/manage_reservation_folder/reservation_table.dart';
+import 'package:modern_golf_reservations/screens/tee_time/manage_reservation_folder/pagination_bar.dart';
 // Fees no longer used here because invoice is created via POS.
 
 class ManageReservationPage extends StatefulWidget {
@@ -209,7 +211,7 @@ class _ManageReservationPageState extends State<ManageReservationPage> {
                 : Column(
                     children: [
                       Expanded(
-                        child: _ReservationTable(
+                        child: ReservationTable(
                           items: _pagedItems,
                           onEdit: _edit,
                           onDelete: _delete,
@@ -217,7 +219,7 @@ class _ManageReservationPageState extends State<ManageReservationPage> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      _PaginationBar(
+                      PaginationBar(
                         total: _items.length,
                         pageSize: _pageSize,
                         currentPage: _currentPage,
@@ -233,242 +235,4 @@ class _ManageReservationPageState extends State<ManageReservationPage> {
     );
   }
 }
-
-class _ReservationTable extends StatelessWidget {
-  final List<TeeTimeModel> items;
-  final ValueChanged<TeeTimeModel> onEdit;
-  final ValueChanged<TeeTimeModel> onDelete;
-  final ValueChanged<TeeTimeModel> onCreateInvoice;
-  const _ReservationTable({
-    required this.items,
-    required this.onEdit,
-    required this.onDelete,
-    required this.onCreateInvoice,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final headers = const [
-      'ID',
-      'Player Name',
-      'Date',
-      'Time',
-      'Status',
-      'Actions',
-    ];
-    // Lebar kolom tetap agar tidak menggunakan Expanded di dalam area scroll horizontal
-    const colId = 120.0;
-    const colPlayer = 220.0;
-    const colDate = 140.0;
-    const colTime = 100.0;
-    const colStatus = 140.0;
-    const colActions = 280.0;
-
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      clipBehavior: Clip.antiAlias,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final table = Table(
-            columnWidths: const {
-              0: FixedColumnWidth(colId),
-              1: FixedColumnWidth(colPlayer),
-              2: FixedColumnWidth(colDate),
-              3: FixedColumnWidth(colTime),
-              4: FixedColumnWidth(colStatus),
-              5: FixedColumnWidth(colActions),
-            },
-            border: TableBorder.symmetric(
-              inside: BorderSide(color: Theme.of(context).colorScheme.outline),
-              outside: BorderSide(color: Theme.of(context).colorScheme.outline),
-            ),
-            children: [
-              // header
-              TableRow(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                ),
-                children: headers
-                    .map((h) => Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                          child: Text(h, style: const TextStyle(fontWeight: FontWeight.w600)),
-                        ))
-                    .toList(),
-              ),
-              // rows
-              ...items.map((r) => TableRow(children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      child: Text('${r.id ?? '-'}'),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      child: Text(r.playerName ?? '-'),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      child: Text(DateFormat('yyyy-MM-dd').format(r.date)),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      child: Text(r.time),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: _Badge(
-                          label: r.status,
-                          color: r.status == 'booked'
-                              ? Theme.of(context).colorScheme.tertiary
-                              : Theme.of(context).colorScheme.secondary,
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      child: Wrap(
-                        spacing: 8,
-                        children: [
-                          SizedBox(
-                            height: 28,
-                            child: FilledButton.tonal(
-                              onPressed: () => onEdit(r),
-                              style: FilledButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(horizontal: 12),
-                                backgroundColor: Theme.of(context).colorScheme.primary,
-                                foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                              ),
-                              child: const Text('Edit'),
-                            ),
-                          ),
-                          SizedBox(
-                            height: 28,
-                            child: FilledButton.tonal(
-                              onPressed: () => onCreateInvoice(r),
-                              style: FilledButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(horizontal: 12),
-                                backgroundColor: Theme.of(context).colorScheme.secondary,
-                                foregroundColor: Theme.of(context).colorScheme.onSecondary,
-                              ),
-                              child: const Text('Create Invoice'),
-                            ),
-                          ),
-                          SizedBox(
-                            height: 28,
-                            child: FilledButton.tonal(
-                              onPressed: () => onDelete(r),
-                              style: FilledButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(horizontal: 12),
-                                backgroundColor: Theme.of(context).colorScheme.error,
-                                foregroundColor: Theme.of(context).colorScheme.onError,
-                              ),
-                              child: const Text('Delete'),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ])),
-            ],
-          );
-
-          return Scrollbar(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.vertical,
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(minWidth: constraints.maxWidth),
-                  child: table,
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _PaginationBar extends StatelessWidget {
-  final int total;
-  final int pageSize;
-  final int currentPage;
-  final ValueChanged<int> onPageSizeChanged;
-  final VoidCallback? onPrev;
-  final VoidCallback? onNext;
-  const _PaginationBar({
-    required this.total,
-    required this.pageSize,
-    required this.currentPage,
-    required this.onPageSizeChanged,
-    required this.onPrev,
-    required this.onNext,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final start = total == 0 ? 0 : (currentPage * pageSize) + 1;
-    final end = (start == 0) ? 0 : ((currentPage + 1) * pageSize).clamp(0, total);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-      alignment: Alignment.centerRight,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          Text('Menampilkan $start-$end dari $total'),
-          const SizedBox(width: 12),
-          DropdownButton<int>(
-            value: pageSize,
-            items: const [10, 20, 50, 100]
-                .map((v) => DropdownMenuItem(value: v, child: Text('$v / halaman')))
-                .toList(),
-            onChanged: (v) {
-              if (v != null) onPageSizeChanged(v);
-            },
-          ),
-          const SizedBox(width: 8),
-          IconButton(
-            tooltip: 'Sebelumnya',
-            onPressed: onPrev,
-            icon: const Icon(Icons.chevron_left),
-          ),
-          IconButton(
-            tooltip: 'Berikutnya',
-            onPressed: onNext,
-            icon: const Icon(Icons.chevron_right),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Badge extends StatelessWidget {
-  final String label;
-  final Color color;
-  const _Badge({required this.label, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: .25),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: color.withValues(alpha: .6)),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: const Color(0xFF212529),
-          fontWeight: FontWeight.w600,
-          fontSize: 12,
-        ),
-      ),
-    );
-  }
-}
-
-// Keep the badge widget reused for statuses
+// Widgets lokal telah dipindahkan ke folder manage_reservation_folder sebagai widget modular.

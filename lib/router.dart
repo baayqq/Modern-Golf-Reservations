@@ -194,8 +194,12 @@ GoRouter createRouter({required bool isLoggedIn}) {
         name: AppRoute.teeCreate.name,
         path: AppRoute.teeCreate.path,
         pageBuilder: (context, state) {
-          final initial = state.extra is TeeTimeModel ? state.extra as TeeTimeModel : null;
-          return _slideFromRightPage(child: CreateTeeTimePage(initial: initial));
+          final initial = state.extra is TeeTimeModel
+              ? state.extra as TeeTimeModel
+              : null;
+          return _slideFromRightPage(
+            child: CreateTeeTimePage(initial: initial),
+          );
         },
       ),
       // Profile page now uses the real ProfilePage from app_scaffold.dart
