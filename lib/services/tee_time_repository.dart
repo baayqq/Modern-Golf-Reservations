@@ -347,7 +347,7 @@ class TeeTimeRepository {
   // ---- Standard slot time helpers (shared by UI pages) ----
   /// Returns standard tee time slots in Indonesian HH:mm format.
   /// Applies 10-minute intervals with a break between 08:30 and 11:30.
-  /// Ranges: 07:00–08:30 and 11:30–14:00.
+  /// Ranges: 06:30–08:30 and 11:30–14:00.
   static List<String> standardSlotTimes() {
     List<String> buildRange(int sh, int sm, int eh, int em) {
       final start = DateTime(2000, 1, 1, sh, sm);
@@ -364,7 +364,7 @@ class TeeTimeRepository {
     }
 
     return [
-      ...buildRange(7, 0, 8, 30),
+      ...buildRange(6, 30, 8, 30),
       ...buildRange(11, 30, 14, 0),
     ];
   }

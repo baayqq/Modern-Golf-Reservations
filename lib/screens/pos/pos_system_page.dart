@@ -83,13 +83,13 @@ class _PosSystemPageState extends State<PosSystemPage> {
     });
     // Inisialisasi list harga sewa (POS mengganti list barang menjadi fee):
     _weekdayFees = const [
-      Product(id: 'WD-1', name: 'Member Fee', price: 1600000, categoryId: 'WEEKDAY'),
+      Product(id: 'WD-1', name: 'Guest Member Fee', price: 1600000, categoryId: 'WEEKDAY'),
       Product(id: 'WD-2', name: 'Visitor Fee', price: 3000000, categoryId: 'WEEKDAY'),
       Product(id: 'WD-3', name: 'Caddy Fee', price: 300000, categoryId: 'WEEKDAY'),
       Product(id: 'WD-4', name: 'Buggy Fee', price: 300000, categoryId: 'WEEKDAY'),
     ];
     _weekendFees = const [
-      Product(id: 'WE-1', name: 'Member Fee', price: 3500000, categoryId: 'WEEKEND'),
+      Product(id: 'WE-1', name: 'Guest Member Fee', price: 3500000, categoryId: 'WEEKEND'),
       Product(id: 'WE-2', name: 'Visitor Fee', price: 5000000, categoryId: 'WEEKEND'),
       Product(id: 'WE-3', name: 'Caddy Fee', price: 300000, categoryId: 'WEEKEND'),
       Product(id: 'WE-4', name: 'Buggy Fee', price: 300000, categoryId: 'WEEKEND'),

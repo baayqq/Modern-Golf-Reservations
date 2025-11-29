@@ -65,7 +65,7 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
       context: context,
       builder: (ctx) {
         return AlertDialog(
-          title: const Text('Pilih jam (07:00–14:00)'),
+          title: const Text('Pilih jam (06:30–14:00)'),
           content: SizedBox(
             width: 520,
             height: 520,
