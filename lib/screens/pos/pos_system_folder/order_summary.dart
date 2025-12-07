@@ -3,6 +3,7 @@
 
 import 'package:flutter/material.dart';
 import '../../../models/pos_models.dart';
+import '../../../utils/currency.dart';
 
 class OrderSummary extends StatelessWidget {
   final List<OrderItem> items;
@@ -31,7 +32,12 @@ class OrderSummary extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Ringkasan Pesanan', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+            Text(
+              'Ringkasan Pesanan',
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+            ),
             const SizedBox(height: 8),
             if (items.isEmpty)
               const Padding(
@@ -54,20 +60,36 @@ class OrderSummary extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(it.product.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                              Text(
+                                it.product.name,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                               const SizedBox(height: 4),
-                              Text('Rp ${it.product.price.toStringAsFixed(0)} x ${it.quantity}'),
+                              Text(
+                                '${Formatters.idr(it.product.price)} x ${it.quantity}',
+                              ),
                             ],
                           ),
                         ),
-                        Text('Rp ${it.subtotal.toStringAsFixed(0)}'),
+                        Text(Formatters.idr(it.subtotal)),
                         const SizedBox(width: 12),
                         Row(
                           children: [
-                            IconButton(onPressed: () => onDecrement(it), icon: const Icon(Icons.remove_circle_outline)),
+                            IconButton(
+                              onPressed: () => onDecrement(it),
+                              icon: const Icon(Icons.remove_circle_outline),
+                            ),
                             Text('${it.quantity}'),
-                            IconButton(onPressed: () => onIncrement(it), icon: const Icon(Icons.add_circle_outline)),
-                            IconButton(onPressed: () => onRemove(it), icon: const Icon(Icons.delete_outline)),
+                            IconButton(
+                              onPressed: () => onIncrement(it),
+                              icon: const Icon(Icons.add_circle_outline),
+                            ),
+                            IconButton(
+                              onPressed: () => onRemove(it),
+                              icon: const Icon(Icons.delete_outline),
+                            ),
                           ],
                         ),
                       ],
@@ -81,10 +103,15 @@ class OrderSummary extends StatelessWidget {
                 Expanded(
                   child: Text(
                     'Total',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
-                Text('Rp ${total.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.w700)),
+                Text(
+                  Formatters.idr(total),
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
               ],
             ),
             const SizedBox(height: 12),

@@ -6,7 +6,7 @@ import 'package:modern_golf_reservations/models/invoice_models.dart';
 import 'package:modern_golf_reservations/utils/currency.dart';
 import 'payment_status_badge.dart';
 
-class InvoiceTable extends StatelessWidget {
+class InvoiceTable extends StatefulWidget {
   final List<InvoiceItem> invoices;
   final Set<int> selectedInvoiceIds;
   final PaymentMode paymentMode;
@@ -25,6 +25,19 @@ class InvoiceTable extends StatelessWidget {
     required this.onTapDetails,
     required this.formatDate,
   });
+
+  @override
+  State<InvoiceTable> createState() => _InvoiceTableState();
+}
+
+class _InvoiceTableState extends State<InvoiceTable> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,12 +69,15 @@ class InvoiceTable extends StatelessWidget {
                 'Payment Status',
                 'Date',
               ]),
-              ...invoices.map((inv) => _dataRow(context, inv)),
+              ...widget.invoices.map((inv) => _dataRow(context, inv)),
             ],
           );
 
           return Scrollbar(
+            controller: _scrollController,
+            thumbVisibility: true,
             child: SingleChildScrollView(
+              controller: _scrollController,
               scrollDirection: Axis.vertical,
               child: ConstrainedBox(
                 constraints: BoxConstraints(minWidth: constraints.maxWidth),
@@ -95,21 +111,22 @@ class InvoiceTable extends StatelessWidget {
 
   TableRow _dataRow(BuildContext context, InvoiceItem inv) {
     final idInt = int.parse(inv.id);
-    final amountCtrl = amountControllers[idInt] ?? TextEditingController();
-    amountControllers[idInt] = amountCtrl;
+    final amountCtrl =
+        widget.amountControllers[idInt] ?? TextEditingController();
+    widget.amountControllers[idInt] = amountCtrl;
     return TableRow(
       children: [
         // Select checkbox
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           child: Checkbox(
-            value: selectedInvoiceIds.contains(idInt),
-            onChanged: (val) => onCheckboxChanged(inv, val),
+            value: widget.selectedInvoiceIds.contains(idInt),
+            onChanged: (val) => widget.onCheckboxChanged(inv, val),
           ),
         ),
         // Invoice ID (clickable)
         InkWell(
-          onTap: () => onTapDetails(inv),
+          onTap: () => widget.onTapDetails(inv),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             child: Text(
@@ -120,7 +137,7 @@ class InvoiceTable extends StatelessWidget {
         ),
         // Customer Name
         InkWell(
-          onTap: () => onTapDetails(inv),
+          onTap: () => widget.onTapDetails(inv),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             child: Text(
@@ -132,7 +149,7 @@ class InvoiceTable extends StatelessWidget {
         ),
         // Total Amount
         InkWell(
-          onTap: () => onTapDetails(inv),
+          onTap: () => widget.onTapDetails(inv),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             child: Text(Formatters.idr(inv.total)),
@@ -159,7 +176,7 @@ class InvoiceTable extends StatelessWidget {
                   );
                 }
               },
-              onTap: () => onTapDetails(inv),
+              onTap: () => widget.onTapDetails(inv),
             ),
           ),
         ),
@@ -170,10 +187,10 @@ class InvoiceTable extends StatelessWidget {
         ),
         // Date
         InkWell(
-          onTap: () => onTapDetails(inv),
+          onTap: () => widget.onTapDetails(inv),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: Text(formatDate(inv.date), softWrap: true),
+            child: Text(widget.formatDate(inv.date), softWrap: true),
           ),
         ),
       ],

@@ -6,6 +6,7 @@
 
 import 'package:flutter/material.dart';
 import '../../../models/pos_models.dart';
+import '../../../utils/currency.dart';
 
 class ProductGrid extends StatelessWidget {
   final List<Product> products;
@@ -43,7 +44,9 @@ class ProductGrid extends StatelessWidget {
             final p = products[index];
             return Card(
               elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
               child: Padding(
                 padding: const EdgeInsets.all(12),
                 child: Column(
@@ -53,23 +56,32 @@ class ProductGrid extends StatelessWidget {
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(6),
                         child: Container(
-                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.surfaceContainerHighest,
                           // Always show a single consistent icon instead of product images.
                           // This avoids broken network images and provides a uniform look.
                           child: Center(
                             child: Icon(
                               Icons.receipt_long,
                               size: 48,
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
                             ),
                           ),
                         ),
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Text(p.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600)),
+                    Text(
+                      p.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
                     const SizedBox(height: 4),
-                    Text('Rp ${p.price.toStringAsFixed(0)}'),
+                    Text(Formatters.idr(p.price)),
                     const SizedBox(height: 10),
                     SizedBox(
                       height: 38,

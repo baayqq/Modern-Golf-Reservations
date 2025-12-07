@@ -65,8 +65,9 @@ class _InvoicePageState extends State<InvoicePage> {
   Future<void> _load() async {
     final items = await _service.loadInvoices(
       date: _filterDate,
-      customerQuery:
-          _filterNameCtrl.text.trim().isEmpty ? null : _filterNameCtrl.text.trim(),
+      customerQuery: _filterNameCtrl.text.trim().isEmpty
+          ? null
+          : _filterNameCtrl.text.trim(),
     );
     setState(() {
       _invoices = items;
@@ -74,7 +75,9 @@ class _InvoicePageState extends State<InvoicePage> {
         final id = int.parse(inv.id);
         _amountCtrls.putIfAbsent(id, () => TextEditingController());
         final ctrl = _amountCtrls[id]!;
-        final defaultText = inv.outstanding > 0 ? inv.outstanding.toStringAsFixed(0) : '';
+        final defaultText = inv.outstanding > 0
+            ? inv.outstanding.toStringAsFixed(0)
+            : '';
         ctrl.text = defaultText;
       }
     });
@@ -104,7 +107,9 @@ class _InvoicePageState extends State<InvoicePage> {
 
     if (targetInv == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pilih tepat satu invoice terlebih dahulu')),
+        const SnackBar(
+          content: Text('Pilih tepat satu invoice terlebih dahulu'),
+        ),
       );
       return;
     }
@@ -117,11 +122,13 @@ class _InvoicePageState extends State<InvoicePage> {
     }
 
     final pdfItems = items
-        .map((it) => pdfsvc.InvoiceItem(
-              productName: it.name,
-              quantity: it.qty,
-              unitPrice: it.price,
-            ))
+        .map(
+          (it) => pdfsvc.InvoiceItem(
+            productName: it.name,
+            quantity: it.qty,
+            unitPrice: it.price,
+          ),
+        )
         .toList();
 
     try {
@@ -134,16 +141,22 @@ class _InvoicePageState extends State<InvoicePage> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal membuka dialog print: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Gagal membuka dialog print: $e')));
       return;
     }
 
-    // Pastikan fokus/gesture kembali normal setelah dialog print ditutup.
+    // Give browser time to cleanup print dialog
+    await Future.delayed(const Duration(milliseconds: 100));
     if (!mounted) return;
-    FocusManager.instance.primaryFocus?.unfocus();
-    setState(() {});
+
+    // Safe state refresh
+    if (mounted) {
+      setState(() {
+        // Trigger rebuild to ensure UI is responsive
+      });
+    }
   }
 
   Future<void> _downloadPdf() async {
@@ -157,7 +170,9 @@ class _InvoicePageState extends State<InvoicePage> {
 
     if (targetInv == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pilih tepat satu invoice terlebih dahulu')),
+        const SnackBar(
+          content: Text('Pilih tepat satu invoice terlebih dahulu'),
+        ),
       );
       return;
     }
@@ -169,11 +184,13 @@ class _InvoicePageState extends State<InvoicePage> {
     }
 
     final pdfItems = items
-        .map((it) => pdfsvc.InvoiceItem(
-              productName: it.name,
-              quantity: it.qty,
-              unitPrice: it.price,
-            ))
+        .map(
+          (it) => pdfsvc.InvoiceItem(
+            productName: it.name,
+            quantity: it.qty,
+            unitPrice: it.price,
+          ),
+        )
         .toList();
 
     try {
@@ -188,15 +205,19 @@ class _InvoicePageState extends State<InvoicePage> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal mengunduh PDF: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Gagal mengunduh PDF: $e')));
       return;
     }
 
+    // Give browser time to cleanup
+    await Future.delayed(const Duration(milliseconds: 100));
     if (!mounted) return;
-    FocusManager.instance.primaryFocus?.unfocus();
-    setState(() {});
+
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   Future<void> _pickFilterDate() async {
@@ -281,46 +302,48 @@ class _InvoicePageState extends State<InvoicePage> {
                     onPickDate: _pickFilterDate,
                   ),
                   const SizedBox(height: 16),
-            SizedBox(
-              height: tableHeight,
-              child: InvoiceTable(
-                invoices: _invoices,
-                selectedInvoiceIds: _selectedInvoiceIds,
-                paymentMode: _paymentMode,
-                amountControllers: _amountCtrls,
-                onCheckboxChanged: _onCheckboxChanged,
-                onTapDetails: _viewDetails,
-                formatDate: _formatDate,
-              ),
-            ),
-            const SizedBox(height: 16),
-            PrintActionBar(
-              canPrintSingle:
-                  _selectedInvoice != null || _selectedInvoiceIds.length == 1,
-              onPrint: _exportPdf,
-              onDownload: _downloadPdf,
-            ),
-            const SizedBox(height: 16),
-            if (_paymentMode == PaymentMode.combined &&
-                _selectedInvoiceIds.isNotEmpty)
-              CombinedDetailsSection(
-                selectedInvoiceIds: _selectedInvoiceIds,
-                invoices: _invoices,
-                combinedSelectedItems: _combinedSelectedItems,
-                formatDate: _formatDate,
-              ),
-            if (_paymentMode == PaymentMode.combined)
-              CombinedReceiptBar(
-                selectedCount: _selectedInvoiceIds.length,
-                onPrintCombined: _printCombinedDetails,
-                onDownloadCombined: _downloadCombinedDetails,
-              ),
-            const SizedBox(height: 16),
-            InvoiceDetailsSection(
-              selectedInvoice: _selectedInvoice,
-              selectedItems: _selectedItems,
-              formatDate: _formatDate,
-            ),
+                  SizedBox(
+                    height: tableHeight,
+                    child: InvoiceTable(
+                      invoices: _invoices,
+                      selectedInvoiceIds: _selectedInvoiceIds,
+                      paymentMode: _paymentMode,
+                      amountControllers: _amountCtrls,
+                      onCheckboxChanged: _onCheckboxChanged,
+                      onTapDetails: _viewDetails,
+                      formatDate: _formatDate,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  if (_paymentMode == PaymentMode.individual)
+                    PrintActionBar(
+                      canPrintSingle:
+                          _selectedInvoice != null ||
+                          _selectedInvoiceIds.length == 1,
+                      onPrint: _exportPdf,
+                      onDownload: _downloadPdf,
+                    ),
+                  const SizedBox(height: 16),
+                  if (_paymentMode == PaymentMode.combined &&
+                      _selectedInvoiceIds.isNotEmpty)
+                    CombinedDetailsSection(
+                      selectedInvoiceIds: _selectedInvoiceIds,
+                      invoices: _invoices,
+                      combinedSelectedItems: _combinedSelectedItems,
+                      formatDate: _formatDate,
+                    ),
+                  if (_paymentMode == PaymentMode.combined)
+                    CombinedReceiptBar(
+                      selectedCount: _selectedInvoiceIds.length,
+                      onPrintCombined: _printCombinedDetails,
+                      onDownloadCombined: _downloadCombinedDetails,
+                    ),
+                  const SizedBox(height: 16),
+                  InvoiceDetailsSection(
+                    selectedInvoice: _selectedInvoice,
+                    selectedItems: _selectedItems,
+                    formatDate: _formatDate,
+                  ),
                   const SizedBox(height: 16),
                   CombinedPaymentBar(
                     payerController: _payerCtrl,
@@ -405,13 +428,15 @@ class _InvoicePageState extends State<InvoicePage> {
     if (data == null) return;
     try {
       final allocations = data.allocations
-          .map((a) => paypdf.PaymentAllocation(
-                invoiceId: a.invoiceId,
-                customer: a.customer,
-                amount: a.amount,
-                invoiceTotal: a.invoiceTotal,
-                status: a.status,
-              ))
+          .map(
+            (a) => paypdf.PaymentAllocation(
+              invoiceId: a.invoiceId,
+              customer: a.customer,
+              amount: a.amount,
+              invoiceTotal: a.invoiceTotal,
+              status: a.status,
+            ),
+          )
           .toList();
       await Printing.layoutPdf(
         onLayout: (format) => paypdf.generatePaymentPdf(
@@ -425,13 +450,22 @@ class _InvoicePageState extends State<InvoicePage> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal membuka dialog print: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Gagal membuka dialog print: $e')));
+      return;
     }
+
+    // Critical: Give browser time to cleanup print dialog before continuing
+    await Future.delayed(const Duration(milliseconds: 150));
     if (!mounted) return;
-    FocusManager.instance.primaryFocus?.unfocus();
-    setState(() {});
+
+    // Safe state refresh to ensure UI responsiveness
+    if (mounted) {
+      setState(() {
+        // Refresh UI after print dialog closes
+      });
+    }
   }
 
   // Unduh rincian pembayaran gabungan sebagai PDF
@@ -440,13 +474,15 @@ class _InvoicePageState extends State<InvoicePage> {
     if (data == null) return;
     try {
       final allocations = data.allocations
-          .map((a) => paypdf.PaymentAllocation(
-                invoiceId: a.invoiceId,
-                customer: a.customer,
-                amount: a.amount,
-                invoiceTotal: a.invoiceTotal,
-                status: a.status,
-              ))
+          .map(
+            (a) => paypdf.PaymentAllocation(
+              invoiceId: a.invoiceId,
+              customer: a.customer,
+              amount: a.amount,
+              invoiceTotal: a.invoiceTotal,
+              status: a.status,
+            ),
+          )
           .toList();
       final bytes = await paypdf.generatePaymentPdf(
         paymentId: 0,
@@ -456,17 +492,25 @@ class _InvoicePageState extends State<InvoicePage> {
         amount: data.totalAmount,
         allocations: allocations,
       );
-      await Printing.sharePdf(bytes: bytes, filename: 'combined_payment_preview.pdf');
+      await Printing.sharePdf(
+        bytes: bytes,
+        filename: 'combined_payment_preview.pdf',
+      );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal mengunduh PDF: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Gagal mengunduh PDF: $e')));
       return;
     }
+
+    // Give browser time to cleanup download dialog
+    await Future.delayed(const Duration(milliseconds: 150));
     if (!mounted) return;
-    FocusManager.instance.primaryFocus?.unfocus();
-    setState(() {});
+
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   // Bangun data kwitansi gabungan dari input kontrol dan validasi via service.
@@ -497,12 +541,11 @@ class _InvoicePageState extends State<InvoicePage> {
     );
     if (res == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Periksa nominal alokasi pembayaran')), 
+        const SnackBar(content: Text('Periksa nominal alokasi pembayaran')),
       );
     }
     return res;
   }
-
 
   Future<void> _handleCombinedPayment() async {
     final data = _buildCombinedReceiptData();
@@ -609,9 +652,7 @@ class _InvoicePageState extends State<InvoicePage> {
     );
   }
 
-
   // Konfirmasi individu dipindah ke widget ConfirmIndividualPaymentDialog
-
 
   String _formatDate(DateTime dt) {
     return DateFormatters.compactDateTime12h(dt);
