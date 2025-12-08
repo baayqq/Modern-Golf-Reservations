@@ -180,6 +180,20 @@ class AppScaffold extends StatelessWidget {
                                 ],
                               ),
                             ),
+                            PopupMenuItem<String>(
+                              value: 'database',
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.storage,
+                                    size: 18,
+                                    color: Colors.black,
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text('Database Management'),
+                                ],
+                              ),
+                            ),
                             PopupMenuDivider(),
                             PopupMenuItem<String>(
                               value: 'logout',
@@ -222,6 +236,26 @@ class AppScaffold extends StatelessWidget {
                                       } catch (e) {
                                         debugPrint(
                                           'Error navigating to profile: $e',
+                                        );
+                                      }
+                                    }
+                                  });
+                                  break;
+                                }
+                              case 'database':
+                                {
+                                  WidgetsBinding.instance.addPostFrameCallback((
+                                    _,
+                                  ) {
+                                    final ctx = rootNavigatorKey.currentContext;
+                                    if (ctx != null && ctx.mounted) {
+                                      try {
+                                        GoRouter.of(ctx).goNamed(
+                                          AppRoute.databaseManagement.name,
+                                        );
+                                      } catch (e) {
+                                        debugPrint(
+                                          'Error navigating to database: $e',
                                         );
                                       }
                                     }

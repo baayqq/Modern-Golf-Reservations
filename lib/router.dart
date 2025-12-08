@@ -11,6 +11,7 @@ import 'screens/tee_time/manage_reservation_page.dart';
 import 'screens/tee_time/create_tee_time_page.dart';
 import 'models/tee_time_model.dart';
 import 'screens/profile/profile_page.dart' show ProfilePage;
+import 'screens/settings/database_management_page.dart';
 import 'main.dart' show MyAppStateBridge;
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>(
@@ -27,6 +28,7 @@ enum AppRoute {
   teeManage,
   teeCreate,
   profile,
+  databaseManagement,
 }
 
 extension AppRoutePath on AppRoute {
@@ -50,6 +52,8 @@ extension AppRoutePath on AppRoute {
         return '/tee-time/create';
       case AppRoute.profile:
         return '/profile';
+      case AppRoute.databaseManagement:
+        return '/settings/database';
     }
   }
 
@@ -202,12 +206,19 @@ GoRouter createRouter({required bool isLoggedIn}) {
           );
         },
       ),
-      // Profile page now uses the real ProfilePage from app_scaffold.dart
+      // Profile page
       GoRoute(
         path: AppRoute.profile.path,
         name: AppRoute.profile.name,
         pageBuilder: (context, state) =>
             _slideFromRightPage(child: const ProfilePage()),
+      ),
+      // Database Management page
+      GoRoute(
+        path: AppRoute.databaseManagement.path,
+        name: AppRoute.databaseManagement.name,
+        pageBuilder: (context, state) =>
+            _slideFromRightPage(child: const DatabaseManagementPage()),
       ),
     ],
     redirect: (context, state) {
