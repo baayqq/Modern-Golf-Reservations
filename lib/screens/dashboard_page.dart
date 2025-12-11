@@ -114,70 +114,71 @@ class _DashboardPageState extends State<DashboardPage> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? Center(child: Text('Error: $_error'))
-              : Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const SizedBox(height: 8),
-          Center(
-            child: Text(
-              'Tee Sheet for $_formattedSelectedDate',
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
-            ),
-          ),
-          const SizedBox(height: 12),
-          // Date row styled similar to the sample image:
-          Align(
-            alignment: Alignment.center,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 460),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: TextEditingController(
-                        text: DateFormat('dd/MM/yyyy').format(_selectedDate),
-                      ),
-                      readOnly: true,
-                      decoration: const InputDecoration(),
+          ? Center(child: Text('Error: $_error'))
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 8),
+                Center(
+                  child: Text(
+                    'Tee Sheet for $_formattedSelectedDate',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  SizedBox(
-                    height: 40,
-                    width: 46,
-                    child: OutlinedButton(
-                      style: OutlinedButton.styleFrom(padding: EdgeInsets.zero),
-                      onPressed: _pickDate,
-                      child: const Icon(Icons.calendar_today, size: 18),
+                ),
+                const SizedBox(height: 12),
+                // Date row styled similar to the sample image:
+                Align(
+                  alignment: Alignment.center,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 460),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: TextEditingController(
+                              text: DateFormat(
+                                'dd/MM/yyyy',
+                              ).format(_selectedDate),
+                            ),
+                            readOnly: true,
+                            decoration: const InputDecoration(),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        SizedBox(
+                          height: 40,
+                          width: 46,
+                          child: OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              padding: EdgeInsets.zero,
+                            ),
+                            onPressed: _pickDate,
+                            child: const Icon(Icons.calendar_today, size: 18),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 16),
+                _StatsRow(
+                  todayCount: _todayCount,
+                  weekCount: _weekCount,
+                  monthCount: _monthCount,
+                ),
+                const SizedBox(height: 16),
+                Expanded(child: _TeeTable(bookings: _bookingsForSelectedDate)),
+                const SizedBox(height: 8),
+                Center(
+                  child: Text(
+                    '© 2025 Fitri Dwi Astuti',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+              ],
             ),
-          ),
-          const SizedBox(height: 16),
-          _StatsRow(
-            todayCount: _todayCount,
-            weekCount: _weekCount,
-            monthCount: _monthCount,
-          ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: _TeeTable(bookings: _bookingsForSelectedDate),
-          ),
-          const SizedBox(height: 8),
-          Center(
-            child: Text(
-              // '© 2025 ${_username.isNotEmpty ? _username : "User"}',
-              '© 2025 Fitri Dwi Astuti',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -205,8 +206,16 @@ class _StatsRow extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final cards = [
       _StatCard(title: 'Players Today', color: cs.primary, count: todayCount),
-      _StatCard(title: 'Players This Week', color: cs.secondary, count: weekCount),
-      _StatCard(title: 'Players This Month', color: cs.tertiary, count: monthCount),
+      _StatCard(
+        title: 'Players This Week',
+        color: cs.secondary,
+        count: weekCount,
+      ),
+      _StatCard(
+        title: 'Players This Month',
+        color: cs.tertiary,
+        count: monthCount,
+      ),
     ];
 
     if (isMobile) {
@@ -241,7 +250,11 @@ class _StatCard extends StatelessWidget {
   final String title;
   final Color color;
   final int count;
-  const _StatCard({required this.title, required this.color, required this.count});
+  const _StatCard({
+    required this.title,
+    required this.color,
+    required this.count,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -285,7 +298,7 @@ class _TeeTable extends StatelessWidget {
       'Player 3',
       'Player 4',
     ];
-    // Gunakan Table dengan TableBorder.all agar tampilan ber-garis kotak rapi.
+
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       clipBehavior: Clip.antiAlias,
@@ -317,7 +330,9 @@ class _TeeTable extends StatelessWidget {
                     .map(
                       (h) => Padding(
                         padding: const EdgeInsets.symmetric(
-                            vertical: 12, horizontal: 12),
+                          vertical: 12,
+                          horizontal: 12,
+                        ),
                         child: Text(
                           h,
                           style: const TextStyle(fontWeight: FontWeight.w600),
@@ -348,8 +363,7 @@ class _TeeTable extends StatelessWidget {
                     left: BorderSide(color: Colors.grey.shade300),
                     right: BorderSide(color: Colors.grey.shade300),
                     bottom: BorderSide(color: Colors.grey.shade300),
-                    horizontalInside:
-                        BorderSide(color: Colors.grey.shade300),
+                    horizontalInside: BorderSide(color: Colors.grey.shade300),
                     verticalInside: BorderSide(color: Colors.grey.shade300),
                   ),
                   columnWidths: const {
@@ -365,33 +379,41 @@ class _TeeTable extends StatelessWidget {
                         children: [
                           Padding(
                             padding: const EdgeInsets.symmetric(
-                                vertical: 10, horizontal: 12),
+                              vertical: 10,
+                              horizontal: 12,
+                            ),
                             child: Text(
                               b.time,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
+                              style: Theme.of(context).textTheme.bodyMedium
                                   ?.copyWith(fontWeight: FontWeight.w600),
                             ),
                           ),
                           Padding(
                             padding: const EdgeInsets.symmetric(
-                                vertical: 10, horizontal: 12),
+                              vertical: 10,
+                              horizontal: 12,
+                            ),
                             child: Text(b.playerName ?? '-'),
                           ),
                           Padding(
                             padding: const EdgeInsets.symmetric(
-                                vertical: 10, horizontal: 12),
+                              vertical: 10,
+                              horizontal: 12,
+                            ),
                             child: Text(b.player2Name ?? '-'),
                           ),
                           Padding(
                             padding: const EdgeInsets.symmetric(
-                                vertical: 10, horizontal: 12),
+                              vertical: 10,
+                              horizontal: 12,
+                            ),
                             child: Text(b.player3Name ?? '-'),
                           ),
                           Padding(
                             padding: const EdgeInsets.symmetric(
-                                vertical: 10, horizontal: 12),
+                              vertical: 10,
+                              horizontal: 12,
+                            ),
                             child: Text(b.player4Name ?? '-'),
                           ),
                         ],

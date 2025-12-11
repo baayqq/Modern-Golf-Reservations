@@ -26,7 +26,12 @@ class PosSystemPage extends StatefulWidget {
   final String? from;
   final String? initialCustomer;
   final int? initialQty;
-  const PosSystemPage({super.key, this.from, this.initialCustomer, this.initialQty});
+  const PosSystemPage({
+    super.key,
+    this.from,
+    this.initialCustomer,
+    this.initialQty,
+  });
 
   @override
   State<PosSystemPage> createState() => _PosSystemPageState();
@@ -83,16 +88,56 @@ class _PosSystemPageState extends State<PosSystemPage> {
     });
     // Inisialisasi list harga sewa (POS mengganti list barang menjadi fee):
     _weekdayFees = const [
-      Product(id: 'WD-1', name: 'Guest Member Fee', price: 1600000, categoryId: 'WEEKDAY'),
-      Product(id: 'WD-2', name: 'Visitor Fee', price: 3000000, categoryId: 'WEEKDAY'),
-      Product(id: 'WD-3', name: 'Caddy Fee', price: 300000, categoryId: 'WEEKDAY'),
-      Product(id: 'WD-4', name: 'Buggy Fee', price: 300000, categoryId: 'WEEKDAY'),
+      Product(
+        id: 'WD-1',
+        name: 'Guest Member Fee',
+        price: 1600000,
+        categoryId: 'WEEKDAY',
+      ),
+      Product(
+        id: 'WD-2',
+        name: 'Visitor Fee',
+        price: 3000000,
+        categoryId: 'WEEKDAY',
+      ),
+      Product(
+        id: 'WD-3',
+        name: 'Caddy Fee',
+        price: 300000,
+        categoryId: 'WEEKDAY',
+      ),
+      Product(
+        id: 'WD-4',
+        name: 'Buggy Fee',
+        price: 300000,
+        categoryId: 'WEEKDAY',
+      ),
     ];
     _weekendFees = const [
-      Product(id: 'WE-1', name: 'Guest Member Fee', price: 3500000, categoryId: 'WEEKEND'),
-      Product(id: 'WE-2', name: 'Visitor Fee', price: 5000000, categoryId: 'WEEKEND'),
-      Product(id: 'WE-3', name: 'Caddy Fee', price: 300000, categoryId: 'WEEKEND'),
-      Product(id: 'WE-4', name: 'Buggy Fee', price: 300000, categoryId: 'WEEKEND'),
+      Product(
+        id: 'WE-1',
+        name: 'Guest Member Fee',
+        price: 3500000,
+        categoryId: 'WEEKEND',
+      ),
+      Product(
+        id: 'WE-2',
+        name: 'Visitor Fee',
+        price: 5000000,
+        categoryId: 'WEEKEND',
+      ),
+      Product(
+        id: 'WE-3',
+        name: 'Caddy Fee',
+        price: 300000,
+        categoryId: 'WEEKEND',
+      ),
+      Product(
+        id: 'WE-4',
+        name: 'Buggy Fee',
+        price: 300000,
+        categoryId: 'WEEKEND',
+      ),
     ];
     _applyFilter();
     // Prefill dari query (jika ada)
@@ -161,7 +206,9 @@ class _PosSystemPageState extends State<PosSystemPage> {
   }
 
   void _incrementItem(OrderItem it) {
-    setState(() { it.quantity++; });
+    setState(() {
+      it.quantity++;
+    });
   }
 
   void _decrementItem(OrderItem it) {
@@ -175,7 +222,9 @@ class _PosSystemPageState extends State<PosSystemPage> {
   }
 
   void _removeItem(OrderItem it) {
-    setState(() { _cart.remove(it); });
+    setState(() {
+      _cart.remove(it);
+    });
   }
 
   double get _subtotal => OrderSummaryHelper.total(_cart);
@@ -184,12 +233,18 @@ class _PosSystemPageState extends State<PosSystemPage> {
 
   Future<void> _saveTransaction() async {
     if (_saving) return; // guard against double tap
-    setState(() { _saving = true; });
+    setState(() {
+      _saving = true;
+    });
     if (!_dbReady) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Database belum siap, coba lagi sebentar...')),
+        const SnackBar(
+          content: Text('Database belum siap, coba lagi sebentar...'),
+        ),
       );
-      setState(() { _saving = false; });
+      setState(() {
+        _saving = false;
+      });
       return;
     }
     final customer = _customerCtrl.text.trim().isEmpty
@@ -209,10 +264,12 @@ class _PosSystemPageState extends State<PosSystemPage> {
       await _invoiceRepo.createInvoice(customer: customer, items: items);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal menyimpan transaksi: $e')),
-      );
-      setState(() { _saving = false; });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Gagal menyimpan transaksi: $e')));
+      setState(() {
+        _saving = false;
+      });
       return;
     }
     if (!mounted) return;
@@ -237,12 +294,21 @@ class _PosSystemPageState extends State<PosSystemPage> {
             children: [
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
                 decoration: const BoxDecoration(
                   color: Color(0xFF198754),
                   borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
                 ),
-                child: const Text('Categories', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                child: const Text(
+                  'Categories',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
               Padding(
                 padding: const EdgeInsets.all(12),
@@ -250,7 +316,9 @@ class _PosSystemPageState extends State<PosSystemPage> {
                   categories: _categories,
                   selectedCategoryId: _selectedCategoryId,
                   onSelectCategory: (id) {
-                    setState(() { _selectedCategoryId = id ?? 'WEEKDAY'; });
+                    setState(() {
+                      _selectedCategoryId = id ?? 'WEEKDAY';
+                    });
                     _applyFilter();
                   },
                 ),
@@ -269,7 +337,12 @@ class _PosSystemPageState extends State<PosSystemPage> {
                     searchController: _searchCtrl,
                     onSearchChanged: (_) => _applyFilter(),
                     sortBy: _sortBy,
-                    onSortChanged: (v) { setState(() { _sortBy = v ?? 'name_asc'; }); _applyFilter(); },
+                    onSortChanged: (v) {
+                      setState(() {
+                        _sortBy = v ?? 'name_asc';
+                      });
+                      _applyFilter();
+                    },
                   ),
                   const SizedBox(height: 8),
                   ProductGrid(products: _filtered, onAddToCart: _addToCart),
@@ -291,10 +364,18 @@ class _PosSystemPageState extends State<PosSystemPage> {
                           searchController: _searchCtrl,
                           onSearchChanged: (_) => _applyFilter(),
                           sortBy: _sortBy,
-                          onSortChanged: (v) { setState(() { _sortBy = v ?? 'name_asc'; }); _applyFilter(); },
+                          onSortChanged: (v) {
+                            setState(() {
+                              _sortBy = v ?? 'name_asc';
+                            });
+                            _applyFilter();
+                          },
                         ),
                         const SizedBox(height: 8),
-                        ProductGrid(products: _filtered, onAddToCart: _addToCart),
+                        ProductGrid(
+                          products: _filtered,
+                          onAddToCart: _addToCart,
+                        ),
                       ],
                     ),
                   ),
@@ -310,6 +391,7 @@ class _PosSystemPageState extends State<PosSystemPage> {
 
     return AppScaffold(title: 'POS System', body: body);
   }
+
   // Customer section + reusable OrderSummary (keranjang)
   Widget _customerAndSummary() {
     return Column(
@@ -365,90 +447,146 @@ class _PosSystemPageState extends State<PosSystemPage> {
   /// Buka bottom sheet untuk mencari pemain/booking.
   /// Memudahkan memilih nama customer dan jumlah pemain (qty) dari data reservasi.
   Future<void> _openBookingSearch() async {
-    // Ambil semua data dengan status 'booked'
-    List<TeeTimeModel> all = await _teeRepo.getAllReservations(status: 'booked');
-    await showModalBottomSheet<void>(
+    // Show loading dialog while fetching data
+    showDialog(
       context: context,
-      isScrollControlled: true,
-      builder: (ctx) {
-        final qCtrl = TextEditingController();
-        List<TeeTimeModel> filtered = List.of(all);
-        void apply() {
-          final q = qCtrl.text.trim().toLowerCase();
-          filtered = all.where((e) {
-            final name = (e.playerName ?? '').toLowerCase();
-            return q.isEmpty || name.contains(q);
-          }).toList();
-        }
-        apply();
-        return StatefulBuilder(
-          builder: (ctx, setModalState) {
-            return Padding(
-              padding: EdgeInsets.only(
-                left: 16,
-                right: 16,
-                top: 16,
-                bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
-              ),
-              child: SizedBox(
-                height: MediaQuery.of(ctx).size.height * 0.7,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Cari Booking',
-                      style: Theme.of(ctx).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: qCtrl,
-                      decoration: const InputDecoration(
-                        hintText: 'Masukkan nama pemain...',
-                        prefixIcon: Icon(Icons.search),
-                      ),
-                      onChanged: (_) {
-                        setModalState(() {
-                          apply();
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    Expanded(
-                      child: filtered.isEmpty
-                          ? Center(
-                              child: Text(
-                                'Tidak ada hasil',
-                                style: TextStyle(color: Colors.grey.shade600),
-                              ),
-                            )
-                          : ListView.separated(
-                              itemCount: filtered.length,
-                              separatorBuilder: (_, __) => const Divider(height: 1),
-                              itemBuilder: (ctx, i) {
-                                final m = filtered[i];
-                                return ListTile(
-                                  title: Text(m.playerName ?? '-'),
-                                  subtitle: Text('${m.time} • ${m.date.toIso8601String().split('T').first} • pemain: ${m.playerCount ?? 1}'),
-                                  trailing: FilledButton.tonal(
-                                    onPressed: () {
-                                      _customerCtrl.text = m.playerName ?? 'Walk-in';
-                                      // Tidak menambahkan item otomatis dari booking.
-                                      Navigator.of(ctx).pop();
-                                    },
-                                    child: const Text('Pilih'),
-                                  ),
-                                );
-                              },
-                            ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
+      barrierDismissible: false,
+      builder: (ctx) => const Center(
+        child: Card(
+          child: Padding(
+            padding: EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Loading bookings...'),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
-  }
 
+    try {
+      // Ambil semua data dengan status 'booked'
+      List<TeeTimeModel> all = await _teeRepo.getAllReservations(
+        status: 'booked',
+      );
+
+      // Get customers who already have invoices - these should be excluded
+      // Customer names are compared in lowercase for case-insensitive matching
+      final customersWithInvoices = await _invoiceRepo
+          .getCustomersWithInvoices();
+
+      // Filter out bookings from customers who already have invoices
+      all = all.where((booking) {
+        final playerName = (booking.playerName ?? '').toLowerCase().trim();
+        return !customersWithInvoices.contains(playerName);
+      }).toList();
+
+      // Close loading dialog
+      if (!mounted) return;
+      Navigator.of(context).pop();
+
+      await showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        builder: (ctx) {
+          final qCtrl = TextEditingController();
+          List<TeeTimeModel> filtered = List.of(all);
+          void apply() {
+            final q = qCtrl.text.trim().toLowerCase();
+            filtered = all.where((e) {
+              final name = (e.playerName ?? '').toLowerCase();
+              return q.isEmpty || name.contains(q);
+            }).toList();
+          }
+
+          apply();
+          return StatefulBuilder(
+            builder: (ctx, setModalState) {
+              return Padding(
+                padding: EdgeInsets.only(
+                  left: 16,
+                  right: 16,
+                  top: 16,
+                  bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
+                ),
+                child: SizedBox(
+                  height: MediaQuery.of(ctx).size.height * 0.7,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Cari Booking',
+                        style: Theme.of(ctx).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: qCtrl,
+                        decoration: const InputDecoration(
+                          hintText: 'Masukkan nama pemain...',
+                          prefixIcon: Icon(Icons.search),
+                        ),
+                        onChanged: (_) {
+                          setModalState(() {
+                            apply();
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      Expanded(
+                        child: filtered.isEmpty
+                            ? Center(
+                                child: Text(
+                                  'Tidak ada hasil',
+                                  style: TextStyle(color: Colors.grey.shade600),
+                                ),
+                              )
+                            : ListView.separated(
+                                itemCount: filtered.length,
+                                separatorBuilder: (_, __) =>
+                                    const Divider(height: 1),
+                                itemBuilder: (ctx, i) {
+                                  final m = filtered[i];
+                                  return ListTile(
+                                    title: Text(m.playerName ?? '-'),
+                                    subtitle: Text(
+                                      '${m.time} • ${m.date.toIso8601String().split('T').first} • pemain: ${m.playerCount ?? 1}',
+                                    ),
+                                    trailing: FilledButton.tonal(
+                                      onPressed: () {
+                                        _customerCtrl.text =
+                                            m.playerName ?? 'Walk-in';
+                                        // Tidak menambahkan item otomatis dari booking.
+                                        Navigator.of(ctx).pop();
+                                      },
+                                      child: const Text('Pilih'),
+                                    ),
+                                  );
+                                },
+                              ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
+        },
+      );
+    } catch (e) {
+      // Close loading dialog if error occurs
+      if (!mounted) return;
+      Navigator.of(context).pop();
+
+      // Show error message
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error loading bookings: $e')));
+    }
+  }
 }

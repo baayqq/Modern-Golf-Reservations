@@ -1,5 +1,6 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart' show kIsWeb; // kIsWeb untuk perilaku khusus web
+import 'package:flutter/foundation.dart'
+    show kIsWeb; // kIsWeb untuk perilaku khusus web
 import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 
@@ -137,7 +138,11 @@ class InvoiceRepository {
     );
   }
 
-  Future<List<Map<String, Object?>>> getInvoices({DateTime? date, String? customerQuery, String? status}) async {
+  Future<List<Map<String, Object?>>> getInvoices({
+    DateTime? date,
+    String? customerQuery,
+    String? status,
+  }) async {
     final whereParts = <String>[];
     final args = <Object?>[];
     if (status != null && status.isNotEmpty) {
@@ -145,10 +150,11 @@ class InvoiceRepository {
       args.add(status);
     }
     if (date != null) {
-      final isoDay = DateTime(date.year, date.month, date.day)
-          .toIso8601String()
-          .split('T')
-          .first; // e.g., 2025-10-15
+      final isoDay = DateTime(
+        date.year,
+        date.month,
+        date.day,
+      ).toIso8601String().split('T').first; // e.g., 2025-10-15
       whereParts.add("date LIKE ?");
       args.add('$isoDay%');
     }
@@ -173,6 +179,7 @@ class InvoiceRepository {
       orderBy: 'id ASC',
     );
   }
+
   // Total paid amount against an invoice (sum of allocations)
   Future<double> getPaidAmountForInvoice(int invoiceId) async {
     final rows = await _db!.rawQuery(
@@ -230,14 +237,19 @@ class InvoiceRepository {
   }
 
   // --- NEW: Query payments and allocations ---
-  Future<List<Map<String, Object?>>> getPayments({DateTime? date, String? payerQuery, String? method}) async {
+  Future<List<Map<String, Object?>>> getPayments({
+    DateTime? date,
+    String? payerQuery,
+    String? method,
+  }) async {
     final whereParts = <String>[];
     final args = <Object?>[];
     if (date != null) {
-      final isoDay = DateTime(date.year, date.month, date.day)
-          .toIso8601String()
-          .split('T')
-          .first;
+      final isoDay = DateTime(
+        date.year,
+        date.month,
+        date.day,
+      ).toIso8601String().split('T').first;
       whereParts.add('date LIKE ?');
       args.add('$isoDay%');
     }
@@ -258,11 +270,26 @@ class InvoiceRepository {
     );
   }
 
-  Future<List<Map<String, Object?>>> getAllocationsForPayment(int paymentId) async {
+  Future<List<Map<String, Object?>>> getAllocationsForPayment(
+    int paymentId,
+  ) async {
     return _db!.rawQuery(
       'SELECT pa.id, pa.invoiceId, pa.amount, i.customer, i.total, i.status FROM payment_allocations pa JOIN invoices i ON i.id = pa.invoiceId WHERE pa.paymentId = ? ORDER BY pa.id ASC',
       [paymentId],
     );
+  }
+
+  /// Get a set of customer names who have invoices.
+  /// This is used to filter out bookings that already have invoices in POS system.
+  /// Returns lowercase names for case-insensitive comparison.
+  Future<Set<String>> getCustomersWithInvoices() async {
+    final rows = await _db!.rawQuery(
+      'SELECT DISTINCT LOWER(customer) as customer FROM invoices WHERE customer IS NOT NULL',
+    );
+    return rows
+        .map((row) => (row['customer'] as String?) ?? '')
+        .where((c) => c.trim().isNotEmpty)
+        .toSet();
   }
 
   /// Pada Flutter Web, penutupan database dapat mempengaruhi koneksi bersama
@@ -271,7 +298,8 @@ class InvoiceRepository {
   Future<void> close() async {
     if (kIsWeb) {
       // Jangan tutup koneksi di Web (WASM) untuk menjaga stabilitas.
-      _db = null; // lepaskan referensi instance, koneksi tetap hidup secara global.
+      _db =
+          null; // lepaskan referensi instance, koneksi tetap hidup secara global.
       return;
     }
     await _db?.close();
@@ -286,8 +314,13 @@ class InvoiceItemInput {
   final int qty;
   final double price;
 
-  const InvoiceItemInput({required this.name, required this.qty, required this.price});
+  const InvoiceItemInput({
+    required this.name,
+    required this.qty,
+    required this.price,
+  });
 }
+
 class PaymentAllocationInput {
   final int invoiceId;
   final double amount;

@@ -21,14 +21,14 @@ class PaymentAllocationsSection extends StatelessWidget {
     required this.formatDate,
   });
 
-  Widget _headerCell(String label, {Alignment alignment = Alignment.centerLeft}) {
+  Widget _headerCell(
+    String label, {
+    Alignment alignment = Alignment.centerLeft,
+  }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       alignment: alignment,
-      child: Text(
-        label,
-        style: const TextStyle(fontWeight: FontWeight.bold),
-      ),
+      child: Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
     );
   }
 
@@ -61,21 +61,29 @@ class PaymentAllocationsSection extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text('Total: ${Formatters.idr(selectedPayment!.amount)}',
-                        style: const TextStyle(fontWeight: FontWeight.bold)),
+                    Text(
+                      'Total: ${Formatters.idr(selectedPayment!.amount)}',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     const SizedBox(height: 8),
                     Row(
                       children: [
                         if (onPrint != null)
-                          TextButton(onPressed: onPrint, child: const Text('Cetak')),
+                          TextButton(
+                            onPressed: onPrint,
+                            child: const Text('Cetak'),
+                          ),
                         if (onDownload != null) ...[
                           const SizedBox(width: 8),
-                          TextButton(onPressed: onDownload, child: const Text('Unduh')),
-                        ]
+                          TextButton(
+                            onPressed: onDownload,
+                            child: const Text('Unduh'),
+                          ),
+                        ],
                       ],
-                    )
+                    ),
                   ],
-                )
+                ),
               ],
             ),
           ),
@@ -85,44 +93,73 @@ class PaymentAllocationsSection extends StatelessWidget {
         Container(
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surfaceVariant,
-            borderRadius: const BorderRadius.only(topLeft: Radius.circular(8), topRight: Radius.circular(8)),
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(8),
+              topRight: Radius.circular(8),
+            ),
           ),
-          child: Row(children: [
-            Expanded(child: _headerCell('Invoice ID')),
-            Expanded(child: _headerCell('Customer')),
-            Expanded(child: _headerCell('Allocated Amount', alignment: Alignment.centerRight)),
-            Expanded(child: _headerCell('Invoice Total', alignment: Alignment.centerRight)),
-            Expanded(child: _headerCell('Status')),
-          ]),
+          child: Row(
+            children: [
+              Expanded(child: _headerCell('Invoice ID')),
+              Expanded(child: _headerCell('Customer')),
+              Expanded(
+                child: _headerCell(
+                  'Allocated Amount',
+                  alignment: Alignment.centerRight,
+                ),
+              ),
+              Expanded(
+                child: _headerCell(
+                  'Invoice Total',
+                  alignment: Alignment.centerRight,
+                ),
+              ),
+              Expanded(child: _headerCell('Status')),
+            ],
+          ),
         ),
         const SizedBox(height: 8),
-        ...allocations.map((a) {
-          return Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
-              ),
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxHeight: 300),
+          child: SingleChildScrollView(
+            child: Column(
+              children: allocations.map((a) {
+                return Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(
+                        color: Theme.of(context).colorScheme.outlineVariant,
+                      ),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(child: Text('#${a.invoiceId}')),
+                      Expanded(child: Text(a.customer)),
+                      Expanded(
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          child: Text(Formatters.idr(a.amount)),
+                        ),
+                      ),
+                      Expanded(
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          child: Text(Formatters.idr(a.invoiceTotal)),
+                        ),
+                      ),
+                      Expanded(child: _statusChip(a.status)),
+                    ],
+                  ),
+                );
+              }).toList(),
             ),
-            child: Row(children: [
-              Expanded(child: Text('#${a.invoiceId}')),
-              Expanded(child: Text(a.customer)),
-              Expanded(
-                child: Align(
-                  alignment: Alignment.centerRight,
-                  child: Text(Formatters.idr(a.amount)),
-                ),
-              ),
-              Expanded(
-                child: Align(
-                  alignment: Alignment.centerRight,
-                  child: Text(Formatters.idr(a.invoiceTotal)),
-                ),
-              ),
-              Expanded(child: _statusChip(a.status)),
-            ]),
-          );
-        }).toList(),
+          ),
+        ),
       ],
     );
   }
