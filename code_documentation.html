@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Modern Golf Reservations — Dokumentasi Kode & Arsitektur</title>
+    <style>
+      :root {
+        --brand: #1b5e20;
+        --brand-light: #2e7d32;
+        --bg: #f1f8e9;
+        --text: #1f2937;
+        --muted: #6b7280;
+        --border: #cbd5e1;
+      }
+      html, body { margin: 0; padding: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Noto Sans"; color: var(--text); background: var(--bg); }
+      header { background: var(--brand); color: #fff; padding: 20px; }
+      header h1 { margin: 0 0 4px; font-size: 22px; }
+      header p { margin: 0; font-size: 14px; opacity: 0.9; }
+      main { max-width: 980px; margin: 24px auto; padding: 0 16px; }
+      nav.toc { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; }
+      nav.toc h2 { font-size: 16px; margin: 0 0 8px; }
+      nav.toc ul { margin: 0; padding-left: 16px; }
+      nav.toc li { margin: 6px 0; }
+      section { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-top: 16px; }
+      section h2 { margin-top: 0; font-size: 18px; color: var(--brand-light); }
+      section h3 { font-size: 16px; margin-bottom: 4px; }
+      .muted { color: var(--muted); }
+      .kbd { background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 4px; padding: 1px 4px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Courier New", monospace; }
+      ul, ol { line-height: 1.6; }
+      code { background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 4px; padding: 0 4px; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Modern Golf Reservations</h1>
+      <p>Dokumentasi Kode & Arsitektur — penjelasan teknis untuk presentasi/pertanyaan dosen</p>
+    </header>
+    <main>
+      <nav class="toc">
+        <h2>Daftar Isi</h2>
+        <ul>
+          <li><a href="#arsitektur">Arsitektur Umum</a></li>
+          <li><a href="#struktur">Struktur Proyek</a></li>
+          <li><a href="#router">Router & Navigasi</a></li>
+          <li><a href="#model">Model Data: TeeTimeModel</a></li>
+          <li><a href="#repository">Layanan Database: TeeTimeRepository & InvoiceRepository</a></li>
+          <li><a href="#screens">Screens Utama & Alur</a></li>
+          <li><a href="#validasi">Validasi & UX</a></li>
+          <li><a href="#konfigurasi">Konfigurasi Biaya & Utilitas</a></li>
+          <li><a href="#responsif">Responsif & Flutter Web</a></li>
+          <li><a href="#clean">Prinsip Clean Code yang Dipakai</a></li>
+          <li><a href="#qa">Q&A: Pertanyaan Teknis yang Umum</a></li>
+          <li><a href="#skema">Lampiran: Skema Tabel tee_times</a></li>
+        </ul>
+      </nav>
+
+      <section id="arsitektur">
+        <h2>Arsitektur Umum</h2>
+        <p>Aplikasi menggunakan pemisahan <strong>UI</strong>, <strong>model</strong>, dan <strong>layanan (service)</strong>. Navigasi memakai <strong>go_router</strong> untuk kesederhanaan dan dukungan URL yang rapi di web.</p>
+        <ul>
+          <li>UI (screens): membangun tampilan halaman, menerima input, dan menampilkan data.</li>
+          <li>Model: mendefinisikan struktur data seperti <em>TeeTimeModel</em>.</li>
+          <li>Service/Repository: mengakses database SQLite, melakukan CRUD, dan menjaga konsistensi data.</li>
+        </ul>
+      </section>
+
+      <section id="struktur">
+        <h2>Struktur Proyek</h2>
+        <ul>
+          <li><span class="kbd">lib/screens/</span>: halaman UI seperti <span class="kbd">dashboard_page.dart</span>, <span class="kbd">login_page.dart</span>, dan halaman Tee Time (booking/manage/create).</li>
+          <li><span class="kbd">lib/models/</span>: model data, mis. <span class="kbd">tee_time_model.dart</span>.</li>
+          <li><span class="kbd">lib/services/</span>: repository/layanan database, mis. <span class="kbd">tee_time_repository.dart</span>, <span class="kbd">invoice_repository.dart</span>.</li>
+          <li><span class="kbd">lib/router.dart</span>: definisi rute dan transisi halaman.</li>
+          <li><span class="kbd">lib/utils/</span>: utilitas, mis. <span class="kbd">currency.dart</span>.</li>
+          <li><span class="kbd">lib/config/fees.dart</span>: konfigurasi biaya (green fee, cart, caddie, dll).</li>
+        </ul>
+      </section>
+
+      <section id="router">
+        <h2>Router & Navigasi</h2>
+        <p>Navigasi dikelola oleh <strong>go_router</strong> di file <span class="kbd">lib/router.dart</span>. Setiap halaman memiliki <em>name</em> dan <em>path</em> yang konsisten.</p>
+        <ul>
+          <li>Contoh rute: <code>AppRoute.teeCreate</code> dengan path <code>/tee-time/create</code>, membuka <code>CreateTeeTimePage</code>.</li>
+          <li>Transisi memakai <code>CustomTransitionPage</code> dengan <em>slide</em> atau <em>fade</em> untuk animasi ringan.</li>
+          <li><code>app_scaffold.dart</code> menyediakan menu navigasi cepat ke Dashboard, Booking, Manage, Create, POS, dan Invoice.</li>
+        </ul>
+      </section>
+
+      <section id="model">
+        <h2>Model Data: TeeTimeModel</h2>
+        <p>Model menyimpan informasi reservasi termasuk nama ketua sewa dan hingga empat pemain.</p>
+        <ul>
+          <li>Field inti: <code>date</code>, <code>time</code>, <code>playerName</code> (ketua sewa), <code>playerCount</code>.</li>
+          <li>Tambahan: <code>player2Name</code>, <code>player3Name</code>, <code>player4Name</code>.</li>
+          <li>Metode util: <code>copyWith</code>, <code>toMap</code>, <code>fromMap</code>, <code>toString</code>.</li>
+          <li>Tujuan: memudahkan serialisasi ke/dari SQLite dan menjaga konsistensi data saat update.</li>
+        </ul>
+        <p class="muted">Catatan: Field <code>notes</code> tersedia di model/tabel untuk kompatibilitas, tetapi <strong>form Catatan pada mode Create telah dihapus</strong> sesuai kebijakan UI terbaru.</p>
+      </section>
+
+      <section id="repository">
+        <h2>Layanan Database: TeeTimeRepository & InvoiceRepository</h2>
+        <h3>TeeTimeRepository</h3>
+        <ul>
+          <li>Mengelola tabel <span class="kbd">tee_times</span> dengan kolom <code>playerName</code>, <code>player2Name</code>, <code>player3Name</code>, <code>player4Name</code>, dan <code>playerCount</code>.</li>
+          <li><code>createOrBookSlot(...)</code>: menyimpan reservasi baru, memvalidasi jumlah pemain, dan menulis data ke SQLite.</li>
+          <li><code>updateReservation(...)</code>: memperbarui data existing, menjaga integritas nama pemain 2–4 sesuai <code>playerCount</code>.</li>
+          <li><code>_ensureColumns()</code>: memastikan skema tabel memiliki kolom baru (2–4) saat migrasi.</li>
+        </ul>
+        <h3>InvoiceRepository</h3>
+        <ul>
+          <li>Mengelola pembuatan invoice dan histori pembayaran, biasanya diakses dari halaman POS.</li>
+          <li>Item biaya mengambil referensi dari <span class="kbd">fees.dart</span>, dengan <em>qty</em> mengikuti jumlah pemain.</li>
+        </ul>
+      </section>
+
+      <section id="screens">
+        <h2>Screens Utama & Alur</h2>
+        <h3>Login Page (<span class="kbd">lib/screens/login_page.dart</span>)</h3>
+        <ul>
+          <li>Autentikasi sederhana, setelah berhasil mengarahkan ke Dashboard.</li>
+        </ul>
+        <h3>Dashboard Page (<span class="kbd">lib/screens/dashboard_page.dart</span>)</h3>
+        <ul>
+          <li>Menampilkan tabel reservasi dengan kolom Nama Pemain 1–4.</li>
+        </ul>
+        <h3>Create Tee Time (<span class="kbd">lib/screens/tee_time/create_tee_time_page.dart</span>)</h3>
+        <ul>
+          <li>Field urutan: Tanggal, Jam, <strong>Jumlah Pemain (dropdown 1–4)</strong>, Nama Pemain 1–4.</li>
+          <li>Validasi jumlah maksimal 4, serta kewajiban nama pemain 2–4 mengikuti <code>playerCount</code>.</li>
+          <li><strong>Catatan dihapus</strong> pada mode Create untuk menyederhanakan input.</li>
+        </ul>
+        <h3>Manage Reservation (<span class="kbd">lib/screens/tee_time/manage_reservation_page.dart</span>)</h3>
+        <ul>
+          <li>Pusat edit/review/cancel reservasi.</li>
+          <li>Gerbang pembayaran: tombol/aksi mengarahkan ke POS dengan parameter reservasi.</li>
+        </ul>
+        <h3>POS & Invoice (<span class="kbd">lib/screens/pos/</span>)</h3>
+        <ul>
+          <li>Pembuatan invoice dan pencatatan pembayaran.</li>
+          <li>Status invoice: Draft → Lunas.</li>
+        </ul>
+      </section>
+
+      <section id="validasi">
+        <h2>Validasi & UX</h2>
+        <ul>
+          <li><strong>Jumlah Pemain</strong>: Dropdown 1–4 membatasi input langsung agar tidak melebihi 4.</li>
+          <li><strong>Nama Pemain</strong>: 2–4 diwajibkan bila <code>playerCount</code> ≥ 2/3/4.</li>
+          <li>SnackBar menampilkan pesan kesalahan bila validasi gagal saat menyimpan.</li>
+          <li>Setelah simpan, router mengarahkan kembali ke Booking Calendar dengan tanggal terpilih.</li>
+        </ul>
+      </section>
+
+      <section id="konfigurasi">
+        <h2>Konfigurasi Biaya & Utilitas</h2>
+        <ul>
+          <li><span class="kbd">lib/config/fees.dart</span>: daftar biaya standar, dipakai POS untuk mengisi item invoice.</li>
+          <li><span class="kbd">lib/utils/currency.dart</span>: format tampilan nilai rupiah/uang.</li>
+        </ul>
+      </section>
+
+      <section id="responsif">
+        <h2>Responsif & Flutter Web</h2>
+        <ul>
+          <li>Menggunakan widget standar (Scaffold, AppBar, ListView, TextField, DropdownButtonFormField).</li>
+          <li>Layout mendukung perangkat kecil hingga besar (phone, tablet, desktop).</li>
+          <li>Animasi transisi ringan untuk perpindahan halaman agar tetap halus di web.</li>
+        </ul>
+      </section>
+
+      <section id="clean">
+        <h2>Prinsip Clean Code yang Dipakai</h2>
+        <ul>
+          <li><strong>Single Responsibility</strong>: setiap file punya tanggung jawab jelas (screen, model, service).</li>
+          <li><strong>Penamaan eksplisit</strong>: variabel dan method jelas (mis. <code>playerCount</code>, <code>createOrBookSlot</code>).</li>
+          <li><strong>Reusable</strong>: komponen/layanan dapat digunakan lintas halaman.</li>
+          <li><strong>Hindari duplikasi</strong>: update schema dilakukan sekali lewat <code>_ensureColumns</code>.</li>
+          <li><strong>Tanpa nested berlebihan</strong>: UI dipecah menjadi blok-blok sederhana untuk keterbacaan.</li>
+        </ul>
+      </section>
+
+      <section id="qa">
+        <h2>Q&A: Pertanyaan Teknis yang Umum</h2>
+        <ul>
+          <li><strong>Mengapa go_router?</strong> Karena sederhana, mendukung URL web, dan mudah menambahkan transisi.</li>
+          <li><strong>Mengapa SQLite?</strong> Mudah untuk data lokal, cocok untuk prototipe/operasional offline ringan.</li>
+          <li><strong>Bagaimana validasi jumlah pemain?</strong> Dibatasi oleh dropdown 1–4; saat simpan dicek kembali agar tidak melebihi 4.</li>
+          <li><strong>Bagaimana keterkaitan reservasi dan pembayaran?</strong> Pembayaran selalu dimulai dari <em>Manage Reservation</em> untuk memastikan invoice terkait reservasi yang valid.</li>
+          <li><strong>Kenapa Catatan dihapus pada Create?</strong> Untuk menyederhanakan proses input awal; catatan dapat dikelola di alur lain bila diperlukan.</li>
+          <li><strong>Bagaimana data nama pemain 2–4?</strong> Disimpan di kolom terpisah dan ditampilkan di Dashboard agar mudah dibaca.</li>
+        </ul>
+      </section>
+
+      <section id="skema">
+        <h2>Lampiran: Skema Tabel tee_times</h2>
+        <ul>
+          <li><strong>Kolom utama</strong>: <code>id</code>, <code>date</code>, <code>time</code>, <code>playerName</code>, <code>playerCount</code>.</li>
+          <li><strong>Nama pemain tambahan</strong>: <code>player2Name</code>, <code>player3Name</code>, <code>player4Name</code>.</li>
+          <li><strong>Kolom opsional</strong>: <code>notes</code> (tersedia untuk kompatibilitas, tidak digunakan pada form Create).</li>
+        </ul>
+        <p class="muted">Repository memastikan kolom-kolom ini ada saat migrasi menggunakan helper <code>_ensureColumns</code>.</p>
+      </section>
+    </main>
+  </body>
+</html>
