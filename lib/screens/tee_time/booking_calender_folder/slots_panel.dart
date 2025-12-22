@@ -1,6 +1,3 @@
-// SlotsPanel
-// Panel ringkas yang menampilkan daftar slot tee time untuk tanggal terpilih.
-// Menggunakan SlotRow untuk layout lebar, dan mendukung tap untuk melihat detail.
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:modern_golf_reservations/models/tee_time_model.dart';
@@ -26,7 +23,6 @@ class SlotsPanel extends StatelessWidget {
       return const Center(child: CircularProgressIndicator());
     }
 
-    // Gunakan jam standar dari repository agar konsisten dengan Create Tee Time
     final slotTimes = TeeTimeRepository.standardSlotTimes();
 
     bool isReserved(String time, int teeBox) =>
@@ -148,7 +144,7 @@ class SlotsPanel extends StatelessWidget {
                 ],
               );
             }
-            // Mobile / sempit: susun vertikal
+
             return Column(
               children: [
                 buildBox('Tee Box 1 (Holes 1–9)', 1, scrollable: false),

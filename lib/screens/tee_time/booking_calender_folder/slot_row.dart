@@ -1,6 +1,3 @@
-// SlotRow
-// Baris slot tee time tunggal: menampilkan waktu dan status (Reserved/Available)
-// dengan warna yang konsisten dan interaksi tap.
 import 'package:flutter/material.dart';
 
 class SlotRow extends StatelessWidget {

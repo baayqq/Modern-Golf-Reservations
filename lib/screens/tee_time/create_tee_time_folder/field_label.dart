@@ -1,6 +1,3 @@
-// FieldLabel Widget
-// Tujuan: Menampilkan label teks kecil di atas input agar konsisten dan reusable.
-// Dapat digunakan di berbagai form termasuk halaman Create Tee Time.
 import 'package:flutter/material.dart';
 
 class FieldLabel extends StatelessWidget {

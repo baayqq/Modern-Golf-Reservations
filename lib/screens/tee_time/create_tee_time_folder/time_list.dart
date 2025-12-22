@@ -1,6 +1,3 @@
-// TimeList Widget
-// Tujuan: Menampilkan daftar pilihan jam dalam dialog pemilihan waktu.
-// Dapat dilabeli Tee Box untuk membedakan pilihan box 1 dan 10.
 import 'package:flutter/material.dart';
 
 class TimeList extends StatelessWidget {

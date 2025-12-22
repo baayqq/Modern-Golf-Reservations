@@ -1,6 +1,3 @@
-// Purpose: Bottom sheet to search bookings and select one.
-// Keeps interaction simple and responsive, suitable for Flutter Web.
-
 import 'package:flutter/material.dart';
 
 class BookingSearchSheet extends StatefulWidget {
@@ -20,7 +17,7 @@ class _BookingSearchSheetState extends State<BookingSearchSheet> {
   Future<void> _search() async {
     setState(() => _loading = true);
     await Future.delayed(const Duration(milliseconds: 400));
-    // Dummy results to demonstrate UI; replace with service call when API is ready.
+
     final q = _searchCtrl.text.trim();
     _results
       ..clear()

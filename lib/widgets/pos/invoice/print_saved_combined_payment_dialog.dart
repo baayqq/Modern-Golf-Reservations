@@ -1,6 +1,3 @@
-// Widget: Dialog to prompt printing/downloading a saved combined payment receipt.
-// Converts generic PaymentAllocationData to paypdf.PaymentAllocation for PDF.
-
 import 'package:flutter/material.dart';
 import 'package:modern_golf_reservations/models/invoice_models.dart';
 import 'package:modern_golf_reservations/services/payment_pdf.dart' as paypdf;
@@ -73,13 +70,15 @@ class PrintSavedCombinedPaymentDialog extends StatelessWidget {
             Navigator.of(context).pop();
             try {
               final pdfAlloc = allocations
-                  .map((a) => paypdf.PaymentAllocation(
-                        invoiceId: a.invoiceId,
-                        customer: a.customer,
-                        amount: a.amount,
-                        invoiceTotal: a.invoiceTotal,
-                        status: a.status,
-                      ))
+                  .map(
+                    (a) => paypdf.PaymentAllocation(
+                      invoiceId: a.invoiceId,
+                      customer: a.customer,
+                      amount: a.amount,
+                      invoiceTotal: a.invoiceTotal,
+                      status: a.status,
+                    ),
+                  )
                   .toList();
               final bytes = await paypdf.generatePaymentPdf(
                 paymentId: paymentId,
@@ -89,7 +88,10 @@ class PrintSavedCombinedPaymentDialog extends StatelessWidget {
                 amount: total,
                 allocations: pdfAlloc,
               );
-              await Printing.sharePdf(bytes: bytes, filename: 'payment_$paymentId.pdf');
+              await Printing.sharePdf(
+                bytes: bytes,
+                filename: 'payment_$paymentId.pdf',
+              );
             } catch (e) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('Gagal mengunduh PDF: $e')),
@@ -103,16 +105,18 @@ class PrintSavedCombinedPaymentDialog extends StatelessWidget {
             Navigator.of(context).pop();
             try {
               final pdfAlloc = allocations
-                  .map((a) => paypdf.PaymentAllocation(
-                        invoiceId: a.invoiceId,
-                        customer: a.customer,
-                        amount: a.amount,
-                        invoiceTotal: a.invoiceTotal,
-                        status: a.status,
-                      ))
+                  .map(
+                    (a) => paypdf.PaymentAllocation(
+                      invoiceId: a.invoiceId,
+                      customer: a.customer,
+                      amount: a.amount,
+                      invoiceTotal: a.invoiceTotal,
+                      status: a.status,
+                    ),
+                  )
                   .toList();
-              await Printing.layoutPdf(
-                onLayout: (format) => paypdf.generatePaymentPdf(
+              await Printing.sharePdf(
+                bytes: await paypdf.generatePaymentPdf(
                   paymentId: paymentId,
                   date: DateTime.now(),
                   payer: payer,
@@ -120,11 +124,12 @@ class PrintSavedCombinedPaymentDialog extends StatelessWidget {
                   amount: total,
                   allocations: pdfAlloc,
                 ),
+                filename: 'payment_$paymentId.pdf',
               );
             } catch (e) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Gagal membuka dialog print: $e')),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text('Gagal print: $e')));
             }
           },
           child: const Text('Print'),

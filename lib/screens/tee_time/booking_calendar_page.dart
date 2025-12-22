@@ -32,7 +32,7 @@ class _BookingCalendarPageState extends State<BookingCalendarPage> {
   Future<void> _initDb() async {
     try {
       await _repo.init();
-      // Jika ada initialSelectedDate, pilih otomatis
+
       final initial = widget.initialSelectedDate;
       if (initial != null) {
         setState(() {
@@ -41,8 +41,7 @@ class _BookingCalendarPageState extends State<BookingCalendarPage> {
         });
         await _openSlots(initial);
       } else {
-        // Default: TIDAK memilih tanggal apa pun.
-        // Tampilkan hanya kalender sampai user memilih tanggal.
+
         final now = DateTime.now();
         setState(() {
           _visibleMonth = DateTime(now.year, now.month);
@@ -76,10 +75,8 @@ class _BookingCalendarPageState extends State<BookingCalendarPage> {
   Widget build(BuildContext context) {
     final monthTitle = DateFormat('MMMM yyyy').format(_visibleMonth);
     const double contentMaxWidth =
-        1120.0; // lebar konten standar agar konsisten dengan bagian lain (dibuat lebih lebar)
+        1120.0;
 
-    // Pastikan AppScaffold SELALU digunakan agar background konsisten
-    // untuk menghindari flicker layar putih saat transisi atau loading.
     Widget pageBody;
     if (_loading) {
       pageBody = const Center(child: CircularProgressIndicator());
@@ -91,7 +88,7 @@ class _BookingCalendarPageState extends State<BookingCalendarPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Page title
+
             Text(
               'Tee Time Schedule Calendar',
               style: Theme.of(
@@ -99,10 +96,10 @@ class _BookingCalendarPageState extends State<BookingCalendarPage> {
               ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 12),
-            // Toolbar (prev/next, today, view switch)
+
             Row(
               children: [
-                // prev/next
+
                 SizedBox(
                   height: 36,
                   child: OutlinedButton(
@@ -138,12 +135,12 @@ class _BookingCalendarPageState extends State<BookingCalendarPage> {
                   child: const Text('today'),
                 ),
                 const Spacer(),
-                // SegmentedButton view switch removed for cleaner UI
+
                 SizedBox.shrink(),
               ],
             ),
             const SizedBox(height: 8),
-            // Month title centered with consistent content width
+
             Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: contentMaxWidth),
@@ -154,8 +151,7 @@ class _BookingCalendarPageState extends State<BookingCalendarPage> {
               ),
             ),
             const SizedBox(height: 6),
-            // Calendar grid
-            // Remove fixed height wrapper so the month can render all 6 weeks
+
             Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: contentMaxWidth),
@@ -164,9 +160,9 @@ class _BookingCalendarPageState extends State<BookingCalendarPage> {
                   selected: _selectedDate,
                   compact:
                       _selectedDate !=
-                      null, // jika user sudah memilih tanggal, tampilkan versi compact
+                      null,
                   onSelect: (d) {
-                    // Toggle selection: klik tanggal yang sama dua kali untuk batal memilih
+
                     if (_selectedDate != null &&
                         _isSameDay(d, _selectedDate!)) {
                       setState(() {
@@ -182,7 +178,7 @@ class _BookingCalendarPageState extends State<BookingCalendarPage> {
               ),
             ),
             const SizedBox(height: 6),
-            // Inline slots panel (summary) for the selected day
+
             if (_selectedDate != null)
               Center(
                 child: ConstrainedBox(
@@ -192,7 +188,7 @@ class _BookingCalendarPageState extends State<BookingCalendarPage> {
                     slots: _slots,
                     loading: _loadingSlots,
                     onTapSlot: _onSlotTap,
-                  ), // tanpa fixed height: panel menyesuaikan konten agar seluruh jadwal tampak
+                  ),
                 ),
               ),
           ],
@@ -251,7 +247,7 @@ class _BookingCalendarPageState extends State<BookingCalendarPage> {
         },
       );
     } else {
-      // Jangan tampilkan form booking. Hanya tampilkan informasi slot tersedia.
+
       await showDialog(
         context: context,
         builder: (ctx) {

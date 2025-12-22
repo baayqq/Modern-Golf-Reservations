@@ -1,6 +1,3 @@
-// Purpose: Reusable order summary (cart) section for POS System.
-// Shows list of items, quantities, subtotals, and checkout button.
-
 import 'package:flutter/material.dart';
 import '../../../models/pos_models.dart';
 import '../../../utils/currency.dart';

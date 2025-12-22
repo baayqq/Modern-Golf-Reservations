@@ -1,6 +1,3 @@
-// Screen: POS System page
-// Tujuan: Pusat transaksi kasir untuk membuat invoice (weekday/weekend fees) dan memilih customer dari booking.
-// Catatan: Dipindahkan ke folder pos_system_folder untuk struktur yang rapi.
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../app_scaffold.dart';
@@ -17,12 +14,8 @@ import 'pos_system_folder/products_header.dart';
 import 'pos_system_folder/product_grid.dart';
 import 'pos_system_folder/order_summary.dart';
 
-/// POS System main page. If opened via redirect, optional `from` tells
-/// which page triggered the redirect (e.g. 'invoice' or 'payments').
 class PosSystemPage extends StatefulWidget {
-  // Halaman POS sebagai pusat transaksi.
-  // from: konteks asal redirect (invoice/payments/teeManage)
-  // initialCustomer & initialQty: nilai awal dari halaman Manage Reservation.
+
   final String? from;
   final String? initialCustomer;
   final int? initialQty;
@@ -38,18 +31,16 @@ class PosSystemPage extends StatefulWidget {
 }
 
 class _PosSystemPageState extends State<PosSystemPage> {
-  // Flag to ensure database is initialized before saving
+
   bool _dbReady = false;
-  // Prevent double-submit causing duplicate invoices
+
   bool _saving = false;
   final TextEditingController _searchCtrl = TextEditingController();
   final TextEditingController _customerCtrl = TextEditingController();
-  // Manual item inputs dihapus (tidak digunakan lagi).
 
-  // Daftar harga sewa: dipisahkan WEEKDAY & WEEKEND (bukan barang belanja).
   late List<Product> _weekdayFees;
   late List<Product> _weekendFees;
-  // Kategori menggunakan model Category yang reusable
+
   final List<Category> _categories = const [
     Category(id: 'WEEKDAY', name: 'Weekday'),
     Category(id: 'WEEKEND', name: 'Weekend'),
@@ -59,20 +50,17 @@ class _PosSystemPageState extends State<PosSystemPage> {
   final List<OrderItem> _cart = [];
   String _sortBy = 'name_asc';
 
-  // SQLite repo for invoices
   final InvoiceRepository _invoiceRepo = InvoiceRepository();
-  // Repo untuk mencari booking/pemain
+
   final TeeTimeRepository _teeRepo = TeeTimeRepository();
-  // Tidak ada auto SEWA LAPANGAN dari booking. Kasir akan input manual.
 
   @override
   void initState() {
     super.initState();
     _initDb();
-    // Tandai bahwa user telah memasuki POS pada sesi ini.
+
     MyAppStateBridge.posEnteredNotifier.value = true;
-    // Jika halaman ini dibuka dari redirect ketika mencoba akses Invoice/Payments,
-    // tampilkan pesan bantuan ringan agar alur jelas.
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final from = widget.from;
@@ -86,7 +74,7 @@ class _PosSystemPageState extends State<PosSystemPage> {
         );
       }
     });
-    // Inisialisasi list harga sewa (POS mengganti list barang menjadi fee):
+
     _weekdayFees = const [
       Product(
         id: 'WD-1',
@@ -140,11 +128,11 @@ class _PosSystemPageState extends State<PosSystemPage> {
       ),
     ];
     _applyFilter();
-    // Prefill dari query (jika ada)
+
     if (widget.initialCustomer != null && widget.initialCustomer!.isNotEmpty) {
       _customerCtrl.text = widget.initialCustomer!;
     }
-    // Tidak ada auto-qty SEWA LAPANGAN; kasir akan set manual.
+
   }
 
   Future<void> _initDb() async {
@@ -162,11 +150,11 @@ class _PosSystemPageState extends State<PosSystemPage> {
     List<Product> base = _selectedCategoryId == 'WEEKDAY'
         ? List<Product>.from(_weekdayFees)
         : List<Product>.from(_weekendFees);
-    // Search by name
+
     if (q.isNotEmpty) {
       base = base.where((p) => p.name.toLowerCase().contains(q)).toList();
     }
-    // Sort
+
     switch (_sortBy) {
       case 'name_asc':
         base.sort((a, b) => a.name.compareTo(b.name));
@@ -196,8 +184,6 @@ class _PosSystemPageState extends State<PosSystemPage> {
       }
     });
   }
-
-  // Fitur tambah item manual dihapus.
 
   void _removeFromCart(String productId) {
     setState(() {
@@ -229,10 +215,8 @@ class _PosSystemPageState extends State<PosSystemPage> {
 
   double get _subtotal => OrderSummaryHelper.total(_cart);
 
-  // Format Rupiah (IDR) is centralized via Formatters.idr
-
   Future<void> _saveTransaction() async {
-    if (_saving) return; // guard against double tap
+    if (_saving) return;
     setState(() {
       _saving = true;
     });
@@ -259,7 +243,7 @@ class _PosSystemPageState extends State<PosSystemPage> {
           ),
         )
         .toList();
-    // Tidak menambahkan SEWA LAPANGAN otomatis; kasir memasukkan manual.
+
     try {
       await _invoiceRepo.createInvoice(customer: customer, items: items);
     } catch (e) {
@@ -273,7 +257,7 @@ class _PosSystemPageState extends State<PosSystemPage> {
       return;
     }
     if (!mounted) return;
-    // Optional: clear cart after save
+
     setState(() {
       _cart.clear();
       _saving = false;
@@ -353,7 +337,7 @@ class _PosSystemPageState extends State<PosSystemPage> {
             : Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Left content scrollable
+
                   Expanded(
                     child: ListView(
                       padding: const EdgeInsets.all(12),
@@ -380,7 +364,7 @@ class _PosSystemPageState extends State<PosSystemPage> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  // Right sidebar: Order Summary (tetap)
+
                   SizedBox(width: 360, child: _customerAndSummary()),
                 ],
               );
@@ -392,7 +376,6 @@ class _PosSystemPageState extends State<PosSystemPage> {
     return AppScaffold(title: 'POS System', body: body);
   }
 
-  // Customer section + reusable OrderSummary (keranjang)
   Widget _customerAndSummary() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -444,10 +427,8 @@ class _PosSystemPageState extends State<PosSystemPage> {
     );
   }
 
-  /// Buka bottom sheet untuk mencari pemain/booking.
-  /// Memudahkan memilih nama customer dan jumlah pemain (qty) dari data reservasi.
   Future<void> _openBookingSearch() async {
-    // Show loading dialog while fetching data
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -469,23 +450,19 @@ class _PosSystemPageState extends State<PosSystemPage> {
     );
 
     try {
-      // Ambil semua data dengan status 'booked'
+
       List<TeeTimeModel> all = await _teeRepo.getAllReservations(
         status: 'booked',
       );
 
-      // Get customers who already have invoices - these should be excluded
-      // Customer names are compared in lowercase for case-insensitive matching
       final customersWithInvoices = await _invoiceRepo
           .getCustomersWithInvoices();
 
-      // Filter out bookings from customers who already have invoices
       all = all.where((booking) {
         final playerName = (booking.playerName ?? '').toLowerCase().trim();
         return !customersWithInvoices.contains(playerName);
       }).toList();
 
-      // Close loading dialog
       if (!mounted) return;
       Navigator.of(context).pop();
 
@@ -561,7 +538,7 @@ class _PosSystemPageState extends State<PosSystemPage> {
                                       onPressed: () {
                                         _customerCtrl.text =
                                             m.playerName ?? 'Walk-in';
-                                        // Tidak menambahkan item otomatis dari booking.
+
                                         Navigator.of(ctx).pop();
                                       },
                                       child: const Text('Pilih'),
@@ -579,11 +556,10 @@ class _PosSystemPageState extends State<PosSystemPage> {
         },
       );
     } catch (e) {
-      // Close loading dialog if error occurs
+
       if (!mounted) return;
       Navigator.of(context).pop();
 
-      // Show error message
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Error loading bookings: $e')));

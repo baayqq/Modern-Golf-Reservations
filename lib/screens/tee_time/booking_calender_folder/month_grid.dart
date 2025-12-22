@@ -1,7 +1,3 @@
-// MonthGrid
-// Kalender bulanan 6-minggu (42 sel) dengan pilihan tanggal.
-// Fitur: highlight hari ini, highlight tanggal terpilih, dan header hari.
-// Digunakan di BookingCalendarPage.
 import 'package:flutter/material.dart';
 import 'day_header.dart';
 
@@ -9,7 +5,7 @@ class MonthGrid extends StatelessWidget {
   final DateTime month;
   final DateTime? selected;
   final ValueChanged<DateTime> onSelect;
-  // compact = true bila user sudah memilih tanggal (kalender dibuat lebih pendek)
+
   final bool compact;
   const MonthGrid({
     super.key,
@@ -22,10 +18,9 @@ class MonthGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final firstOfMonth = DateTime(month.year, month.month, 1);
-    final startWeekday = firstOfMonth.weekday % 7; // make Sunday = 0
+    final startWeekday = firstOfMonth.weekday % 7;
 
-    // build list of DateTimes displayed (previous month padding + current + next padding)
-    const totalCells = 42; // 6 weeks x 7 days
+    const totalCells = 42;
     final startDate = firstOfMonth.subtract(Duration(days: startWeekday));
     final dates = List.generate(
       totalCells,
@@ -34,11 +29,11 @@ class MonthGrid extends StatelessWidget {
 
     return Column(
       children: [
-        // Weekday headers
+
         Padding(
           padding: EdgeInsets.symmetric(
             vertical: compact ? 0 : 2,
-          ), // header adaptif (rapat saat compact)
+          ),
           child: const Row(
             children: [
               DayHeader('Sun'),
@@ -51,11 +46,11 @@ class MonthGrid extends StatelessWidget {
             ],
           ),
         ),
-        // Grid
+
         LayoutBuilder(
           builder: (context, c) {
-            final spacing = compact ? 0.0 : 3.0; // jarak antar sel adaptif
-            final boxWidth = c.maxWidth; // isi penuh lebar kontainer
+            final spacing = compact ? 0.0 : 3.0;
+            final boxWidth = c.maxWidth;
             return Center(
               child: SizedBox(
                 width: boxWidth,
@@ -86,9 +81,9 @@ class MonthGrid extends StatelessWidget {
                       Color? bg;
                       final cs = Theme.of(context).colorScheme;
                       if (isSelected) {
-                        bg = cs.primaryContainer; // selection highlight
+                        bg = cs.primaryContainer;
                       } else if (isToday) {
-                        bg = cs.surfaceContainerLowest; // subtle background for today
+                        bg = cs.surfaceContainerLowest;
                       }
 
                       return InkWell(

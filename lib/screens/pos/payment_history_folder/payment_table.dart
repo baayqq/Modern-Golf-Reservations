@@ -1,6 +1,3 @@
-// Widget: Payment Table
-// Tujuan: Menampilkan daftar pembayaran dengan aksi Lihat, Cetak, dan Download.
-// Catatan: Responsif dengan LayoutBuilder; gunakan tabel saat lebar cukup.
 import 'package:flutter/material.dart';
 import '../../../utils/currency.dart';
 import '../../../models/payment_models.dart';
@@ -41,7 +38,7 @@ class PaymentTable extends StatelessWidget {
       builder: (context, constraints) {
         final isWide = constraints.maxWidth > 800;
         if (!isWide) {
-          // Card list view for narrow screens
+
           return ListView.separated(
             itemBuilder: (context, index) {
               final p = payments[index];
@@ -86,7 +83,6 @@ class PaymentTable extends StatelessWidget {
           );
         }
 
-        // Table view for wide screens
         return SingleChildScrollView(
           child: Column(
             children: [

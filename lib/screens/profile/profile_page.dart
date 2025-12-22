@@ -5,8 +5,6 @@ import '../../main.dart' show MyAppStateBridge;
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Halaman profil pengguna yang menampilkan informasi username
-/// dan menyediakan tombol untuk logout
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
@@ -44,9 +42,9 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    // Profile page UI similar to screenshot: title, username field, and Update Profile button.
+
     return Scaffold(
-      // Hindari menu/leading default yang mungkin men-trigger rebuild saat navigasi.
+
       appBar: AppBar(title: const Text('Profile')),
       body: Center(
         child: ConstrainedBox(
@@ -94,16 +92,15 @@ class _ProfilePageState extends State<ProfilePage> {
                     alignment: Alignment.centerLeft,
                     child: Row(
                       children: [
-                        // Tambah tombol Logout juga di Profile agar jelas dan aman
+
                         OutlinedButton.icon(
                           onPressed: () async {
                             try {
-                              // Tambah delay kecil untuk memastikan UI stabil
+
                               await Future.delayed(
                                 const Duration(milliseconds: 50),
                               );
 
-                              // Jangan akses context dulu sebelum operasi async selesai
                               final ok = await SessionStorage().clearSession();
                               if (!ok) {
                                 WidgetsBinding.instance.addPostFrameCallback((
@@ -127,7 +124,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                 return;
                               }
                               MyAppStateBridge.isLoggedInNotifier.value = false;
-                              // Navigasi pada frame berikutnya menggunakan root context
+
                               WidgetsBinding.instance.addPostFrameCallback((_) {
                                 final rc = rootNavigatorKey.currentContext;
                                 if (rc != null && rc.mounted) {

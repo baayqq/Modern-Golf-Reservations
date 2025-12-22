@@ -1,6 +1,3 @@
-// PlayerFields Widget
-// Tujuan: Menampilkan field nama pemain berdasarkan jumlah pemain (1-4).
-// Menggunakan controller dari halaman induk agar state tetap terpusat.
 import 'package:flutter/material.dart';
 import 'field_label.dart';
 

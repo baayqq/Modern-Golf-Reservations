@@ -2,12 +2,6 @@ import 'dart:convert';
 import 'package:modern_golf_reservations/services/invoice_repository.dart';
 import 'package:modern_golf_reservations/services/tee_time_repository.dart';
 
-/// Service untuk mengimpor data dari format JSON ke database.
-///
-/// Fitur:
-/// - Import dari JSON dengan validasi struktur
-/// - Mode Replace (hapus data lama) atau Merge (gabung data)
-/// - Error handling dan logging hasil import
 class DatabaseImportService {
   final InvoiceRepository _invoiceRepo;
   final TeeTimeRepository _teeTimeRepo;
@@ -18,15 +12,9 @@ class DatabaseImportService {
   }) : _invoiceRepo = invoiceRepo,
        _teeTimeRepo = teeTimeRepo;
 
-  /// Hasil import dengan statistik
   ImportResult? _lastImportResult;
   ImportResult? get lastImportResult => _lastImportResult;
 
-  /// Import data dari JSON string
-  ///
-  /// [jsonString] - JSON yang di-export sebelumnya
-  /// [mode] - ImportMode.replace (hapus semua) atau ImportMode.merge (gabung)
-  /// [clearBeforeImport] - Jika true, hapus semua data sebelum import (untuk mode replace)
   Future<ImportResult> importFromJson(
     String jsonString, {
     ImportMode mode = ImportMode.merge,
@@ -34,10 +22,9 @@ class DatabaseImportService {
     final result = ImportResult();
 
     try {
-      // Parse JSON
+
       final Map<String, dynamic> data = jsonDecode(jsonString);
 
-      // Validasi struktur dasar
       if (!_validateJsonStructure(data)) {
         result.success = false;
         result.errors.add(
@@ -47,7 +34,6 @@ class DatabaseImportService {
         return result;
       }
 
-      // Jika mode replace, hapus semua data dulu
       if (mode == ImportMode.replace) {
         await _clearAllData();
         result.notes.add('Mode Replace: Semua data lama dihapus');
@@ -55,13 +41,11 @@ class DatabaseImportService {
 
       final databases = data['databases'] as Map<String, dynamic>;
 
-      // Import POS data jika ada
       if (databases.containsKey('pos')) {
         final posData = databases['pos'] as Map<String, dynamic>;
         await _importPosData(posData, result, mode);
       }
 
-      // Import Tee Time data jika ada
       if (databases.containsKey('teeTimes')) {
         final teeTimeData = databases['teeTimes'] as Map<String, dynamic>;
         await _importTeeTimeData(teeTimeData, result, mode);
@@ -78,9 +62,8 @@ class DatabaseImportService {
     }
   }
 
-  /// Validasi struktur JSON
   bool _validateJsonStructure(Map<String, dynamic> data) {
-    // Check required fields
+
     if (!data.containsKey('version') || !data.containsKey('databases')) {
       return false;
     }
@@ -90,7 +73,6 @@ class DatabaseImportService {
       return false;
     }
 
-    // At least one database should exist
     if (!databases.containsKey('pos') && !databases.containsKey('teeTimes')) {
       return false;
     }
@@ -98,13 +80,12 @@ class DatabaseImportService {
     return true;
   }
 
-  /// Import data POS (invoices dan payments)
   Future<void> _importPosData(
     Map<String, dynamic> posData,
     ImportResult result,
     ImportMode mode,
   ) async {
-    // Import invoices
+
     if (posData.containsKey('invoices')) {
       final invoices = posData['invoices'] as List;
 
@@ -134,7 +115,6 @@ class DatabaseImportService {
       }
     }
 
-    // Import payments
     if (posData.containsKey('payments')) {
       final payments = posData['payments'] as List;
 
@@ -164,7 +144,6 @@ class DatabaseImportService {
     }
   }
 
-  /// Import data Tee Time
   Future<void> _importTeeTimeData(
     Map<String, dynamic> teeTimeData,
     ImportResult result,
@@ -180,7 +159,6 @@ class DatabaseImportService {
           final teeBox = resData['teeBox'] as int;
           final status = resData['status'] as String;
 
-          // Only import if booked (skip available slots in merge mode)
           if (mode == ImportMode.merge && status == 'available') {
             continue;
           }
@@ -207,24 +185,18 @@ class DatabaseImportService {
     }
   }
 
-  /// Hapus semua data (untuk mode replace)
   Future<void> _clearAllData() async {
-    // Note: Untuk implementasi yang lebih robust, kita perlu method clear di repository
-    // Untuk sekarang kita asumsikan data akan di-replace saat insert
-    // Implementasi penuh memerlukan method deleteAll() di repository
+
   }
 }
 
-/// Mode import data
 enum ImportMode {
-  /// Replace: Hapus semua data lama, import data baru
+
   replace,
 
-  /// Merge: Gabung data baru dengan data existing (skip duplikat)
   merge,
 }
 
-/// Hasil import dengan statistik dan error log
 class ImportResult {
   bool success = false;
   int invoicesImported = 0;

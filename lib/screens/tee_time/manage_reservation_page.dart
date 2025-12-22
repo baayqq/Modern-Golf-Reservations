@@ -7,7 +7,6 @@ import 'package:go_router/go_router.dart';
 import 'package:modern_golf_reservations/router.dart' show AppRoute;
 import 'package:modern_golf_reservations/screens/tee_time/manage_reservation_folder/reservation_table.dart';
 import 'package:modern_golf_reservations/screens/tee_time/manage_reservation_folder/pagination_bar.dart';
-// Fees no longer used here because invoice is created via POS.
 
 class ManageReservationPage extends StatefulWidget {
   const ManageReservationPage({super.key});
@@ -23,7 +22,6 @@ class _ManageReservationPageState extends State<ManageReservationPage> {
   DateTime? _filterDate;
   final TextEditingController _playerQueryCtrl = TextEditingController();
 
-  // Pagination state
   int _pageSize = 20;
   int _currentPage = 0;
 
@@ -45,7 +43,7 @@ class _ManageReservationPageState extends State<ManageReservationPage> {
   void _setPageSize(int size) {
     setState(() {
       _pageSize = size;
-      _currentPage = 0; // reset to first page when page size changes
+      _currentPage = 0;
     });
   }
 
@@ -67,7 +65,7 @@ class _ManageReservationPageState extends State<ManageReservationPage> {
     setState(() {
       _items = list;
       _loading = false;
-      _currentPage = 0; // reset page on new data load
+      _currentPage = 0;
     });
   }
 
@@ -100,10 +98,6 @@ class _ManageReservationPageState extends State<ManageReservationPage> {
     }
   }
 
-  /// Alihkan ke halaman POS System untuk membuat invoice.
-  /// Sesuai alur baru: invoice tidak dibuat langsung dari Manage Reservation.
-  /// Kita kirim konteks awal berupa nama customer dan jumlah pemain (qty)
-  /// agar POS dapat memudahkan input GREEN FEE, namun tidak otomatis menambahkannya.
   void _createInvoice(TeeTimeModel m) {
     final customer = (m.playerName == null || m.playerName!.isEmpty)
         ? 'Walk-in'
@@ -149,7 +143,7 @@ class _ManageReservationPageState extends State<ManageReservationPage> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Banner title
+
           Container(
             height: 54,
             decoration: BoxDecoration(
@@ -168,10 +162,10 @@ class _ManageReservationPageState extends State<ManageReservationPage> {
             ),
           ),
           const SizedBox(height: 16),
-          // Filters row
+
           Row(
             children: [
-              // Date filter
+
               SizedBox(
                 height: 40,
                 child: OutlinedButton.icon(
@@ -185,7 +179,7 @@ class _ManageReservationPageState extends State<ManageReservationPage> {
                 ),
               ),
               const SizedBox(width: 8),
-              // Player filter
+
               Expanded(
                 child: TextField(
                   controller: _playerQueryCtrl,
@@ -235,4 +229,3 @@ class _ManageReservationPageState extends State<ManageReservationPage> {
     );
   }
 }
-// Widgets lokal telah dipindahkan ke folder manage_reservation_folder sebagai widget modular.

@@ -15,10 +15,8 @@ class _DashboardPageState extends State<DashboardPage> {
   final TextEditingController _dateController = TextEditingController();
   DateTime _selectedDate = DateTime.now();
 
-  // Repository untuk mengambil data dari SQLite (WASM di web)
   final TeeTimeRepository _repo = TeeTimeRepository();
 
-  // State untuk statistik dan daftar booking
   bool _loading = true;
   String? _error;
   int _todayCount = 0;
@@ -36,7 +34,6 @@ class _DashboardPageState extends State<DashboardPage> {
     _initData();
   }
 
-  /// Inisialisasi database dan muat statistik awal serta daftar booking
   Future<void> _initData() async {
     try {
       await _repo.init();
@@ -53,7 +50,6 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   }
 
-  /// Memuat ulang statistik jumlah pemain hari ini, minggu ini, bulan ini
   Future<void> _refreshCounts() async {
     final today = await _repo.countPlayersToday();
     final week = await _repo.countPlayersThisWeek();
@@ -65,7 +61,6 @@ class _DashboardPageState extends State<DashboardPage> {
     });
   }
 
-  /// Memuat daftar booking untuk tanggal yang dipilih (untuk tabel)
   Future<void> _refreshBookingsForSelectedDate() async {
     final list = await _repo.getBookedForDate(_selectedDate);
     setState(() {
@@ -84,11 +79,10 @@ class _DashboardPageState extends State<DashboardPage> {
       firstDate: firstDate,
       lastDate: lastDate,
       initialEntryMode: DatePickerEntryMode.calendarOnly,
-      initialDatePickerMode: DatePickerMode.day, // day view default
+      initialDatePickerMode: DatePickerMode.day,
       selectableDayPredicate: (day) => true,
       builder: (context, child) {
-        // Force calendar-only mode with month/year dropdown always visible (Material 3 behavior).
-        // For better direct selection UX, show the input mode initially:
+
         return Theme(
           data: Theme.of(context),
           child: child ?? const SizedBox.shrink(),
@@ -101,14 +95,14 @@ class _DashboardPageState extends State<DashboardPage> {
         _selectedDate = picked;
         _dateController.text = _formattedSelectedDate;
       });
-      // Setelah ganti tanggal, muat ulang daftar booking untuk tabel
+
       await _refreshBookingsForSelectedDate();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Tampilkan AppScaffold agar latar konsisten dan responsif
+
     return AppScaffold(
       title: 'Dashboard',
       body: _loading
@@ -128,7 +122,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                // Date row styled similar to the sample image:
+
                 Align(
                   alignment: Alignment.center,
                   child: ConstrainedBox(
@@ -304,7 +298,7 @@ class _TeeTable extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: Column(
         children: [
-          // Header table dengan background berbeda
+
           Table(
             border: TableBorder(
               top: BorderSide(color: Colors.grey.shade300),
@@ -343,7 +337,7 @@ class _TeeTable extends StatelessWidget {
               ),
             ],
           ),
-          // Isi tabel: scrollable bila banyak baris
+
           if (bookings.isEmpty)
             SizedBox(
               height: 60,

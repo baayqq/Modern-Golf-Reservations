@@ -1,6 +1,3 @@
-// Purpose: Header for POS products section including search and sort controls.
-// Keeps the layout responsive and consistent across web/mobile.
-
 import 'package:flutter/material.dart';
 
 class ProductsHeader extends StatelessWidget {

@@ -1,8 +1,3 @@
-// Service: Encapsulates business logic for InvoicePage.
-// Handles loading invoices with outstanding calculation, fetching invoice lines,
-// validating combined/individual payment allocations, and processing payments
-// via InvoiceRepository. Keeps UI (screens) clean and junior-friendly.
-
 import 'package:modern_golf_reservations/models/invoice_models.dart';
 import 'invoice_repository.dart';
 
@@ -14,7 +9,6 @@ class InvoicePaymentService {
   Future<void> init() => _repo.init();
   Future<void> close() => _repo.close();
 
-  // Load invoices with optional filters and compute outstanding for each.
   Future<List<InvoiceItem>> loadInvoices({DateTime? date, String? customerQuery}) async {
     final rows = await _repo.getInvoices(date: date, customerQuery: customerQuery);
     final items = <InvoiceItem>[];
@@ -32,7 +26,7 @@ class InvoicePaymentService {
       final paid = await _repo.getPaidAmountForInvoice(idVal);
       final outstanding = (total - paid).clamp(0.0, double.infinity);
       if (outstanding <= 0.0) {
-        // Hide fully paid invoices from the page.
+
         continue;
       }
       items.add(
@@ -49,7 +43,6 @@ class InvoicePaymentService {
     return items;
   }
 
-  // Fetch line items for a specific invoice.
   Future<List<InvoiceLine>> getInvoiceLines(int invoiceId) async {
     final rows = await _repo.getItemsForInvoice(invoiceId);
     return rows.map((e) {
@@ -60,8 +53,6 @@ class InvoicePaymentService {
     }).toList();
   }
 
-  // Validate combined allocations: ensure each amount > 0 and <= outstanding.
-  // Returns a CombinedReceiptData (for preview/printing) if valid; otherwise null with errors.
   CombinedReceiptData? validateCombinedAllocations({
     required List<InvoiceItem> invoices,
     required Map<int, double> amountsByInvoiceId,
@@ -108,7 +99,7 @@ class InvoicePaymentService {
     }
 
     if (invalid.isNotEmpty || allocations.isEmpty) {
-      return null; // caller should show errors/snackbar
+      return null;
     }
 
     return CombinedReceiptData(
@@ -119,7 +110,6 @@ class InvoicePaymentService {
     );
   }
 
-  // Process a combined payment and return saved paymentId.
   Future<int> processCombinedPayment({
     required String payer,
     required Map<int, double> amountsByInvoiceId,
@@ -136,7 +126,6 @@ class InvoicePaymentService {
     return paymentId;
   }
 
-  // Process an individual payment as a single combined payment with one allocation.
   Future<void> processIndividualPayment({
     required int invoiceId,
     required double amount,

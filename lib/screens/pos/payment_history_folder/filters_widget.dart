@@ -1,6 +1,3 @@
-// Widget: Payment History Filters
-// Tujuan: Menyediakan filter tanggal, nama pembayar, dan metode pembayaran.
-// Catatan: Responsif menggunakan Row + Expanded dan tinggi tombol konsisten.
 import 'package:flutter/material.dart';
 
 class PaymentHistoryFilters extends StatelessWidget {

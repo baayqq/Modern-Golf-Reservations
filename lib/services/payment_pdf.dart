@@ -1,8 +1,3 @@
-// Service: Generate printable PDF for a payment receipt.
-// This builds a clean receipt with Payment ID, Payer, Date, Method,
-// Amount, and a table of allocations to invoices. Designed for Flutter Web
-// via the `printing` package.
-
 import 'dart:typed_data';
 
 import 'package:intl/intl.dart';
@@ -11,7 +6,6 @@ import 'package:pdf/widgets.dart' as pw;
 
 import '../utils/currency.dart';
 
-/// Simple data holder for payment allocation rows in the PDF.
 class PaymentAllocation {
   final int invoiceId;
   final String customer;
@@ -28,12 +22,6 @@ class PaymentAllocation {
   });
 }
 
-/// Generate a payment receipt PDF as bytes.
-///
-/// Layout:
-/// - Title: "PAYMENT RECEIPT" bold size 24
-/// - Meta: Payment ID, Date, Payer, Method, Amount
-/// - Table: Invoice ID, Customer, Allocated Amount, Invoice Total, Status
 Future<Uint8List> generatePaymentPdf({
   required int paymentId,
   required DateTime date,
@@ -72,15 +60,14 @@ Future<Uint8List> generatePaymentPdf({
               pw.Text('Jumlah Pembayaran: ${Formatters.idr(amount)}'),
               pw.SizedBox(height: 16),
 
-              // Table of allocations
               pw.Table(
                 border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.6),
                 columnWidths: {
-                  0: const pw.FlexColumnWidth(1.5), // Invoice ID
-                  1: const pw.FlexColumnWidth(3),   // Customer
-                  2: const pw.FlexColumnWidth(2),   // Allocated Amount
-                  3: const pw.FlexColumnWidth(2),   // Invoice Total
-                  4: const pw.FlexColumnWidth(1.5), // Status
+                  0: const pw.FlexColumnWidth(1.5),
+                  1: const pw.FlexColumnWidth(3),
+                  2: const pw.FlexColumnWidth(2),
+                  3: const pw.FlexColumnWidth(2),
+                  4: const pw.FlexColumnWidth(1.5),
                 },
                 children: [
                   pw.TableRow(
@@ -134,7 +121,6 @@ Future<Uint8List> generatePaymentPdf({
   return doc.save();
 }
 
-// Helper to render a standard table cell.
 pw.Widget _cell(String text, {bool bold = false}) {
   return pw.Padding(
     padding: const pw.EdgeInsets.symmetric(vertical: 8, horizontal: 6),

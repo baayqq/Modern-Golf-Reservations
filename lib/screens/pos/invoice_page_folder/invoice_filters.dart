@@ -1,6 +1,3 @@
-// Widget: InvoiceFilters
-// Kartu filter untuk Invoice Page: tanggal dan nama pemain.
-// Menggunakan controller dari parent dan callback untuk aksi.
 import 'package:flutter/material.dart';
 
 class InvoiceFilters extends StatelessWidget {

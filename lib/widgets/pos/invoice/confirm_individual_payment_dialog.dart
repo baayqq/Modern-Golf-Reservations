@@ -1,6 +1,3 @@
-// Widget: Reusable dialog to confirm individual payment.
-// Displays invoice info, amount, remaining after payment, payer, and method.
-
 import 'package:flutter/material.dart';
 import 'package:modern_golf_reservations/models/invoice_models.dart';
 import 'package:modern_golf_reservations/utils/currency.dart';

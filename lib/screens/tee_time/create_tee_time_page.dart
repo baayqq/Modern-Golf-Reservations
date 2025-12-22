@@ -1,7 +1,3 @@
-// Create Tee Time Page
-// Menyediakan form untuk membuat atau mengedit reservasi tee time.
-// Termasuk input tanggal, jam mulai, jumlah pemain (maks 4), dan nama pemain 1-4.
-// Posisi form pada mode create: Jumlah Pemain diletakkan sebelum Nama Pemain 1.
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:modern_golf_reservations/app_scaffold.dart';
@@ -26,19 +22,19 @@ class CreateTeeTimePage extends StatefulWidget {
 
 class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
   final _repo = TeeTimeRepository();
-  // Create form fields
+
   DateTime? _createDate;
   TimeOfDay? _createTime;
-  // Menyimpan pilihan tee box untuk create (1 atau 10)
+
   String? _createTeeBox;
   final TextEditingController _playerCtrl = TextEditingController();
   final TextEditingController _player2Ctrl = TextEditingController();
   final TextEditingController _player3Ctrl = TextEditingController();
   final TextEditingController _player4Ctrl = TextEditingController();
-  // Jumlah pemain: default kosong agar field nama tidak muncul sebelum dipilih.
+
   final TextEditingController _countCtrl = TextEditingController(text: '');
   final TextEditingController _notesCtrl = TextEditingController();
-  // Edit single reservation fields when initial is provided
+
   DateTime? _editDate;
   TimeOfDay? _editTime;
 
@@ -54,8 +50,7 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
   }
 
   Future<void> _pickCreateTime() async {
-    // Dialog waktu: dua bagian, Tee Box 1 dan Tee Box 10.
-    // Gunakan jam standar dari repository agar konsisten dengan Booking Calendar.
+
     final slotStrings = TeeTimeRepository.standardSlotTimes();
     final slotTOD = slotStrings.map(_parseTime).toList();
     final itemsBox1 = slotTOD;
@@ -166,8 +161,6 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
     final m = t.minute.toString().padLeft(2, '0');
     return '$h:$m';
   }
-
-  // Field nama pemain kini ditangani oleh widget PlayerFields (modular & reusable).
 
   String? _validate({required bool editMode}) {
     final count = int.tryParse(_countCtrl.text.trim());
@@ -398,6 +391,3 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
     );
   }
 }
-
-// Widget duplikat (TimeList, FieldLabel, DateField) telah dipindah ke
-// folder create_tee_time_folder agar lebih modular dan reusable.

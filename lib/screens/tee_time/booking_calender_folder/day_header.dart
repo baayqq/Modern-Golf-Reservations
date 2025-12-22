@@ -1,6 +1,3 @@
-// DayHeader
-// Widget label hari (Sun-Mon-...) untuk header kalender bulanan.
-// Tujuan: reusable, ringan, dan konsisten di seluruh tampilan kalender.
 import 'package:flutter/material.dart';
 
 class DayHeader extends StatelessWidget {

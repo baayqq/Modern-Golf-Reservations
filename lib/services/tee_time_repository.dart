@@ -8,7 +8,7 @@ class TeeTimeRepository {
   Database? _db;
 
   Future<void> init() async {
-    // Use SQLite via WASM on web
+
     final factory = databaseFactoryFfiWeb;
     _db = await factory.openDatabase('tee_times.db');
     await _createTables();
@@ -32,7 +32,7 @@ class TeeTimeRepository {
         status TEXT NOT NULL
       );
     ''');
-    // Index to speed up per-day queries
+
     await _db!.execute(
       'CREATE INDEX IF NOT EXISTS idx_tee_times_date ON tee_times(date);',
     );
@@ -71,7 +71,7 @@ class TeeTimeRepository {
 
     final now = DateTime.now();
     final start = DateTime(now.year, now.month, now.day);
-    final daysToSeed = 21; // 3 weeks of sample data
+    final daysToSeed = 21;
     final times = TeeTimeRepository.standardSlotTimes();
 
     final batch = _db!.batch();
@@ -80,8 +80,7 @@ class TeeTimeRepository {
       final dayIso = _iso(day);
       for (var i = 0; i < times.length; i++) {
         final time = times[i];
-        // Demo seed: start ALL slots as available for BOTH tee boxes.
-        // This ensures when user books Tee Box 1, only that box becomes reserved.
+
         batch.insert(
           'tee_times',
           {
@@ -124,7 +123,6 @@ class TeeTimeRepository {
     return rows.map((e) => TeeTimeModel.fromMap(e)).toList();
   }
 
-  /// Get only booked slots for a specific date, ordered by time (for dashboard listing).
   Future<List<TeeTimeModel>> getBookedForDate(DateTime date) async {
     final iso = _iso(date);
     final rows = await _db!.query(
@@ -221,7 +219,6 @@ class TeeTimeRepository {
     await _db!.delete('tee_times', where: 'id = ?', whereArgs: [id]);
   }
 
-  /// Create new reservation or convert existing available slot into booked.
   Future<void> createOrBookSlot({
     required DateTime date,
     required String time,
@@ -233,7 +230,7 @@ class TeeTimeRepository {
     String? player4Name,
     String? notes,
   }) async {
-    // Check if a row exists for this date+time
+
     final rows = await _db!.query(
       'tee_times',
       where: 'date = ? AND time = ? AND teeBox = ?',
@@ -241,7 +238,7 @@ class TeeTimeRepository {
       limit: 1,
     );
     if (rows.isNotEmpty) {
-      // Update existing row
+
       final id = (rows.first['id'] as int?) ?? (rows.first['id'] as num).toInt();
       await _db!.update(
         'tee_times',
@@ -258,7 +255,7 @@ class TeeTimeRepository {
         whereArgs: [id],
       );
     } else {
-      // Insert new row
+
       await _db!.insert('tee_times', {
         'date': _iso(date),
         'time': time,
@@ -295,9 +292,6 @@ class TeeTimeRepository {
     return rows.isNotEmpty;
   }
 
-  // ---- Dashboard statistics helpers ----
-  /// Sum of players on the given date (status = 'booked').
-  /// Uses playerCount if present; defaults to 1 per booked slot when null.
   Future<int> countPlayersOnDate(DateTime date) async {
     final iso = _iso(date);
     final rows = await _db!.rawQuery(
@@ -309,7 +303,6 @@ class TeeTimeRepository {
     return (val is int) ? val : (val as num).toInt();
   }
 
-  /// Sum of players in [start, end) date range.
   Future<int> countPlayersInRange(DateTime startInclusive, DateTime endExclusive) async {
     final startIso = _iso(startInclusive);
     final endIso = _iso(endExclusive);
@@ -330,7 +323,7 @@ class TeeTimeRepository {
 
   Future<int> countPlayersThisWeek() async {
     final now = DateTime.now();
-    // Start of week (Monday)
+
     final start = DateTime(now.year, now.month, now.day)
         .subtract(Duration(days: now.weekday - 1));
     final end = start.add(const Duration(days: 7));
@@ -344,10 +337,6 @@ class TeeTimeRepository {
     return countPlayersInRange(start, end);
   }
 
-  // ---- Standard slot time helpers (shared by UI pages) ----
-  /// Returns standard tee time slots in Indonesian HH:mm format.
-  /// Applies 10-minute intervals with a break between 08:30 and 11:30.
-  /// Ranges: 06:30–08:30 and 11:30–14:00.
   static List<String> standardSlotTimes() {
     List<String> buildRange(int sh, int sm, int eh, int em) {
       final start = DateTime(2000, 1, 1, sh, sm);

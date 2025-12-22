@@ -4,8 +4,6 @@ import 'router.dart' show AppRoute, rootNavigatorKey;
 import 'services/session_storage.dart' show SessionStorage;
 import 'main.dart' show MyAppStateBridge;
 
-/// Scaffold sederhana untuk header dengan dua dropdown dan body fleksibel.
-/// Dipisah dari main.dart agar main.dart hanya sebagai pemanggil.
 class AppScaffold extends StatelessWidget {
   final Widget body;
   final String title;
@@ -13,8 +11,7 @@ class AppScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Contoh penempatan action Logout pada AppBar/Overflow menu:
-    // Jika file Anda sudah memiliki AppBar/menus, Anda bisa memindahkan IconButton ini ke sana.
+
     final isWide = MediaQuery.of(context).size.width >= 900;
     final appBarFg =
         Theme.of(context).appBarTheme.foregroundColor ??
@@ -27,7 +24,7 @@ class AppScaffold extends StatelessWidget {
         title: Row(
           children: [
             const SizedBox(width: 12),
-            // AppBar logo dari web/icons/Icon-192.png; ukuran kecil agar serasi dengan tinggi AppBar.
+
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: Image.network(
@@ -53,7 +50,7 @@ class AppScaffold extends StatelessWidget {
             icon: Icons.dashboard,
             label: 'Dashboard',
             onTap: () {
-              // Hindari memakai context dari AppBar langsung; gunakan root context
+
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 final rc = rootNavigatorKey.currentContext;
                 if (rc != null && rc.mounted) {
@@ -66,12 +63,12 @@ class AppScaffold extends StatelessWidget {
               });
             },
           ),
-          // Membership & Register Player removed; keep working menus below.
+
           _TopMenu(
             icon: Icons.calendar_month,
             label: 'Tee Time Reservation',
             onSelect: (ctx, key) {
-              // Navigasi selalu lewat root context dan dijalankan pada frame berikutnya
+
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 final rc = rootNavigatorKey.currentContext;
                 if (rc == null || !rc.mounted) return;
@@ -133,7 +130,7 @@ class AppScaffold extends StatelessWidget {
             ],
           ),
           const SizedBox(width: 8),
-          // User dropdown: Profile & Logout
+
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Row(
@@ -146,7 +143,7 @@ class AppScaffold extends StatelessWidget {
                     return GestureDetector(
                       behavior: HitTestBehavior.opaque,
                       onTapDown: (details) async {
-                        // Hitung posisi tepat untuk dropdown
+
                         final RenderBox btnBox =
                             btnContext.findRenderObject() as RenderBox;
                         final Offset btnTopLeft = btnBox.localToGlobal(
@@ -213,9 +210,9 @@ class AppScaffold extends StatelessWidget {
                         );
 
                         if (key != null) {
-                          // Pastikan menu benar-benar tertutup sebelum navigasi
+
                           await Future.microtask(() async {
-                            // Tambah delay kecil untuk memastikan menu benar-benar tertutup
+
                             await Future.delayed(
                               const Duration(milliseconds: 100),
                             );
@@ -223,7 +220,7 @@ class AppScaffold extends StatelessWidget {
                             switch (key) {
                               case 'profile':
                                 {
-                                  // Gunakan post frame callback untuk navigasi yang aman
+
                                   WidgetsBinding.instance.addPostFrameCallback((
                                     _,
                                   ) {
@@ -265,22 +262,21 @@ class AppScaffold extends StatelessWidget {
                               case 'logout':
                                 {
                                   try {
-                                    // Jangan sentuh UI/context sampai operasi async selesai
+
                                     final success = await SessionStorage()
                                         .clearSession();
                                     if (success) {
-                                      // Update state global
+
                                       MyAppStateBridge
                                               .isLoggedInNotifier
                                               .value =
                                           false;
-                                      // Reset flag POS agar sesi baru dimulai bersih
+
                                       MyAppStateBridge
                                               .posEnteredNotifier
                                               .value =
                                           false;
 
-                                      // Navigasi di frame berikutnya menggunakan root context
                                       WidgetsBinding.instance.addPostFrameCallback((
                                         _,
                                       ) {
@@ -303,7 +299,7 @@ class AppScaffold extends StatelessWidget {
                                         }
                                       });
                                     } else {
-                                      // Gunakan root context untuk snackbar
+
                                       WidgetsBinding.instance
                                           .addPostFrameCallback((_) {
                                             final ctx =
@@ -409,14 +405,13 @@ class _TopMenu extends StatelessWidget {
         Theme.of(context).appBarTheme.foregroundColor ??
         Theme.of(context).colorScheme.onPrimary;
     final appBarFgSubtle = appBarFg.withValues(alpha: 0.7);
-    // Gunakan onTapDown + showMenu manual agar kita bisa menutup menu terlebih dulu
-    // sebelum melakukan navigasi. Ini mencegah penggunaan context yang ter-deactivated.
+
     return Builder(
       builder: (btnContext) {
         return GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTapDown: (details) async {
-            // Hitung posisi tepat berdasarkan ukuran tombol header yang ditekan
+
             final RenderBox btnBox = btnContext.findRenderObject() as RenderBox;
             final Offset btnTopLeft = btnBox.localToGlobal(Offset.zero);
             final Size btnSize = btnBox.size;
@@ -425,7 +420,7 @@ class _TopMenu extends StatelessWidget {
             final RelativeRect position = RelativeRect.fromLTRB(
               left,
               top,
-              left, // gunakan left juga sebagai right agar dropdown sejajar kiri tombol
+              left,
               0,
             );
             final key = await showMenu<String>(
@@ -447,7 +442,7 @@ class _TopMenu extends StatelessWidget {
                   .toList(),
             );
             if (key != null) {
-              // Guard BuildContext after the async gap (await showMenu)
+
               await Future.microtask(() {
                 if (!btnContext.mounted) return;
                 onSelect(btnContext, key);

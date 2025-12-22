@@ -1,6 +1,3 @@
-// ReservationTable
-// Tabel daftar reservation dengan kolom ID, Player, Date, Time, Status, Actions.
-// Mendukung aksi Edit, Create Invoice, Delete melalui callback dari parent.
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:modern_golf_reservations/models/tee_time_model.dart';
@@ -29,7 +26,7 @@ class ReservationTable extends StatelessWidget {
       'Status',
       'Actions',
     ];
-    // Lebar kolom tetap agar tidak menggunakan Expanded di dalam area scroll horizontal
+
     const colId = 120.0;
     const colPlayer = 220.0;
     const colDate = 140.0;
@@ -56,7 +53,7 @@ class ReservationTable extends StatelessWidget {
               outside: BorderSide(color: Theme.of(context).colorScheme.outline),
             ),
             children: [
-              // header
+
               TableRow(
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surfaceContainerHighest,
@@ -68,7 +65,7 @@ class ReservationTable extends StatelessWidget {
                         ))
                     .toList(),
               ),
-              // rows
+
               ...items.map((r) => TableRow(children: [
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),

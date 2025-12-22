@@ -1,17 +1,16 @@
-/// Tee time data model
 class TeeTimeModel {
   final int? id;
   final DateTime date;
-  final String time; // HH:mm
-  final int? teeBox; // 1 atau 10
+  final String time;
+  final int? teeBox;
   final String? playerName;
-  // Additional player names (optional). Player 1 is considered the leader (ketua sewa)
+
   final String? player2Name;
   final String? player3Name;
   final String? player4Name;
-  final int? playerCount; // jumlah pemain
-  final String? notes; // catatan
-  final String status; // 'available' | 'booked'
+  final int? playerCount;
+  final String? notes;
+  final String status;
 
   const TeeTimeModel({
     this.id,

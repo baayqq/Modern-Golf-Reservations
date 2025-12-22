@@ -1,16 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Abstraction over SharedPreferences for session-related data.
-/// Centralizes keys, adds minimal consistency handling, and keeps UI free from storage details.
 class SessionStorage {
-  // Gunakan key yang sama dengan yang digunakan di login_page.dart
+
   static const String _keyUsername = 'username';
   static const String _keyIsLoggedIn = 'isLoggedIn';
 
   static void _log(String msg) {
-    // Prefix agar mudah difilter di console
-    // ignore: avoid_print
+
     print('[SessionStorage] $msg');
   }
 
@@ -22,21 +19,18 @@ class SessionStorage {
   }) async {
     final prefs = await SharedPreferences.getInstance();
 
-    // Write sequentially and keep state consistent on failure.
     final okUser = await prefs.setString(_keyUsername, username);
     if (!okUser) return false;
 
     final okLogin = await prefs.setBool(_keyIsLoggedIn, isLoggedIn);
     if (!okLogin) {
-      // Best-effort rollback so partial writes don't leave inconsistent state.
+
       await prefs.remove(_keyUsername);
       return false;
     }
     return true;
   }
 
-  /// Clears session data and converges to a "logged-out" state.
-  /// Returns true if the end state is logged-out and username removed.
   Future<bool> clearSession() async {
     _log('clearSession: start');
     final sw = Stopwatch()..start();
@@ -47,7 +41,7 @@ class SessionStorage {
     );
 
     try {
-      // Jalankan operasi utama
+
       _log('clearSession: removing username and setting isLoggedIn=false');
       final results = await Future.wait<bool>([
         prefs.remove(_keyUsername),
@@ -68,7 +62,6 @@ class SessionStorage {
         ]);
       }
 
-      // Verifikasi akhir
       final stillHasUser = prefs.getString(_keyUsername) != null;
       final isLoggedIn = prefs.getBool(_keyIsLoggedIn) ?? false;
       final success = !stillHasUser && !isLoggedIn;

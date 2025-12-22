@@ -1,6 +1,3 @@
-// Widget: InvoiceTable
-// Menampilkan tabel daftar invoice dengan checkbox, input nominal bayar, dan kolom-kolom utama.
-// Memisahkan UI dari logika agar mudah diuji dan dipelihara.
 import 'package:flutter/material.dart';
 import 'package:modern_golf_reservations/models/invoice_models.dart';
 import 'package:modern_golf_reservations/utils/currency.dart';
@@ -48,13 +45,13 @@ class _InvoiceTableState extends State<InvoiceTable> {
         builder: (context, constraints) {
           final table = Table(
             columnWidths: const {
-              0: FixedColumnWidth(56), // select
-              1: FlexColumnWidth(1), // invoice id
-              2: FlexColumnWidth(2), // customer name
-              3: FlexColumnWidth(1.4), // total
-              4: FlexColumnWidth(1.6), // bayar (input)
-              5: FlexColumnWidth(1), // status
-              6: FlexColumnWidth(1.2), // date
+              0: FixedColumnWidth(56),
+              1: FlexColumnWidth(1),
+              2: FlexColumnWidth(2),
+              3: FlexColumnWidth(1.4),
+              4: FlexColumnWidth(1.6),
+              5: FlexColumnWidth(1),
+              6: FlexColumnWidth(1.2),
             },
             border: TableBorder.all(
               color: Theme.of(context).colorScheme.outline,
@@ -116,7 +113,7 @@ class _InvoiceTableState extends State<InvoiceTable> {
     widget.amountControllers[idInt] = amountCtrl;
     return TableRow(
       children: [
-        // Select checkbox
+
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           child: Checkbox(
@@ -124,7 +121,7 @@ class _InvoiceTableState extends State<InvoiceTable> {
             onChanged: (val) => widget.onCheckboxChanged(inv, val),
           ),
         ),
-        // Invoice ID (clickable)
+
         InkWell(
           onTap: () => widget.onTapDetails(inv),
           child: Padding(
@@ -135,7 +132,7 @@ class _InvoiceTableState extends State<InvoiceTable> {
             ),
           ),
         ),
-        // Customer Name
+
         InkWell(
           onTap: () => widget.onTapDetails(inv),
           child: Padding(
@@ -147,7 +144,7 @@ class _InvoiceTableState extends State<InvoiceTable> {
             ),
           ),
         ),
-        // Total Amount
+
         InkWell(
           onTap: () => widget.onTapDetails(inv),
           child: Padding(
@@ -155,7 +152,7 @@ class _InvoiceTableState extends State<InvoiceTable> {
             child: Text(Formatters.idr(inv.total)),
           ),
         ),
-        // Bayar (Rp) - input
+
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           child: SizedBox(
@@ -180,12 +177,12 @@ class _InvoiceTableState extends State<InvoiceTable> {
             ),
           ),
         ),
-        // Payment Status (badge)
+
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           child: PaymentStatusBadge(status: inv.status),
         ),
-        // Date
+
         InkWell(
           onTap: () => widget.onTapDetails(inv),
           child: Padding(

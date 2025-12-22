@@ -4,12 +4,11 @@ import 'package:modern_golf_reservations/services/database_import_service.dart';
 import 'package:modern_golf_reservations/services/invoice_repository.dart';
 import 'package:modern_golf_reservations/services/tee_time_repository.dart';
 import 'package:modern_golf_reservations/app_scaffold.dart';
-// For web: download file
+
 import 'dart:convert';
 import 'dart:html' as html;
 import 'package:flutter/foundation.dart' show kIsWeb;
 
-/// Halaman manajemen database untuk import/export data
 class DatabaseManagementPage extends StatefulWidget {
   const DatabaseManagementPage({super.key});
 
@@ -55,7 +54,6 @@ class _DatabaseManagementPageState extends State<DatabaseManagementPage> {
       teeTimeRepo: _teeTimeRepo,
     );
 
-    // Load summary
     _exportSummary = await _exportService.getExportSummary();
 
     setState(() {
@@ -86,7 +84,6 @@ class _DatabaseManagementPageState extends State<DatabaseManagementPage> {
           break;
       }
 
-      // Download file (Web only)
       if (kIsWeb) {
         final bytes = utf8.encode(jsonData);
         final blob = html.Blob([bytes]);
@@ -118,7 +115,6 @@ class _DatabaseManagementPageState extends State<DatabaseManagementPage> {
   }
 
   Future<void> _handleImport() async {
-    // Web: use file picker
     if (kIsWeb) {
       final uploadInput = html.FileUploadInputElement()..accept = '.json';
       uploadInput.click();
@@ -147,11 +143,12 @@ class _DatabaseManagementPageState extends State<DatabaseManagementPage> {
         mode: _importMode,
       );
 
+      await _invoiceRepo.recalculateAllInvoiceStatuses();
+
       setState(() {
         _lastImportResult = result;
       });
 
-      // Refresh summary
       _exportSummary = await _exportService.getExportSummary();
 
       if (!mounted) return;
@@ -159,7 +156,7 @@ class _DatabaseManagementPageState extends State<DatabaseManagementPage> {
         SnackBar(
           content: Text(
             result.success
-                ? '✅ Import berhasil! ${result.invoicesImported} invoices, ${result.paymentsImported} payments, ${result.teeSlotsImported} slots'
+                ? '✅ Import berhasil! ${result.invoicesImported} invoices, ${result.paymentsImported} payments, ${result.teeSlotsImported} slots. Status invoice sudah di-recalculate.'
                 : '❌ Import gagal dengan ${result.errors.length} errors',
           ),
           backgroundColor: result.success ? Colors.green : Colors.orange,
@@ -195,7 +192,6 @@ class _DatabaseManagementPageState extends State<DatabaseManagementPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Header info
                   Card(
                     child: Padding(
                       padding: const EdgeInsets.all(16),
@@ -232,7 +228,6 @@ class _DatabaseManagementPageState extends State<DatabaseManagementPage> {
 
                   const SizedBox(height: 24),
 
-                  // Export Section
                   Card(
                     child: Padding(
                       padding: const EdgeInsets.all(16),
@@ -256,7 +251,6 @@ class _DatabaseManagementPageState extends State<DatabaseManagementPage> {
                           ),
                           const SizedBox(height: 16),
 
-                          // Export scope selection
                           SegmentedButton<ExportScope>(
                             segments: const [
                               ButtonSegment(
@@ -304,7 +298,6 @@ class _DatabaseManagementPageState extends State<DatabaseManagementPage> {
 
                   const SizedBox(height: 24),
 
-                  // Import Section
                   Card(
                     child: Padding(
                       padding: const EdgeInsets.all(16),
@@ -328,7 +321,6 @@ class _DatabaseManagementPageState extends State<DatabaseManagementPage> {
                           ),
                           const SizedBox(height: 16),
 
-                          // Import mode selection
                           SegmentedButton<ImportMode>(
                             segments: const [
                               ButtonSegment(
@@ -383,7 +375,6 @@ class _DatabaseManagementPageState extends State<DatabaseManagementPage> {
                     ),
                   ),
 
-                  // Import result
                   if (_lastImportResult != null) ...[
                     const SizedBox(height: 24),
                     Card(
@@ -407,7 +398,6 @@ class _DatabaseManagementPageState extends State<DatabaseManagementPage> {
                     ),
                   ],
 
-                  // Loading indicator
                   if (_isLoading) ...[
                     const SizedBox(height: 24),
                     const Center(child: CircularProgressIndicator()),

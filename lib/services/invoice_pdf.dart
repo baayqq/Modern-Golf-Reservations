@@ -1,9 +1,3 @@
-// Service: Generate printable PDF invoice for Flutter Web using pdf/widgets.
-// This file provides a single function `generateInvoicePdf` that builds
-// a clean, left-aligned invoice PDF with padding 24, a bold title, meta info,
-// product table, and a large bold total at the bottom. It returns Uint8List
-// and is designed to be used with `printing` on Flutter Web.
-
 import 'dart:typed_data';
 
 import 'package:intl/intl.dart';
@@ -12,9 +6,6 @@ import 'package:pdf/widgets.dart' as pw;
 
 import '../utils/currency.dart';
 
-/// Simple data holder for invoice line items.
-/// Kept here for convenience; if you already have a product model,
-/// you can adapt/convert to this structure before generating the PDF.
 class InvoiceItem {
   final String productName;
   final int quantity;
@@ -29,14 +20,6 @@ class InvoiceItem {
   num get subtotal => quantity * unitPrice;
 }
 
-/// Generate an invoice PDF as bytes.
-///
-/// - title: "INVOICE" uppercase bold size 26
-/// - date: passed as parameter
-/// - customer name: passed as parameter
-/// - items table: product, qty, price, subtotal
-/// - total: bold and larger at the bottom
-/// - layout: left aligned, padding 24
 Future<Uint8List> generateInvoicePdf({
   required DateTime invoiceDate,
   required String customerName,
@@ -57,7 +40,7 @@ Future<Uint8List> generateInvoicePdf({
           child: pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
-              // Title
+
               pw.Text(
                 'INVOICE',
                 style: pw.TextStyle(
@@ -66,19 +49,18 @@ Future<Uint8List> generateInvoicePdf({
                 ),
               ),
               pw.SizedBox(height: 8),
-              // Meta info
+
               pw.Text('Tanggal: ${dateFmt.format(invoiceDate)}'),
               pw.Text('Customer: $customerName'),
               pw.SizedBox(height: 16),
 
-              // Table header
               pw.Table(
                 border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.6),
                 columnWidths: {
-                  0: const pw.FlexColumnWidth(3), // Product name
-                  1: const pw.FlexColumnWidth(1), // Qty
-                  2: const pw.FlexColumnWidth(2), // Unit price
-                  3: const pw.FlexColumnWidth(2), // Subtotal
+                  0: const pw.FlexColumnWidth(3),
+                  1: const pw.FlexColumnWidth(1),
+                  2: const pw.FlexColumnWidth(2),
+                  3: const pw.FlexColumnWidth(2),
                 },
                 children: [
                   pw.TableRow(
@@ -126,7 +108,6 @@ Future<Uint8List> generateInvoicePdf({
   return doc.save();
 }
 
-// Helper to render a standard table cell.
 pw.Widget _cell(String text, {bool bold = false}) {
   return pw.Padding(
     padding: const pw.EdgeInsets.symmetric(vertical: 8, horizontal: 6),

@@ -1,32 +1,21 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart'
-    show kIsWeb; // kIsWeb untuk perilaku khusus web
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 
-/// Simple repository for POS invoices and invoice items using SQLite (WASM on web).
-///
-/// Perubahan penting: gunakan koneksi database bersama (singleton) agar koneksi
-/// tidak tertutup oleh halaman lain. Di Flutter Web (SQLite WASM), menutup satu
-/// koneksi dapat menyebabkan error `DatabaseException(error database_closed)`
-/// pada instance lain. Dengan shared connection, memanggil `close()` menjadi
-/// no-op di web.
 class InvoiceRepository {
-  // Shared connection untuk seluruh aplikasi
   static Database? _sharedDb;
   static bool _tablesInitialized = false;
 
-  // Pegangan koneksi untuk instance ini (mengacu ke _sharedDb)
   Database? _db;
 
   Future<void> init() async {
-    // Buka sekali, share ke semua instance
     if (_sharedDb == null || !_sharedDb!.isOpen) {
       final factory = databaseFactoryFfiWeb;
       _sharedDb = await factory.openDatabase('pos.db');
     }
     _db = _sharedDb;
-    // Inisialisasi tabel hanya sekali
+
     if (!_tablesInitialized) {
       await _createTables();
       await _seedIfEmpty();
@@ -59,7 +48,7 @@ class InvoiceRepository {
     await _db!.execute(
       'CREATE INDEX IF NOT EXISTS idx_invoice_items_invoice ON invoice_items(invoiceId);',
     );
-    // Payments: support combined payments across multiple invoices
+
     await _db!.execute('''
       CREATE TABLE IF NOT EXISTS payments (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -82,27 +71,7 @@ class InvoiceRepository {
     );
   }
 
-  Future<void> _seedIfEmpty() async {
-    final count = Sqflite.firstIntValue(
-      await _db!.rawQuery('SELECT COUNT(*) FROM invoices'),
-    );
-    if ((count ?? 0) == 0) {
-      // Create one sample unpaid invoice for demo
-      final now = DateTime.now();
-      final id = await _db!.insert('invoices', {
-        'customer': 'Alexander Dippo',
-        'total': 24272000.0,
-        'status': 'unpaid',
-        'date': now.toIso8601String(),
-      });
-      await _db!.insert('invoice_items', {
-        'invoiceId': id,
-        'name': 'GREEN FEE',
-        'qty': 1,
-        'price': 24272000.0,
-      });
-    }
-  }
+  Future<void> _seedIfEmpty() async {}
 
   Future<int> createInvoice({
     required String customer,
@@ -154,7 +123,7 @@ class InvoiceRepository {
         date.year,
         date.month,
         date.day,
-      ).toIso8601String().split('T').first; // e.g., 2025-10-15
+      ).toIso8601String().split('T').first;
       whereParts.add("date LIKE ?");
       args.add('$isoDay%');
     }
@@ -180,7 +149,6 @@ class InvoiceRepository {
     );
   }
 
-  // Total paid amount against an invoice (sum of allocations)
   Future<double> getPaidAmountForInvoice(int invoiceId) async {
     final rows = await _db!.rawQuery(
       'SELECT SUM(amount) AS paid FROM payment_allocations WHERE invoiceId = ?',
@@ -190,8 +158,6 @@ class InvoiceRepository {
     return paid;
   }
 
-  /// Create a combined payment that allocates amounts to multiple invoices.
-  /// This allows one payer to settle invoices for multiple customers or bookings.
   Future<int> createCombinedPayment({
     required String payer,
     required List<PaymentAllocationInput> allocations,
@@ -212,7 +178,7 @@ class InvoiceRepository {
         'invoiceId': alloc.invoiceId,
         'amount': alloc.amount,
       });
-      // Update invoice status based on total paid so far
+
       final invRow = await _db!.query(
         'invoices',
         where: 'id = ?',
@@ -236,7 +202,6 @@ class InvoiceRepository {
     return paymentId;
   }
 
-  // --- NEW: Query payments and allocations ---
   Future<List<Map<String, Object?>>> getPayments({
     DateTime? date,
     String? payerQuery,
@@ -279,9 +244,6 @@ class InvoiceRepository {
     );
   }
 
-  /// Get a set of customer names who have invoices.
-  /// This is used to filter out bookings that already have invoices in POS system.
-  /// Returns lowercase names for case-insensitive comparison.
   Future<Set<String>> getCustomersWithInvoices() async {
     final rows = await _db!.rawQuery(
       'SELECT DISTINCT LOWER(customer) as customer FROM invoices WHERE customer IS NOT NULL',
@@ -292,20 +254,31 @@ class InvoiceRepository {
         .toSet();
   }
 
-  /// Pada Flutter Web, penutupan database dapat mempengaruhi koneksi bersama
-  /// dan memicu error `database_closed` di halaman lain. Karena itu, `close()`
-  /// dibuat no-op di web. Di platform non-web, koneksi tetap ditutup.
+  Future<void> recalculateAllInvoiceStatuses() async {
+    final invoices = await _db!.query('invoices');
+    for (final invoice in invoices) {
+      final invoiceId = invoice['id'] as int;
+      final total = (invoice['total'] as num).toDouble();
+      final paid = await getPaidAmountForInvoice(invoiceId);
+      final status = paid >= total
+          ? 'paid'
+          : (paid > 0.0 ? 'partial' : 'unpaid');
+      await _db!.update(
+        'invoices',
+        {'status': status},
+        where: 'id = ?',
+        whereArgs: [invoiceId],
+      );
+    }
+  }
+
   Future<void> close() async {
     if (kIsWeb) {
-      // Jangan tutup koneksi di Web (WASM) untuk menjaga stabilitas.
-      _db =
-          null; // lepaskan referensi instance, koneksi tetap hidup secara global.
+      _db = null;
       return;
     }
     await _db?.close();
     _db = null;
-    // Jika semua instance menutup, sharedDb bisa ditutup juga (opsional).
-    // Dalam implementasi sederhana ini kita biarkan _sharedDb tetap terbuka.
   }
 }
 

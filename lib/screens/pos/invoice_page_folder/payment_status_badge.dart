@@ -1,6 +1,3 @@
-// Widget: PaymentStatusBadge
-// Menampilkan lencana status pembayaran (Unpaid, Paid, Partial) dengan warna konsisten dari Theme.
-// Reusable untuk halaman POS/invoice.
 import 'package:flutter/material.dart';
 import 'package:modern_golf_reservations/models/invoice_models.dart';
 

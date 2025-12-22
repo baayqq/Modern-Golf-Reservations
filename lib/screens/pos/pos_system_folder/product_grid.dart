@@ -1,9 +1,3 @@
-// Purpose: Responsive grid of products for the POS System.
-// Displays product cards with add-to-cart action.
-// Update: Product image area now uses a single consistent icon instead of network images,
-//         to keep UI clean and avoid broken images on web. This follows the user's request
-//         to replace product pictures with the same icon across all items.
-
 import 'package:flutter/material.dart';
 import '../../../models/pos_models.dart';
 import '../../../utils/currency.dart';
@@ -59,8 +53,7 @@ class ProductGrid extends StatelessWidget {
                           color: Theme.of(
                             context,
                           ).colorScheme.surfaceContainerHighest,
-                          // Always show a single consistent icon instead of product images.
-                          // This avoids broken network images and provides a uniform look.
+
                           child: Center(
                             child: Icon(
                               Icons.receipt_long,

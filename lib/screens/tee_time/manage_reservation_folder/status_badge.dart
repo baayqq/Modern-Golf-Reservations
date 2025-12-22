@@ -1,6 +1,3 @@
-// StatusBadge
-// Badge sederhana untuk menampilkan status booking (booked/available) dengan warna konsisten.
-// Reusable di tabel atau komponen lain.
 import 'package:flutter/material.dart';
 
 class StatusBadge extends StatelessWidget {

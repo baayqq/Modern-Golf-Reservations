@@ -4,7 +4,7 @@ import '../../services/invoice_payment_service.dart';
 import 'package:modern_golf_reservations/utils/currency.dart';
 import 'package:printing/printing.dart';
 import '../../services/invoice_pdf.dart' as pdfsvc;
-// Refactor imports: gunakan model & widget terpisah agar UI bersih
+
 import 'package:modern_golf_reservations/models/invoice_models.dart';
 import 'invoice_page_folder/invoice_filters.dart';
 import 'invoice_page_folder/invoice_table.dart';
@@ -33,14 +33,14 @@ class _InvoicePageState extends State<InvoicePage> {
   List<InvoiceLine> _selectedItems = [];
   DateTime? _filterDate;
   final TextEditingController _filterNameCtrl = TextEditingController();
-  // Combined payment state
+
   final TextEditingController _payerCtrl = TextEditingController();
   final Set<int> _selectedInvoiceIds = <int>{};
-  // Controllers untuk nominal bayar per invoice (partial/custom)
+
   final Map<int, TextEditingController> _amountCtrls = {};
-  // Mode pembayaran: gabungan atau individu
+
   PaymentMode _paymentMode = PaymentMode.combined;
-  // Metode pembayaran: cash, credit, debit, qris
+
   String _paymentMethod = 'cash';
   static const Map<String, String> _methodLabels = {
     'cash': 'Cash',
@@ -48,7 +48,7 @@ class _InvoicePageState extends State<InvoicePage> {
     'debit': 'Debit',
     'qris': 'QRIS',
   };
-  // Detail item untuk pilihan gabungan: invoiceId -> daftar item
+
   final Map<int, List<InvoiceLine>> _combinedSelectedItems = {};
 
   @override
@@ -95,9 +95,6 @@ class _InvoicePageState extends State<InvoicePage> {
   }
 
   Future<void> _exportPdf() async {
-    // Dapatkan invoice yang akan dicetak:
-    // - Prioritaskan _selectedInvoice
-    // - Jika tidak ada, tetapi ada tepat satu checkbox terpilih, gunakan itu
     InvoiceItem? targetInv = _selectedInvoice;
     if (targetInv == null && _selectedInvoiceIds.length == 1) {
       final id = _selectedInvoiceIds.first;
@@ -114,10 +111,8 @@ class _InvoicePageState extends State<InvoicePage> {
       return;
     }
 
-    // Pastikan detail item untuk invoice tersebut tersedia
     List<InvoiceLine> items = _selectedItems;
     if (_selectedInvoice == null || _selectedInvoice!.id != targetInv!.id) {
-      // Detail belum dimuat untuk invoice target; muat dari repository
       items = await _service.getInvoiceLines(int.parse(targetInv!.id));
     }
 
@@ -132,35 +127,31 @@ class _InvoicePageState extends State<InvoicePage> {
         .toList();
 
     try {
-      await Printing.layoutPdf(
-        onLayout: (format) => pdfsvc.generateInvoicePdf(
+      await Printing.sharePdf(
+        bytes: await pdfsvc.generateInvoicePdf(
           invoiceDate: targetInv!.date,
           customerName: targetInv!.customer,
           items: pdfItems,
         ),
+        filename: 'invoice_${targetInv!.id}.pdf',
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Gagal membuka dialog print: $e')));
+      ).showSnackBar(SnackBar(content: Text('Gagal print invoice: $e')));
       return;
     }
 
-    // Give browser time to cleanup print dialog
     await Future.delayed(const Duration(milliseconds: 100));
     if (!mounted) return;
 
-    // Safe state refresh
     if (mounted) {
-      setState(() {
-        // Trigger rebuild to ensure UI is responsive
-      });
+      setState(() {});
     }
   }
 
   Future<void> _downloadPdf() async {
-    // Mirip dengan _exportPdf, tetapi mengunduh PDF langsung sebagai file.
     InvoiceItem? targetInv = _selectedInvoice;
     if (targetInv == null && _selectedInvoiceIds.length == 1) {
       final id = _selectedInvoiceIds.first;
@@ -177,7 +168,6 @@ class _InvoicePageState extends State<InvoicePage> {
       return;
     }
 
-    // Pastikan detail item tersedia
     List<InvoiceLine> items = _selectedItems;
     if (_selectedInvoice == null || _selectedInvoice!.id != targetInv.id) {
       items = await _service.getInvoiceLines(int.parse(targetInv.id));
@@ -211,7 +201,6 @@ class _InvoicePageState extends State<InvoicePage> {
       return;
     }
 
-    // Give browser time to cleanup
     await Future.delayed(const Duration(milliseconds: 100));
     if (!mounted) return;
 
@@ -240,7 +229,6 @@ class _InvoicePageState extends State<InvoicePage> {
   }
 
   Future<void> _loadCombinedDetails() async {
-    // Muat detail untuk semua invoice yang dipilih (mode gabungan), paralel agar UI tidak macet
     final ids = _selectedInvoiceIds.toList();
     final futures = ids.map((id) => _service.getInvoiceLines(id)).toList();
     final results = await Future.wait(futures);
@@ -275,8 +263,6 @@ class _InvoicePageState extends State<InvoicePage> {
         padding: const EdgeInsets.all(12),
         child: LayoutBuilder(
           builder: (context, constraints) {
-            // Gunakan scroll vertikal agar konten panjang tidak overflow.
-            // Tabel invoice punya scroll internal sehingga aman.
             final tableHeight = (constraints.maxHeight * 0.5).clamp(
               320.0,
               560.0,
@@ -293,7 +279,7 @@ class _InvoicePageState extends State<InvoicePage> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  // Filters (tanggal & nama) dipisah ke widget agar reusable
+
                   InvoiceFilters(
                     filterDate: _filterDate,
                     nameController: _filterNameCtrl,
@@ -392,7 +378,6 @@ class _InvoicePageState extends State<InvoicePage> {
     );
   }
 
-  // Handler untuk perubahan checkbox pada tabel invoice
   Future<void> _onCheckboxChanged(InvoiceItem inv, bool? val) async {
     final id = int.parse(inv.id);
     if (_paymentMode == PaymentMode.combined) {
@@ -406,7 +391,6 @@ class _InvoicePageState extends State<InvoicePage> {
       });
       await _loadCombinedDetails();
     } else {
-      // Mode individu: hanya satu invoice yang bisa dipilih via checkbox
       setState(() {
         if (val == true) {
           _selectedInvoiceIds
@@ -422,7 +406,6 @@ class _InvoicePageState extends State<InvoicePage> {
     }
   }
 
-  // Cetak rincian pembayaran gabungan (sebelum memproses transaksi)
   Future<void> _printCombinedDetails() async {
     final data = _buildCombinedReceiptData();
     if (data == null) return;
@@ -438,8 +421,8 @@ class _InvoicePageState extends State<InvoicePage> {
             ),
           )
           .toList();
-      await Printing.layoutPdf(
-        onLayout: (format) => paypdf.generatePaymentPdf(
+      await Printing.sharePdf(
+        bytes: await paypdf.generatePaymentPdf(
           paymentId: 0,
           date: DateTime.now(),
           payer: data.payer,
@@ -447,28 +430,25 @@ class _InvoicePageState extends State<InvoicePage> {
           amount: data.totalAmount,
           allocations: allocations,
         ),
+        filename:
+            'payment_combined_${DateTime.now().millisecondsSinceEpoch}.pdf',
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Gagal membuka dialog print: $e')));
+      ).showSnackBar(SnackBar(content: Text('Gagal print payment: $e')));
       return;
     }
 
-    // Critical: Give browser time to cleanup print dialog before continuing
     await Future.delayed(const Duration(milliseconds: 150));
     if (!mounted) return;
 
-    // Safe state refresh to ensure UI responsiveness
     if (mounted) {
-      setState(() {
-        // Refresh UI after print dialog closes
-      });
+      setState(() {});
     }
   }
 
-  // Unduh rincian pembayaran gabungan sebagai PDF
   Future<void> _downloadCombinedDetails() async {
     final data = _buildCombinedReceiptData();
     if (data == null) return;
@@ -504,7 +484,6 @@ class _InvoicePageState extends State<InvoicePage> {
       return;
     }
 
-    // Give browser time to cleanup download dialog
     await Future.delayed(const Duration(milliseconds: 150));
     if (!mounted) return;
 
@@ -513,7 +492,6 @@ class _InvoicePageState extends State<InvoicePage> {
     }
   }
 
-  // Bangun data kwitansi gabungan dari input kontrol dan validasi via service.
   CombinedReceiptData? _buildCombinedReceiptData() {
     if (_selectedInvoiceIds.length < 2) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -557,7 +535,7 @@ class _InvoicePageState extends State<InvoicePage> {
       allocations: data.allocations,
     );
     if (!confirmed) return;
-    // Build amounts map to process
+
     final amountsById = <int, double>{
       for (final a in data.allocations) a.invoiceId: a.amount,
     };
@@ -584,10 +562,6 @@ class _InvoicePageState extends State<InvoicePage> {
       allocations: data.allocations,
     );
   }
-
-  // Konfirmasi gabungan dipindah ke widget ConfirmCombinedPaymentDialog
-
-  // Prompt print dialog dipindah ke PrintSavedCombinedPaymentDialog
 
   Future<void> _handleIndividualPayment(InvoiceItem inv) async {
     if (_paymentMode != PaymentMode.individual) {
@@ -651,8 +625,6 @@ class _InvoicePageState extends State<InvoicePage> {
       ),
     );
   }
-
-  // Konfirmasi individu dipindah ke widget ConfirmIndividualPaymentDialog
 
   String _formatDate(DateTime dt) {
     return DateFormatters.compactDateTime12h(dt);

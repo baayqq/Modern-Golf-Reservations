@@ -1,6 +1,3 @@
-// Models: Payment & Allocation
-// Tujuan: Menyediakan model data yang konsisten untuk halaman Payment History.
-// Catatan: Pisahkan dari UI agar reusable di berbagai widget/service.
 class PaymentRecord {
   final int id;
   final String payer;

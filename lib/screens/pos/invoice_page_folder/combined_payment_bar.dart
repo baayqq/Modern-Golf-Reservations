@@ -1,6 +1,3 @@
-// Widget: CombinedPaymentBar
-// Bar kontrol untuk memilih mode pembayaran (gabungan/individu) dan metode (cash/credit/debit/QRIS),
-// serta tombol aksi untuk memproses pembayaran.
 import 'package:flutter/material.dart';
 import 'package:modern_golf_reservations/models/invoice_models.dart';
 
@@ -12,7 +9,7 @@ class CombinedPaymentBar extends StatelessWidget {
   final ValueChanged<String> onChangePaymentMethod;
   final VoidCallback onCombinedPay;
   final VoidCallback onIndividualPay;
-  // Jumlah invoice yang dipilih, untuk validasi tombol gabungan
+
   final int selectedCount;
 
   const CombinedPaymentBar({

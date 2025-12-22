@@ -1,5 +1,3 @@
-// Widget: CombinedDetailsSection
-// Menampilkan detail item untuk semua invoice yang dipilih pada mode pembayaran gabungan.
 import 'package:flutter/material.dart';
 import 'package:modern_golf_reservations/models/invoice_models.dart';
 import 'package:modern_golf_reservations/utils/currency.dart';

@@ -1,6 +1,3 @@
-// PaginationBar
-// Komponen bar kontrol pagination: info jumlah data, dropdown page size, tombol prev/next.
-// Reusable untuk daftar/tabel dengan pagination sederhana.
 import 'package:flutter/material.dart';
 
 class PaginationBar extends StatelessWidget {

@@ -6,8 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'router.dart';
 
 void main() {
-  // Gunakan hash routing agar URL kompatibel di hosting statis (tanpa rewrite).
-  // Ini memudahkan demo online pada Netlify/Vercel/GitHub Pages.
+
   setUrlStrategy(const HashUrlStrategy());
   runApp(const MyApp());
 }
@@ -20,12 +19,11 @@ class MyApp extends StatefulWidget {
 }
 
 class MyAppStateBridge {
-  // Jembatan statis agar file lain bisa memicu refresh router
+
   static final ValueNotifier<bool> isLoggedInNotifier = ValueNotifier<bool>(
     false,
   );
-  // Flag sesi sederhana: bernilai true setelah pengguna memasuki halaman POS.
-  // Dipakai untuk mewajibkan alur "masuk POS dulu" sebelum ke halaman Invoice.
+
   static final ValueNotifier<bool> posEnteredNotifier = ValueNotifier<bool>(
     false,
   );
@@ -51,7 +49,7 @@ class _MyAppState extends State<MyApp> {
       future: _initFuture,
       builder: (context, snap) {
         if (snap.connectionState != ConnectionState.done) {
-          // Saat masih loading, tetap gunakan MaterialApp.router dengan router minimal
+
           final tempRouter = GoRouter(
             routes: [
               GoRoute(
@@ -61,9 +59,7 @@ class _MyAppState extends State<MyApp> {
             ],
             initialLocation: '/splash',
           );
-          // Penting: jangan gunakan MaterialApp biasa/berbeda konfigurasi saat splash,
-          // tetap gunakan MaterialApp.router dengan konfigurasi yang SAMA (tema dll)
-          // untuk mencegah rebuild yang memicu popup/theme lookup pada context yang di-dispose.
+
           return MaterialApp.router(
             debugShowCheckedModeBanner: false,
             title: 'Modern Golf Reservations',
@@ -71,9 +67,9 @@ class _MyAppState extends State<MyApp> {
               useMaterial3: true,
               colorScheme: ColorScheme(
                 brightness: Brightness.light,
-                primary: const Color(0xFF2E7D32), // Golf green
+                primary: const Color(0xFF2E7D32),
                 onPrimary: Colors.white,
-                secondary: const Color(0xFF388E3C), // Accent green
+                secondary: const Color(0xFF388E3C),
                 onSecondary: Colors.white,
                 error: const Color(0xFFDC3545),
                 onError: Colors.white,
@@ -81,14 +77,14 @@ class _MyAppState extends State<MyApp> {
                 onSurface: const Color(0xFF212529),
                 surfaceContainerHighest: const Color(
                   0xFFF1F8E9,
-                ), // Light green background
-                outline: const Color(0xFFC7D3C0), // Soft greenish outline
-                tertiary: const Color(0xFF1E88E5), // Sky blue accent
+                ),
+                outline: const Color(0xFFC7D3C0),
+                tertiary: const Color(0xFF1E88E5),
                 onTertiary: Colors.white,
               ),
               scaffoldBackgroundColor: const Color(0xFFF1F8E9),
               appBarTheme: const AppBarTheme(
-                backgroundColor: Color(0xFF1B5E20), // Dark forest green
+                backgroundColor: Color(0xFF1B5E20),
                 elevation: 0,
                 foregroundColor: Colors.white,
                 centerTitle: false,
@@ -146,11 +142,11 @@ class _MyAppState extends State<MyApp> {
           );
         }
         final isLoggedIn = snap.data == true;
-        // Pastikan ValueNotifier sinkron dengan nilai awal
+
         MyAppStateBridge.isLoggedInNotifier.value = isLoggedIn;
-        // Router dibuat setiap build agar redirect mempertimbangkan status terbaru.
+
         final router = createRouter(isLoggedIn: isLoggedIn);
-        // Tambahkan navigatorKey global agar semua navigator konsisten (rootNavigatorKey)
+
         return MaterialApp.router(
           debugShowCheckedModeBanner: false,
           title: 'Modern Golf Reservations',
@@ -158,9 +154,9 @@ class _MyAppState extends State<MyApp> {
             useMaterial3: true,
             colorScheme: ColorScheme(
               brightness: Brightness.light,
-              primary: const Color(0xFF2E7D32), // Golf green
+              primary: const Color(0xFF2E7D32),
               onPrimary: Colors.white,
-              secondary: const Color(0xFF388E3C), // Accent green
+              secondary: const Color(0xFF388E3C),
               onSecondary: Colors.white,
               error: const Color(0xFFDC3545),
               onError: Colors.white,
@@ -168,14 +164,14 @@ class _MyAppState extends State<MyApp> {
               onSurface: const Color(0xFF212529),
               surfaceContainerHighest: const Color(
                 0xFFF1F8E9,
-              ), // Light green background
-              outline: const Color(0xFFC7D3C0), // Soft greenish outline
-              tertiary: const Color(0xFF1E88E5), // Sky blue accent
+              ),
+              outline: const Color(0xFFC7D3C0),
+              tertiary: const Color(0xFF1E88E5),
               onTertiary: Colors.white,
             ),
             scaffoldBackgroundColor: const Color(0xFFF1F8E9),
             appBarTheme: const AppBarTheme(
-              backgroundColor: Color(0xFF1B5E20), // Dark forest green
+              backgroundColor: Color(0xFF1B5E20),
               elevation: 0,
               foregroundColor: Colors.white,
               centerTitle: false,

@@ -100,22 +100,19 @@ class _AuthState extends ChangeNotifier {
 }
 
 GoRouter createRouter({required bool isLoggedIn}) {
-  // Sinkronkan nilai awal ke bridge agar konsisten
+
   MyAppStateBridge.isLoggedInNotifier.value = isLoggedIn;
 
-  // Bungkus status login ke ValueNotifier agar GoRouter dapat refresh saat berubah
   final authState = _AuthState();
 
-  // Force refresh ketika nilai notifier berubah untuk memastikan redirect re-evaluated
   MyAppStateBridge.isLoggedInNotifier.addListener(() {
-    // ignore: avoid_print
+
     print(
       '[ROUTER] isLoggedInNotifier changed => ${MyAppStateBridge.isLoggedInNotifier.value}, forcing refresh',
     );
     rootNavigatorKey.currentState?.context
         .findAncestorStateOfType<State<StatefulWidget>>();
-    // Tidak ada API langsung untuk force refresh selain notifyListeners pada refreshListenable,
-    // tapi karena GoRouter mem-listen ValueNotifier, perubahan value sudah cukup.
+
   });
 
   final router = GoRouter(
@@ -206,14 +203,14 @@ GoRouter createRouter({required bool isLoggedIn}) {
           );
         },
       ),
-      // Profile page
+
       GoRoute(
         path: AppRoute.profile.path,
         name: AppRoute.profile.name,
         pageBuilder: (context, state) =>
             _slideFromRightPage(child: const ProfilePage()),
       ),
-      // Database Management page
+
       GoRoute(
         path: AppRoute.databaseManagement.path,
         name: AppRoute.databaseManagement.name,
@@ -229,53 +226,45 @@ GoRouter createRouter({required bool isLoggedIn}) {
       final atInvoice = loc == AppRoute.invoice.path;
       final atPayments = loc == AppRoute.payments.path;
 
-      // Gunakan satu sumber kebenaran: MyAppStateBridge.isLoggedInNotifier.value
       final loggedIn = MyAppStateBridge.isLoggedInNotifier.value;
 
-      // Debug prints
-      // ignore: avoid_print
       print(
         '[ROUTER][redirect] loc="$loc" loggedIn=$loggedIn atLogin=$atLogin',
       );
 
-      // Jika belum login dan bukan di halaman login, arahkan ke /login
       if (!loggedIn && !atLogin) {
-        // ignore: avoid_print
+
         print('[ROUTER][redirect] -> /login');
         return AppRoute.login.path;
       }
-      // Jika sudah login dan sedang di /login, arahkan ke /dashboard
+
       if (loggedIn && atLogin) {
-        // ignore: avoid_print
+
         print('[ROUTER][redirect] -> /dashboard');
         return AppRoute.dashboard.path;
       }
 
-      // Guard: sebelum membuat/melihat invoice atau riwayat pembayaran,
-      // pengguna harus masuk ke menu POS terlebih dahulu pada sesi ini.
-      // Jika belum, arahkan ke /pos dengan query from=invoice/payments
       if (loggedIn && (atInvoice || atPayments)) {
         final entered = MyAppStateBridge.posEnteredNotifier.value;
         if (!entered) {
           final from = atInvoice ? 'invoice' : 'payments';
-          // ignore: avoid_print
+
           print('[ROUTER][redirect] -> /pos?from=$from (POS not entered)');
           return '${AppRoute.pos.path}?from=$from';
         }
       }
-      // Jangan redirect kalau sudah di tujuan yang benar untuk menghindari flicker/error
+
       if (loggedIn && (atDashboard || atProfile)) {
-        // ignore: avoid_print
+
         print('[ROUTER][redirect] stay');
         return null;
       }
-      // ignore: avoid_print
+
       print('[ROUTER][redirect] null');
       return null;
     },
   );
 
-  // ignore: avoid_print
   print(
     '[ROUTER] created. initial=${isLoggedIn ? AppRoute.dashboard.path : AppRoute.login.path}, refreshListenable hooked to MyAppStateBridge',
   );

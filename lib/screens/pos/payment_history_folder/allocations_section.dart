@@ -1,6 +1,3 @@
-// Widget: Payment Allocations Section
-// Tujuan: Menampilkan alokasi pembayaran untuk payment yang dipilih.
-// Catatan: Tampilkan ringkasan dan tabel alokasi; sertakan aksi cetak/unduh.
 import 'package:flutter/material.dart';
 import '../../../utils/currency.dart';
 import '../../../models/payment_models.dart';
@@ -89,7 +86,7 @@ class PaymentAllocationsSection extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        // Table allocations
+
         Container(
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surfaceVariant,

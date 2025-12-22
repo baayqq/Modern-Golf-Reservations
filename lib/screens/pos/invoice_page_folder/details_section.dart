@@ -1,5 +1,3 @@
-// Widget: InvoiceDetailsSection
-// Menampilkan detail item untuk invoice terpilih dan tombol export ke PDF.
 import 'package:flutter/material.dart';
 import 'package:modern_golf_reservations/models/invoice_models.dart';
 import 'package:modern_golf_reservations/utils/currency.dart';
@@ -8,7 +6,6 @@ class InvoiceDetailsSection extends StatelessWidget {
   final InvoiceItem? selectedInvoice;
   final List<InvoiceLine> selectedItems;
   final String Function(DateTime dt) formatDate;
-  // Tombol export PDF dihapus karena sudah ada tombol Print & Download di action bar.
 
   const InvoiceDetailsSection({
     super.key,

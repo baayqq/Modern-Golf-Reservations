@@ -1,7 +1,3 @@
-// Widget: CombinedReceiptBar
-// Tujuan: Menyediakan tombol Print dan Download untuk detail pembayaran gabungan
-// Ketika user memilih >= 2 invoice pada mode gabungan, user bisa mencetak atau
-// mengunduh PDF rincian alokasi pembayaran sebelum atau tanpa memproses transaksi.
 import 'package:flutter/material.dart';
 
 class CombinedReceiptBar extends StatelessWidget {

@@ -1,6 +1,3 @@
-// Screen: Payment History page
-// Tujuan: Menampilkan daftar pembayaran dan alokasinya (combined/individual).
-// Fitur: Filter, lihat detail alokasi, Print dan Download PDF kwitansi.
 import 'package:flutter/material.dart';
 import '../../app_scaffold.dart';
 import '../../services/invoice_repository.dart';
@@ -23,7 +20,7 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
   final InvoiceRepository _repo = InvoiceRepository();
   final TextEditingController _payerCtrl = TextEditingController();
   DateTime? _filterDate;
-  String? _methodFilter; // e.g., cash, card, transfer
+  String? _methodFilter;
 
   List<PaymentRecord> _payments = [];
   PaymentRecord? _selectedPayment;
@@ -190,22 +187,10 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
       ),
     );
   }
-  // Legacy _filters() method removed. Filters are now provided by PaymentHistoryFilters widget.
-
-  // Legacy _paymentTable() method removed. Use PaymentTable widget.
-
-  // Legacy header row method removed. PaymentTable renders its own headers.
-
-  // Legacy payment row method removed. PaymentTable handles row rendering.
-
-  // Legacy allocations section method removed. Use PaymentAllocationsSection widget.
-
-  // Legacy status chip method removed. AllocationsSection provides status chip UI.
 
   String _two(int n) => n.toString().padLeft(2, '0');
 
   Future<void> _printPayment(PaymentRecord p) async {
-    // Pastikan data allocasi tersedia untuk payment ini.
     List<AllocationRecord> allocs = _allocations;
     if (_selectedPayment == null || _selectedPayment!.id != p.id) {
       final rows = await _repo.getAllocationsForPayment(p.id);
@@ -232,7 +217,6 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
       }).toList();
     }
 
-    // Konversi ke struktur service untuk PDF.
     final pdfAllocations = allocs
         .map(
           (a) => paypdf.PaymentAllocation(
@@ -245,10 +229,9 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
         )
         .toList();
 
-    // Cetak PDF: tunggu proses selesai lalu re-render agar fokus/gesture kembali normal.
     try {
-      await Printing.layoutPdf(
-        onLayout: (format) => paypdf.generatePaymentPdf(
+      await Printing.sharePdf(
+        bytes: await paypdf.generatePaymentPdf(
           paymentId: p.id,
           date: p.date,
           payer: p.payer,
@@ -256,6 +239,7 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
           amount: p.amount,
           allocations: pdfAllocations,
         ),
+        filename: 'payment_${p.id}.pdf',
       );
     } catch (e) {
       if (!mounted) return;
@@ -271,8 +255,6 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
   }
 
   Future<void> _downloadPayment(PaymentRecord p) async {
-    // Buat PDF dan unduh/bagikan langsung tanpa dialog print.
-    // Pastikan data allocasi tersedia untuk payment ini.
     List<AllocationRecord> allocs = _allocations;
     if (_selectedPayment == null || _selectedPayment!.id != p.id) {
       final rows = await _repo.getAllocationsForPayment(p.id);
@@ -334,5 +316,3 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
     setState(() {});
   }
 }
-
-// Model dipindahkan ke lib/models/payment_models.dart agar reusable.

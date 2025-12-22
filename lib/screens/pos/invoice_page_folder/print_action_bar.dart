@@ -1,5 +1,3 @@
-// Widget: PrintActionBar
-// Bar aksi untuk mencetak atau mengunduh PDF invoice terpilih.
 import 'package:flutter/material.dart';
 
 class PrintActionBar extends StatelessWidget {

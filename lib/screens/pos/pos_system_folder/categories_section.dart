@@ -1,6 +1,3 @@
-// Purpose: Reusable categories section for POS System.
-// Displays categories as responsive selectable chips.
-
 import 'package:flutter/material.dart';
 import '../../../models/pos_models.dart';
 

@@ -1,6 +1,3 @@
-// Widget: Reusable dialog to confirm combined payment before processing.
-// Shows payer, method, allocations list, and total nominal.
-
 import 'package:flutter/material.dart';
 import 'package:modern_golf_reservations/models/invoice_models.dart';
 import 'package:modern_golf_reservations/utils/currency.dart';

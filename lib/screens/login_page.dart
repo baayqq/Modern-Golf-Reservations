@@ -20,7 +20,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     super.initState();
-    // Listener agar tombol Login enable/disable dinamis saat user mengetik
+
     _usernameCtrl.addListener(() => setState(() {}));
     _passwordCtrl.addListener(() => setState(() {}));
   }
@@ -33,13 +33,13 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _onLogin() async {
-    // Login dummy: terima username/password apa saja
+
     if (_loading) return;
     setState(() => _loading = true);
     debugPrint('[LOGIN] Button pressed');
 
     try {
-      // Validasi sederhana
+
       final username = _usernameCtrl.text.trim();
       final password = _passwordCtrl.text;
       debugPrint(
@@ -58,10 +58,8 @@ class _LoginPageState extends State<LoginPage> {
         return;
       }
 
-      // Simulasi minimal kerja async
       await Future<void>.delayed(const Duration(milliseconds: 50));
 
-      // Simpan status login dan username ke SharedPreferences
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('isLoggedIn', true);
       await prefs.setString('username', username);
@@ -69,12 +67,10 @@ class _LoginPageState extends State<LoginPage> {
         '[LOGIN] SharedPreferences saved: isLoggedIn=true, username="$username"',
       );
 
-      // Beritahu aplikasi bahwa status login berubah (untuk GoRouter refresh)
-      // Update ValueNotifier statis milik MyApp agar GoRouter refresh redirect
       MyAppStateBridge.isLoggedInNotifier.value = true;
 
       if (!mounted) return;
-      // Tampilkan snackbar sukses
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Login berhasil'),
@@ -82,9 +78,6 @@ class _LoginPageState extends State<LoginPage> {
         ),
       );
 
-      // Pastikan MaterialApp.router rebuild dengan status login terbaru,
-      // lalu gunakan rootNavigator untuk navigasi agar tidak bentrok context.
-      // Navigasi setelah frame berikutnya (setelah notifier di-update)
       WidgetsBinding.instance.addPostFrameCallback((_) {
         final rootCtx = rootNavigatorKey.currentContext ?? context;
         debugPrint(
@@ -113,7 +106,7 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    final bg = const Color(0xFFF1F5F9); // light grey-blue like screenshot
+    final bg = const Color(0xFFF1F5F9);
     return Scaffold(
       backgroundColor: bg,
       body: Center(
@@ -131,18 +124,18 @@ class _LoginPageState extends State<LoginPage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Emblem/logo placeholder
+
                   Padding(
                     padding: const EdgeInsets.only(top: 8, bottom: 16),
                     child: Column(
                       children: [
-                        // Gunakan ikon 192x192 agar tajam di UI
+
                         Image.network(
                           '/icons/Icon-192.png',
                           width: 80,
                           height: 80,
                           errorBuilder: (context, error, stackTrace) {
-                            // Fallback jika ikon belum tersedia
+
                             return Icon(
                               Icons.flag,
                               size: 80,
@@ -161,7 +154,7 @@ class _LoginPageState extends State<LoginPage> {
                       ],
                     ),
                   ),
-                  // Username
+
                   const SizedBox(height: 8),
                   Align(
                     alignment: Alignment.center,
@@ -179,13 +172,13 @@ class _LoginPageState extends State<LoginPage> {
                     textInputAction: TextInputAction.done,
                     decoration: const InputDecoration(hintText: 'Username'),
                     onSubmitted: (_) {
-                      // Tekan Enter pada username langsung trigger login
+
                       if (_loading) return;
                       _onLogin();
                     },
                   ),
                   const SizedBox(height: 16),
-                  // Password
+
                   Align(
                     alignment: Alignment.center,
                     child: Text(
@@ -211,7 +204,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                     onSubmitted: (_) {
-                      // Tekan Enter untuk login jika input valid
+
                       final uOk = _usernameCtrl.text.trim().isNotEmpty;
                       final pOk = _passwordCtrl.text.isNotEmpty;
                       if (_loading) return;
@@ -237,7 +230,7 @@ class _LoginPageState extends State<LoginPage> {
                               _passwordCtrl.text.isEmpty)
                           ? null
                           : _onLogin,
-                      // Gunakan ElevatedButtonTheme default (primary hijau & radius 8)
+
                        child: _loading
                            ? const SizedBox(
                                width: 18,
