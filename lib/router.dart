@@ -100,19 +100,16 @@ class _AuthState extends ChangeNotifier {
 }
 
 GoRouter createRouter({required bool isLoggedIn}) {
-
   MyAppStateBridge.isLoggedInNotifier.value = isLoggedIn;
 
   final authState = _AuthState();
 
   MyAppStateBridge.isLoggedInNotifier.addListener(() {
-
     print(
       '[ROUTER] isLoggedInNotifier changed => ${MyAppStateBridge.isLoggedInNotifier.value}, forcing refresh',
     );
     rootNavigatorKey.currentState?.context
         .findAncestorStateOfType<State<StatefulWidget>>();
-
   });
 
   final router = GoRouter(
@@ -140,11 +137,13 @@ GoRouter createRouter({required bool isLoggedIn}) {
           final initialCustomer = state.uri.queryParameters['customer'];
           final qtyStr = state.uri.queryParameters['qty'];
           final initialQty = qtyStr == null ? null : int.tryParse(qtyStr);
+          final initialPhone = state.uri.queryParameters['phone'];
           return _slideFromRightPage(
             child: PosSystemPage(
               from: from,
               initialCustomer: initialCustomer,
               initialQty: initialQty,
+              initialPhone: initialPhone,
             ),
           );
         },
@@ -233,13 +232,11 @@ GoRouter createRouter({required bool isLoggedIn}) {
       );
 
       if (!loggedIn && !atLogin) {
-
         print('[ROUTER][redirect] -> /login');
         return AppRoute.login.path;
       }
 
       if (loggedIn && atLogin) {
-
         print('[ROUTER][redirect] -> /dashboard');
         return AppRoute.dashboard.path;
       }
@@ -255,7 +252,6 @@ GoRouter createRouter({required bool isLoggedIn}) {
       }
 
       if (loggedIn && (atDashboard || atProfile)) {
-
         print('[ROUTER][redirect] stay');
         return null;
       }

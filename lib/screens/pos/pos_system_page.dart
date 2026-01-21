@@ -15,15 +15,16 @@ import 'pos_system_folder/product_grid.dart';
 import 'pos_system_folder/order_summary.dart';
 
 class PosSystemPage extends StatefulWidget {
-
   final String? from;
   final String? initialCustomer;
   final int? initialQty;
+  final String? initialPhone;
   const PosSystemPage({
     super.key,
     this.from,
     this.initialCustomer,
     this.initialQty,
+    this.initialPhone,
   });
 
   @override
@@ -31,12 +32,12 @@ class PosSystemPage extends StatefulWidget {
 }
 
 class _PosSystemPageState extends State<PosSystemPage> {
-
   bool _dbReady = false;
 
   bool _saving = false;
   final TextEditingController _searchCtrl = TextEditingController();
   final TextEditingController _customerCtrl = TextEditingController();
+  final TextEditingController _phoneCtrl = TextEditingController();
 
   late List<Product> _weekdayFees;
   late List<Product> _weekendFees;
@@ -132,7 +133,9 @@ class _PosSystemPageState extends State<PosSystemPage> {
     if (widget.initialCustomer != null && widget.initialCustomer!.isNotEmpty) {
       _customerCtrl.text = widget.initialCustomer!;
     }
-
+    if (widget.initialPhone != null && widget.initialPhone!.isNotEmpty) {
+      _phoneCtrl.text = widget.initialPhone!;
+    }
   }
 
   Future<void> _initDb() async {
@@ -245,7 +248,13 @@ class _PosSystemPageState extends State<PosSystemPage> {
         .toList();
 
     try {
-      await _invoiceRepo.createInvoice(customer: customer, items: items);
+      await _invoiceRepo.createInvoice(
+        customer: customer,
+        phoneNumber: _phoneCtrl.text.trim().isEmpty
+            ? null
+            : _phoneCtrl.text.trim(),
+        items: items,
+      );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -337,7 +346,6 @@ class _PosSystemPageState extends State<PosSystemPage> {
             : Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-
                   Expanded(
                     child: ListView(
                       padding: const EdgeInsets.all(12),
@@ -428,7 +436,6 @@ class _PosSystemPageState extends State<PosSystemPage> {
   }
 
   Future<void> _openBookingSearch() async {
-
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -450,7 +457,6 @@ class _PosSystemPageState extends State<PosSystemPage> {
     );
 
     try {
-
       List<TeeTimeModel> all = await _teeRepo.getAllReservations(
         status: 'booked',
       );
@@ -531,14 +537,29 @@ class _PosSystemPageState extends State<PosSystemPage> {
                                   final m = filtered[i];
                                   return ListTile(
                                     title: Text(m.playerName ?? '-'),
-                                    subtitle: Text(
-                                      '${m.time} • ${m.date.toIso8601String().split('T').first} • pemain: ${m.playerCount ?? 1}',
+                                    subtitle: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          '${m.time} • ${m.date.toIso8601String().split('T').first} • pemain: ${m.playerCount ?? 1}',
+                                        ),
+                                        if (m.phoneNumber != null &&
+                                            m.phoneNumber!.isNotEmpty)
+                                          Text(
+                                            'Tel: ${m.phoneNumber}',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey.shade600,
+                                            ),
+                                          ),
+                                      ],
                                     ),
                                     trailing: FilledButton.tonal(
                                       onPressed: () {
                                         _customerCtrl.text =
                                             m.playerName ?? 'Walk-in';
-
+                                        _phoneCtrl.text = m.phoneNumber ?? '';
                                         Navigator.of(ctx).pop();
                                       },
                                       child: const Text('Pilih'),
@@ -556,7 +577,6 @@ class _PosSystemPageState extends State<PosSystemPage> {
         },
       );
     } catch (e) {
-
       if (!mounted) return;
       Navigator.of(context).pop();
 

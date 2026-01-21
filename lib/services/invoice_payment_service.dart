@@ -4,13 +4,19 @@ import 'invoice_repository.dart';
 class InvoicePaymentService {
   final InvoiceRepository _repo;
   InvoicePaymentService({InvoiceRepository? repository})
-      : _repo = repository ?? InvoiceRepository();
+    : _repo = repository ?? InvoiceRepository();
 
   Future<void> init() => _repo.init();
   Future<void> close() => _repo.close();
 
-  Future<List<InvoiceItem>> loadInvoices({DateTime? date, String? customerQuery}) async {
-    final rows = await _repo.getInvoices(date: date, customerQuery: customerQuery);
+  Future<List<InvoiceItem>> loadInvoices({
+    DateTime? date,
+    String? customerQuery,
+  }) async {
+    final rows = await _repo.getInvoices(
+      date: date,
+      customerQuery: customerQuery,
+    );
     final items = <InvoiceItem>[];
     for (final e in rows) {
       final idVal = e['id'] as int? ?? (e['id'] as num).toInt();
@@ -26,16 +32,17 @@ class InvoicePaymentService {
       final paid = await _repo.getPaidAmountForInvoice(idVal);
       final outstanding = (total - paid).clamp(0.0, double.infinity);
       if (outstanding <= 0.0) {
-
         continue;
       }
       items.add(
         InvoiceItem(
           id: idVal.toString(),
           customer: (e['customer'] as String?) ?? 'Walk-in',
+          phoneNumber: e['phoneNumber'] as String?,
           total: total,
           status: status,
-          date: DateTime.tryParse((e['date'] as String?) ?? '') ?? DateTime.now(),
+          date:
+              DateTime.tryParse((e['date'] as String?) ?? '') ?? DateTime.now(),
           outstanding: outstanding,
         ),
       );
@@ -47,8 +54,12 @@ class InvoicePaymentService {
     final rows = await _repo.getItemsForInvoice(invoiceId);
     return rows.map((e) {
       final name = (e['name'] as String?) ?? '';
-      final qty = (e['qty'] as int?) ?? (e['qty'] is num ? (e['qty'] as num).toInt() : 0);
-      final price = (e['price'] is num) ? (e['price'] as num).toDouble() : (e['price'] as double? ?? 0.0);
+      final qty =
+          (e['qty'] as int?) ??
+          (e['qty'] is num ? (e['qty'] as num).toInt() : 0);
+      final price = (e['price'] is num)
+          ? (e['price'] as num).toDouble()
+          : (e['price'] as double? ?? 0.0);
       return InvoiceLine(name: name, qty: qty, price: price);
     }).toList();
   }
@@ -86,11 +97,14 @@ class InvoicePaymentService {
         continue;
       }
       totalAmount += amount;
-      final statusAfter = amount >= inv.outstanding - 0.0001 ? 'paid' : 'partial';
+      final statusAfter = amount >= inv.outstanding - 0.0001
+          ? 'paid'
+          : 'partial';
       allocations.add(
         PaymentAllocationData(
           invoiceId: int.parse(inv.id),
           customer: inv.customer,
+          phoneNumber: inv.phoneNumber,
           amount: amount,
           invoiceTotal: inv.total,
           status: statusAfter,
@@ -134,7 +148,9 @@ class InvoicePaymentService {
   }) async {
     await _repo.createCombinedPayment(
       payer: payer.isEmpty ? 'Unknown Payer' : payer,
-      allocations: [PaymentAllocationInput(invoiceId: invoiceId, amount: amount)],
+      allocations: [
+        PaymentAllocationInput(invoiceId: invoiceId, amount: amount),
+      ],
       method: method,
     );
   }

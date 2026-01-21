@@ -60,7 +60,9 @@ class _ManageReservationPageState extends State<ManageReservationPage> {
 
   Future<void> _load() async {
     setState(() => _loading = true);
-    final q = _playerQueryCtrl.text.trim().isEmpty ? null : _playerQueryCtrl.text.trim();
+    final q = _playerQueryCtrl.text.trim().isEmpty
+        ? null
+        : _playerQueryCtrl.text.trim();
     final list = await _repo.search(date: _filterDate, playerQuery: q);
     setState(() {
       _items = list;
@@ -103,10 +105,12 @@ class _ManageReservationPageState extends State<ManageReservationPage> {
         ? 'Walk-in'
         : m.playerName!.trim();
     final qty = (m.playerCount ?? 1).toString();
+    final phone = m.phoneNumber ?? '';
     final qp = {
       'from': 'teeManage',
       'customer': customer,
       'qty': qty,
+      if (phone.isNotEmpty) 'phone': phone,
     };
     GoRouter.of(context).goNamed(AppRoute.pos.name, queryParameters: qp);
   }
@@ -116,9 +120,14 @@ class _ManageReservationPageState extends State<ManageReservationPage> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete Reservation'),
-        content: Text('Delete reservation for ${m.playerName ?? '-'} on ${DateFormat('yyyy-MM-dd').format(m.date)} at ${m.time}?'),
+        content: Text(
+          'Delete reservation for ${m.playerName ?? '-'} on ${DateFormat('yyyy-MM-dd').format(m.date)} at ${m.time}?',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
             style: FilledButton.styleFrom(
@@ -143,7 +152,6 @@ class _ManageReservationPageState extends State<ManageReservationPage> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-
           Container(
             height: 54,
             decoration: BoxDecoration(
@@ -165,7 +173,6 @@ class _ManageReservationPageState extends State<ManageReservationPage> {
 
           Row(
             children: [
-
               SizedBox(
                 height: 40,
                 child: OutlinedButton.icon(
@@ -218,8 +225,12 @@ class _ManageReservationPageState extends State<ManageReservationPage> {
                         pageSize: _pageSize,
                         currentPage: _currentPage,
                         onPageSizeChanged: _setPageSize,
-                        onPrev: _currentPage > 0 ? () => _goToPage(_currentPage - 1) : null,
-                        onNext: (_currentPage + 1) < _totalPages ? () => _goToPage(_currentPage + 1) : null,
+                        onPrev: _currentPage > 0
+                            ? () => _goToPage(_currentPage - 1)
+                            : null,
+                        onNext: (_currentPage + 1) < _totalPages
+                            ? () => _goToPage(_currentPage + 1)
+                            : null,
                       ),
                     ],
                   ),

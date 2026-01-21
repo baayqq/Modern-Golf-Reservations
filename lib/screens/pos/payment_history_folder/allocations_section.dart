@@ -99,6 +99,7 @@ class PaymentAllocationsSection extends StatelessWidget {
             children: [
               Expanded(child: _headerCell('Invoice ID')),
               Expanded(child: _headerCell('Customer')),
+              Expanded(child: _headerCell('Phone Number')),
               Expanded(
                 child: _headerCell(
                   'Allocated Amount',
@@ -137,6 +138,7 @@ class PaymentAllocationsSection extends StatelessWidget {
                     children: [
                       Expanded(child: Text('#${a.invoiceId}')),
                       Expanded(child: Text(a.customer)),
+                      Expanded(child: Text(a.phoneNumber ?? '-')),
                       Expanded(
                         child: Align(
                           alignment: Alignment.centerRight,

@@ -131,6 +131,7 @@ class _InvoicePageState extends State<InvoicePage> {
         bytes: await pdfsvc.generateInvoicePdf(
           invoiceDate: targetInv!.date,
           customerName: targetInv!.customer,
+          phoneNumber: targetInv!.phoneNumber,
           items: pdfItems,
         ),
         filename: 'invoice_${targetInv!.id}.pdf',
@@ -187,6 +188,7 @@ class _InvoicePageState extends State<InvoicePage> {
       final bytes = await pdfsvc.generateInvoicePdf(
         invoiceDate: targetInv.date,
         customerName: targetInv.customer,
+        phoneNumber: targetInv.phoneNumber,
         items: pdfItems,
       );
       await Printing.sharePdf(
@@ -415,6 +417,7 @@ class _InvoicePageState extends State<InvoicePage> {
             (a) => paypdf.PaymentAllocation(
               invoiceId: a.invoiceId,
               customer: a.customer,
+              phoneNumber: a.phoneNumber,
               amount: a.amount,
               invoiceTotal: a.invoiceTotal,
               status: a.status,
@@ -458,6 +461,7 @@ class _InvoicePageState extends State<InvoicePage> {
             (a) => paypdf.PaymentAllocation(
               invoiceId: a.invoiceId,
               customer: a.customer,
+              phoneNumber: a.phoneNumber,
               amount: a.amount,
               invoiceTotal: a.invoiceTotal,
               status: a.status,

@@ -74,6 +74,7 @@ class PrintSavedCombinedPaymentDialog extends StatelessWidget {
                     (a) => paypdf.PaymentAllocation(
                       invoiceId: a.invoiceId,
                       customer: a.customer,
+                      phoneNumber: a.phoneNumber,
                       amount: a.amount,
                       invoiceTotal: a.invoiceTotal,
                       status: a.status,
@@ -109,6 +110,7 @@ class PrintSavedCombinedPaymentDialog extends StatelessWidget {
                     (a) => paypdf.PaymentAllocation(
                       invoiceId: a.invoiceId,
                       customer: a.customer,
+                      phoneNumber: a.phoneNumber,
                       amount: a.amount,
                       invoiceTotal: a.invoiceTotal,
                       status: a.status,

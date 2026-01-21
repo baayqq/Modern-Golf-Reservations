@@ -50,6 +50,8 @@ class InvoiceDetailsSection extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text('Tanggal: ${formatDate(inv.date)}'),
+            if (inv.phoneNumber != null && inv.phoneNumber!.isNotEmpty)
+              Text('Telepon: ${inv.phoneNumber}'),
             const SizedBox(height: 12),
             _ItemsTable(items: selectedItems),
             const SizedBox(height: 12),

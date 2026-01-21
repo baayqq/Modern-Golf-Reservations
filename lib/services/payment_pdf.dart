@@ -9,6 +9,7 @@ import '../utils/currency.dart';
 class PaymentAllocation {
   final int invoiceId;
   final String customer;
+  final String? phoneNumber;
   final num amount;
   final num invoiceTotal;
   final String status;
@@ -16,6 +17,7 @@ class PaymentAllocation {
   const PaymentAllocation({
     required this.invoiceId,
     required this.customer,
+    this.phoneNumber,
     required this.amount,
     required this.invoiceTotal,
     required this.status,
@@ -33,8 +35,7 @@ Future<Uint8List> generatePaymentPdf({
   final doc = pw.Document();
 
   final dateFmt = DateFormat('dd/MM/yyyy');
-  final totalAllocated =
-      allocations.fold<num>(0, (sum, a) => sum + (a.amount));
+  final totalAllocated = allocations.fold<num>(0, (sum, a) => sum + (a.amount));
 
   doc.addPage(
     pw.Page(
@@ -61,20 +62,27 @@ Future<Uint8List> generatePaymentPdf({
               pw.SizedBox(height: 16),
 
               pw.Table(
-                border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.6),
+                border: pw.TableBorder.all(
+                  color: PdfColors.grey300,
+                  width: 0.6,
+                ),
                 columnWidths: {
                   0: const pw.FlexColumnWidth(1.5),
-                  1: const pw.FlexColumnWidth(3),
+                  1: const pw.FlexColumnWidth(2.5),
                   2: const pw.FlexColumnWidth(2),
                   3: const pw.FlexColumnWidth(2),
-                  4: const pw.FlexColumnWidth(1.5),
+                  4: const pw.FlexColumnWidth(2),
+                  5: const pw.FlexColumnWidth(1.5),
                 },
                 children: [
                   pw.TableRow(
-                    decoration: const pw.BoxDecoration(color: PdfColors.grey200),
+                    decoration: const pw.BoxDecoration(
+                      color: PdfColors.grey200,
+                    ),
                     children: [
                       _cell('Invoice ID', bold: true),
                       _cell('Customer', bold: true),
+                      _cell('Phone', bold: true),
                       _cell('Allocated', bold: true),
                       _cell('Inv Total', bold: true),
                       _cell('Status', bold: true),
@@ -85,6 +93,7 @@ Future<Uint8List> generatePaymentPdf({
                       children: [
                         _cell('#${a.invoiceId}'),
                         _cell(a.customer),
+                        _cell(a.phoneNumber ?? '-'),
                         _cell(Formatters.idr(a.amount)),
                         _cell(Formatters.idr(a.invoiceTotal)),
                         _cell(a.status.toUpperCase()),

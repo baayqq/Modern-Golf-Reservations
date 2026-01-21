@@ -23,6 +23,7 @@ class InvoiceItem {
 Future<Uint8List> generateInvoicePdf({
   required DateTime invoiceDate,
   required String customerName,
+  String? phoneNumber,
   required List<InvoiceItem> items,
 }) async {
   final doc = pw.Document();
@@ -40,7 +41,6 @@ Future<Uint8List> generateInvoicePdf({
           child: pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
-
               pw.Text(
                 'INVOICE',
                 style: pw.TextStyle(
@@ -52,10 +52,15 @@ Future<Uint8List> generateInvoicePdf({
 
               pw.Text('Tanggal: ${dateFmt.format(invoiceDate)}'),
               pw.Text('Customer: $customerName'),
+              if (phoneNumber != null && phoneNumber.isNotEmpty)
+                pw.Text('Telepon: $phoneNumber'),
               pw.SizedBox(height: 16),
 
               pw.Table(
-                border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.6),
+                border: pw.TableBorder.all(
+                  color: PdfColors.grey300,
+                  width: 0.6,
+                ),
                 columnWidths: {
                   0: const pw.FlexColumnWidth(3),
                   1: const pw.FlexColumnWidth(1),
@@ -64,7 +69,9 @@ Future<Uint8List> generateInvoicePdf({
                 },
                 children: [
                   pw.TableRow(
-                    decoration: const pw.BoxDecoration(color: PdfColors.grey200),
+                    decoration: const pw.BoxDecoration(
+                      color: PdfColors.grey200,
+                    ),
                     children: [
                       _cell('Produk', bold: true),
                       _cell('Qty', bold: true),

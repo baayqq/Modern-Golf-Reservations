@@ -48,10 +48,11 @@ class _InvoiceTableState extends State<InvoiceTable> {
               0: FixedColumnWidth(56),
               1: FlexColumnWidth(1),
               2: FlexColumnWidth(2),
-              3: FlexColumnWidth(1.4),
-              4: FlexColumnWidth(1.6),
-              5: FlexColumnWidth(1),
-              6: FlexColumnWidth(1.2),
+              3: FlexColumnWidth(1.5),
+              4: FlexColumnWidth(1.4),
+              5: FlexColumnWidth(1.6),
+              6: FlexColumnWidth(1),
+              7: FlexColumnWidth(1.2),
             },
             border: TableBorder.all(
               color: Theme.of(context).colorScheme.outline,
@@ -61,6 +62,7 @@ class _InvoiceTableState extends State<InvoiceTable> {
                 'Select',
                 'Invoice ID',
                 'Customer Name',
+                'Phone Number',
                 'Total Amount',
                 'Bayar (Rp)',
                 'Payment Status',
@@ -113,7 +115,6 @@ class _InvoiceTableState extends State<InvoiceTable> {
     widget.amountControllers[idInt] = amountCtrl;
     return TableRow(
       children: [
-
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           child: Checkbox(
@@ -139,6 +140,18 @@ class _InvoiceTableState extends State<InvoiceTable> {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             child: Text(
               inv.customer,
+              softWrap: false,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ),
+
+        InkWell(
+          onTap: () => widget.onTapDetails(inv),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Text(
+              inv.phoneNumber ?? '-',
               softWrap: false,
               overflow: TextOverflow.ellipsis,
             ),

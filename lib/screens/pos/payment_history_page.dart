@@ -84,6 +84,7 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
             ? (e['amount'] as num).toDouble()
             : (e['amount'] as double? ?? 0.0);
         final customer = (e['customer'] as String?) ?? 'Walk-in';
+        final phoneNumber = e['phoneNumber'] as String?;
         final total = (e['total'] is num)
             ? (e['total'] as num).toDouble()
             : (e['total'] as double? ?? 0.0);
@@ -93,6 +94,7 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
           invoiceId: invoiceId,
           amount: amount,
           customer: customer,
+          phoneNumber: phoneNumber,
           invoiceTotal: total,
           status: status,
         );
@@ -202,6 +204,7 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
             ? (e['amount'] as num).toDouble()
             : (e['amount'] as double? ?? 0.0);
         final customer = (e['customer'] as String?) ?? 'Walk-in';
+        final phoneNumber = e['phoneNumber'] as String?;
         final total = (e['total'] is num)
             ? (e['total'] as num).toDouble()
             : (e['total'] as double? ?? 0.0);
@@ -211,6 +214,7 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
           invoiceId: invoiceId,
           amount: amount,
           customer: customer,
+          phoneNumber: phoneNumber,
           invoiceTotal: total,
           status: status,
         );
@@ -222,6 +226,7 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
           (a) => paypdf.PaymentAllocation(
             invoiceId: a.invoiceId,
             customer: a.customer,
+            phoneNumber: a.phoneNumber,
             amount: a.amount,
             invoiceTotal: a.invoiceTotal,
             status: a.status,
@@ -266,6 +271,7 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
             ? (e['amount'] as num).toDouble()
             : (e['amount'] as double? ?? 0.0);
         final customer = (e['customer'] as String?) ?? 'Walk-in';
+        final phoneNumber = e['phoneNumber'] as String?;
         final total = (e['total'] is num)
             ? (e['total'] as num).toDouble()
             : (e['total'] as double? ?? 0.0);
@@ -275,6 +281,7 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
           invoiceId: invoiceId,
           amount: amount,
           customer: customer,
+          phoneNumber: phoneNumber,
           invoiceTotal: total,
           status: status,
         );
@@ -286,6 +293,7 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
           (a) => paypdf.PaymentAllocation(
             invoiceId: a.invoiceId,
             customer: a.customer,
+            phoneNumber: a.phoneNumber,
             amount: a.amount,
             invoiceTotal: a.invoiceTotal,
             status: a.status,

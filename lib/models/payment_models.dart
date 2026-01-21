@@ -18,6 +18,7 @@ class AllocationRecord {
   final int invoiceId;
   final double amount;
   final String customer;
+  final String? phoneNumber;
   final double invoiceTotal;
   final String status;
   const AllocationRecord({
@@ -25,6 +26,7 @@ class AllocationRecord {
     required this.invoiceId,
     required this.amount,
     required this.customer,
+    this.phoneNumber,
     required this.invoiceTotal,
     required this.status,
   });

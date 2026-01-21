@@ -34,6 +34,7 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
 
   final TextEditingController _countCtrl = TextEditingController(text: '');
   final TextEditingController _notesCtrl = TextEditingController();
+  final TextEditingController _phoneCtrl = TextEditingController();
 
   DateTime? _editDate;
   TimeOfDay? _editTime;
@@ -50,7 +51,6 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
   }
 
   Future<void> _pickCreateTime() async {
-
     final slotStrings = TeeTimeRepository.standardSlotTimes();
     final slotTOD = slotStrings.map(_parseTime).toList();
     final itemsBox1 = slotTOD;
@@ -136,8 +136,11 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
       _player2Ctrl.text = init.player2Name ?? '';
       _player3Ctrl.text = init.player3Name ?? '';
       _player4Ctrl.text = init.player4Name ?? '';
-      _countCtrl.text = init.playerCount == null ? '' : init.playerCount!.toString();
+      _countCtrl.text = init.playerCount == null
+          ? ''
+          : init.playerCount!.toString();
       _notesCtrl.text = init.notes ?? '';
+      _phoneCtrl.text = init.phoneNumber ?? '';
       setState(() {});
     }
   }
@@ -191,13 +194,17 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
           if (widget.initial != null) ...[
             Text(
               'Edit Tee Time Reservation',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w600),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 12),
             const FieldLabel('Tanggal:'),
             DateField(
               hint: 'dd/mm/yyyy',
-              value: _editDate == null ? '' : DateFormat('dd/MM/yyyy').format(_editDate!),
+              value: _editDate == null
+                  ? ''
+                  : DateFormat('dd/MM/yyyy').format(_editDate!),
               onTap: () async {
                 final now = DateTime.now();
                 final res = await showDatePicker(
@@ -229,7 +236,12 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
             DropdownButtonFormField<int>(
               value: int.tryParse(_countCtrl.text.trim()),
               items: const [1, 2, 3, 4]
-                  .map((e) => DropdownMenuItem<int>(value: e, child: Text(e.toString())))
+                  .map(
+                    (e) => DropdownMenuItem<int>(
+                      value: e,
+                      child: Text(e.toString()),
+                    ),
+                  )
                   .toList(),
               onChanged: (v) {
                 if (v == null) return;
@@ -253,6 +265,17 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
               player3Ctrl: _player3Ctrl,
               player4Ctrl: _player4Ctrl,
             ),
+            const SizedBox(height: 12),
+            const FieldLabel('Nomor Telepon:'),
+            TextField(
+              controller: _phoneCtrl,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                hintText: 'Masukkan nomor telepon',
+                prefixIcon: Icon(Icons.phone),
+              ),
+              keyboardType: TextInputType.phone,
+            ),
             const SizedBox(height: 16),
             SizedBox(
               width: 180,
@@ -271,11 +294,22 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
                     time: _formatTime(_editTime!),
                     teeBox: widget.initial!.teeBox,
                     playerName: _playerCtrl.text.trim(),
-                    player2Name: _player2Ctrl.text.trim().isEmpty ? null : _player2Ctrl.text.trim(),
-                    player3Name: _player3Ctrl.text.trim().isEmpty ? null : _player3Ctrl.text.trim(),
-                    player4Name: _player4Ctrl.text.trim().isEmpty ? null : _player4Ctrl.text.trim(),
+                    player2Name: _player2Ctrl.text.trim().isEmpty
+                        ? null
+                        : _player2Ctrl.text.trim(),
+                    player3Name: _player3Ctrl.text.trim().isEmpty
+                        ? null
+                        : _player3Ctrl.text.trim(),
+                    player4Name: _player4Ctrl.text.trim().isEmpty
+                        ? null
+                        : _player4Ctrl.text.trim(),
                     playerCount: int.tryParse(_countCtrl.text.trim()) ?? 1,
-                    notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
+                    notes: _notesCtrl.text.trim().isEmpty
+                        ? null
+                        : _notesCtrl.text.trim(),
+                    phoneNumber: _phoneCtrl.text.trim().isEmpty
+                        ? null
+                        : _phoneCtrl.text.trim(),
                     status: widget.initial!.status,
                   );
                   await _repo.updateReservation(updated);
@@ -293,13 +327,17 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
           ],
           Text(
             'Create Tee Time Reservation',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w600),
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 16),
           const FieldLabel('Tanggal:'),
           DateField(
             hint: 'dd/mm/yyyy',
-            value: _createDate == null ? '' : DateFormat('dd/MM/yyyy').format(_createDate!),
+            value: _createDate == null
+                ? ''
+                : DateFormat('dd/MM/yyyy').format(_createDate!),
             onTap: _pickCreateDate,
             icon: Icons.calendar_today,
           ),
@@ -318,7 +356,12 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
           DropdownButtonFormField<int>(
             value: int.tryParse(_countCtrl.text.trim()),
             items: const [1, 2, 3, 4]
-                .map((e) => DropdownMenuItem<int>(value: e, child: Text(e.toString())))
+                .map(
+                  (e) => DropdownMenuItem<int>(
+                    value: e,
+                    child: Text(e.toString()),
+                  ),
+                )
                 .toList(),
             onChanged: (v) {
               if (v == null) return;
@@ -343,6 +386,16 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
             player4Ctrl: _player4Ctrl,
           ),
           const SizedBox(height: 12),
+          const FieldLabel('Nomor Telepon:'),
+          TextField(
+            controller: _phoneCtrl,
+            decoration: const InputDecoration(
+              border: OutlineInputBorder(),
+              hintText: 'Masukkan nomor telepon',
+              prefixIcon: Icon(Icons.phone),
+            ),
+            keyboardType: TextInputType.phone,
+          ),
           const SizedBox(height: 16),
           SizedBox(
             width: 180,
@@ -350,7 +403,9 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
               onPressed: () async {
                 final err = _validate(editMode: false);
                 if (err != null) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text(err)));
                   return;
                 }
                 await _repo.createOrBookSlot(
@@ -358,21 +413,39 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
                   time: _formatTime(_createTime!),
                   teeBox: int.tryParse(_createTeeBox ?? '') ?? 1,
                   playerName: _playerCtrl.text.trim(),
-                  playerCount: (int.tryParse(_countCtrl.text.trim()) ?? 1).clamp(1, 4),
-                  player2Name: _player2Ctrl.text.trim().isEmpty ? null : _player2Ctrl.text.trim(),
-                  player3Name: _player3Ctrl.text.trim().isEmpty ? null : _player3Ctrl.text.trim(),
-                  player4Name: _player4Ctrl.text.trim().isEmpty ? null : _player4Ctrl.text.trim(),
-                  notes: _createTeeBox == null ? null : 'Tee Box ${_createTeeBox}',
+                  playerCount: (int.tryParse(_countCtrl.text.trim()) ?? 1)
+                      .clamp(1, 4),
+                  player2Name: _player2Ctrl.text.trim().isEmpty
+                      ? null
+                      : _player2Ctrl.text.trim(),
+                  player3Name: _player3Ctrl.text.trim().isEmpty
+                      ? null
+                      : _player3Ctrl.text.trim(),
+                  player4Name: _player4Ctrl.text.trim().isEmpty
+                      ? null
+                      : _player4Ctrl.text.trim(),
+                  notes: _createTeeBox == null
+                      ? null
+                      : 'Tee Box ${_createTeeBox}',
+                  phoneNumber: _phoneCtrl.text.trim().isEmpty
+                      ? null
+                      : _phoneCtrl.text.trim(),
                 );
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Reservasi berhasil dibuat. Silakan buka POS untuk membuat invoice/pembayaran.'),
+                    content: Text(
+                      'Reservasi berhasil dibuat. Silakan buka POS untuk membuat invoice/pembayaran.',
+                    ),
                   ),
                 );
                 if (!context.mounted) return;
                 GoRouter.of(context).goNamed(
                   AppRoute.teeBooking.name,
-                  extra: DateTime(_createDate!.year, _createDate!.month, _createDate!.day),
+                  extra: DateTime(
+                    _createDate!.year,
+                    _createDate!.month,
+                    _createDate!.day,
+                  ),
                 );
               },
               style: FilledButton.styleFrom(
@@ -384,7 +457,10 @@ class _CreateTeeTimePageState extends State<CreateTeeTimePage> {
           ),
           const SizedBox(height: 40),
           Center(
-            child: Text('© 2025 | Fitri Dwi Astuti.', style: Theme.of(context).textTheme.bodySmall),
+            child: Text(
+              '© 2025 | Fitri Dwi Astuti.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
           ),
         ],
       ),

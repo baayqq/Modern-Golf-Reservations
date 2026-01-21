@@ -28,6 +28,7 @@ class InvoiceRepository {
       CREATE TABLE IF NOT EXISTS invoices (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         customer TEXT,
+        phoneNumber TEXT,
         total REAL NOT NULL,
         status TEXT NOT NULL,
         date TEXT NOT NULL
@@ -75,6 +76,7 @@ class InvoiceRepository {
 
   Future<int> createInvoice({
     required String customer,
+    String? phoneNumber,
     required List<InvoiceItemInput> items,
     String status = 'unpaid',
     DateTime? date,
@@ -83,6 +85,7 @@ class InvoiceRepository {
     final total = items.fold<double>(0.0, (s, e) => s + e.price * e.qty);
     final invoiceId = await _db!.insert('invoices', {
       'customer': customer,
+      'phoneNumber': phoneNumber,
       'total': total,
       'status': status,
       'date': dt.toIso8601String(),
@@ -239,7 +242,7 @@ class InvoiceRepository {
     int paymentId,
   ) async {
     return _db!.rawQuery(
-      'SELECT pa.id, pa.invoiceId, pa.amount, i.customer, i.total, i.status FROM payment_allocations pa JOIN invoices i ON i.id = pa.invoiceId WHERE pa.paymentId = ? ORDER BY pa.id ASC',
+      'SELECT pa.id, pa.invoiceId, pa.amount, i.customer, i.phoneNumber, i.total, i.status FROM payment_allocations pa JOIN invoices i ON i.id = pa.invoiceId WHERE pa.paymentId = ? ORDER BY pa.id ASC',
       [paymentId],
     );
   }

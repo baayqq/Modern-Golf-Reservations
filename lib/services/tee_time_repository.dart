@@ -8,7 +8,6 @@ class TeeTimeRepository {
   Database? _db;
 
   Future<void> init() async {
-
     final factory = databaseFactoryFfiWeb;
     _db = await factory.openDatabase('tee_times.db');
     await _createTables();
@@ -29,6 +28,7 @@ class TeeTimeRepository {
         player4Name TEXT,
         playerCount INTEGER,
         notes TEXT,
+        phoneNumber TEXT,
         status TEXT NOT NULL
       );
     ''');
@@ -45,7 +45,9 @@ class TeeTimeRepository {
     final cols = await _db!.rawQuery("PRAGMA table_info('tee_times')");
     final names = cols.map((e) => e['name'] as String).toSet();
     if (!names.contains('playerCount')) {
-      await _db!.execute("ALTER TABLE tee_times ADD COLUMN playerCount INTEGER");
+      await _db!.execute(
+        "ALTER TABLE tee_times ADD COLUMN playerCount INTEGER",
+      );
     }
     if (!names.contains('notes')) {
       await _db!.execute("ALTER TABLE tee_times ADD COLUMN notes TEXT");
@@ -61,6 +63,9 @@ class TeeTimeRepository {
     }
     if (!names.contains('teeBox')) {
       await _db!.execute("ALTER TABLE tee_times ADD COLUMN teeBox INTEGER");
+    }
+    if (!names.contains('phoneNumber')) {
+      await _db!.execute("ALTER TABLE tee_times ADD COLUMN phoneNumber TEXT");
     }
   }
 
@@ -81,32 +86,24 @@ class TeeTimeRepository {
       for (var i = 0; i < times.length; i++) {
         final time = times[i];
 
-        batch.insert(
-          'tee_times',
-          {
-            'date': dayIso,
-            'time': time,
-            'teeBox': 1,
-            'playerName': null,
-            'playerCount': null,
-            'notes': 'Tee Box 1',
-            'status': 'available',
-          },
-          conflictAlgorithm: ConflictAlgorithm.ignore,
-        );
-        batch.insert(
-          'tee_times',
-          {
-            'date': dayIso,
-            'time': time,
-            'teeBox': 10,
-            'playerName': null,
-            'playerCount': null,
-            'notes': 'Tee Box 10',
-            'status': 'available',
-          },
-          conflictAlgorithm: ConflictAlgorithm.ignore,
-        );
+        batch.insert('tee_times', {
+          'date': dayIso,
+          'time': time,
+          'teeBox': 1,
+          'playerName': null,
+          'playerCount': null,
+          'notes': 'Tee Box 1',
+          'status': 'available',
+        }, conflictAlgorithm: ConflictAlgorithm.ignore);
+        batch.insert('tee_times', {
+          'date': dayIso,
+          'time': time,
+          'teeBox': 10,
+          'playerName': null,
+          'playerCount': null,
+          'notes': 'Tee Box 10',
+          'status': 'available',
+        }, conflictAlgorithm: ConflictAlgorithm.ignore);
       }
     }
     await batch.commit(noResult: true);
@@ -144,7 +141,10 @@ class TeeTimeRepository {
     return rows.map((e) => TeeTimeModel.fromMap(e)).toList();
   }
 
-  Future<List<TeeTimeModel>> search({DateTime? date, String? playerQuery}) async {
+  Future<List<TeeTimeModel>> search({
+    DateTime? date,
+    String? playerQuery,
+  }) async {
     final whereParts = <String>[];
     final args = <Object?>[];
     if (date != null) {
@@ -166,7 +166,11 @@ class TeeTimeRepository {
   }
 
   Future<TeeTimeModel?> getById(int id) async {
-    final rows = await _db!.query('tee_times', where: 'id = ?', whereArgs: [id]);
+    final rows = await _db!.query(
+      'tee_times',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
     if (rows.isEmpty) return null;
     return TeeTimeModel.fromMap(rows.first);
   }
@@ -174,10 +178,7 @@ class TeeTimeRepository {
   Future<void> bookSlot({required int id, required String playerName}) async {
     await _db!.update(
       'tee_times',
-      {
-        'playerName': playerName,
-        'status': 'booked',
-      },
+      {'playerName': playerName, 'status': 'booked'},
       where: 'id = ?',
       whereArgs: [id],
     );
@@ -186,10 +187,7 @@ class TeeTimeRepository {
   Future<void> cancelBooking({required int id}) async {
     await _db!.update(
       'tee_times',
-      {
-        'playerName': null,
-        'status': 'available',
-      },
+      {'playerName': null, 'status': 'available'},
       where: 'id = ?',
       whereArgs: [id],
     );
@@ -208,6 +206,7 @@ class TeeTimeRepository {
         'player4Name': model.player4Name,
         'playerCount': model.playerCount,
         'notes': model.notes,
+        'phoneNumber': model.phoneNumber,
         'status': model.status,
       },
       where: 'id = ?',
@@ -229,8 +228,8 @@ class TeeTimeRepository {
     String? player3Name,
     String? player4Name,
     String? notes,
+    String? phoneNumber,
   }) async {
-
     final rows = await _db!.query(
       'tee_times',
       where: 'date = ? AND time = ? AND teeBox = ?',
@@ -238,8 +237,8 @@ class TeeTimeRepository {
       limit: 1,
     );
     if (rows.isNotEmpty) {
-
-      final id = (rows.first['id'] as int?) ?? (rows.first['id'] as num).toInt();
+      final id =
+          (rows.first['id'] as int?) ?? (rows.first['id'] as num).toInt();
       await _db!.update(
         'tee_times',
         {
@@ -249,13 +248,13 @@ class TeeTimeRepository {
           'player4Name': player4Name,
           'playerCount': playerCount,
           'notes': notes,
+          'phoneNumber': phoneNumber,
           'status': 'booked',
         },
         where: 'id = ?',
         whereArgs: [id],
       );
     } else {
-
       await _db!.insert('tee_times', {
         'date': _iso(date),
         'time': time,
@@ -266,6 +265,7 @@ class TeeTimeRepository {
         'player4Name': player4Name,
         'playerCount': playerCount,
         'notes': notes,
+        'phoneNumber': phoneNumber,
         'status': 'booked',
       });
     }
@@ -303,7 +303,10 @@ class TeeTimeRepository {
     return (val is int) ? val : (val as num).toInt();
   }
 
-  Future<int> countPlayersInRange(DateTime startInclusive, DateTime endExclusive) async {
+  Future<int> countPlayersInRange(
+    DateTime startInclusive,
+    DateTime endExclusive,
+  ) async {
     final startIso = _iso(startInclusive);
     final endIso = _iso(endExclusive);
     final rows = await _db!.rawQuery(
@@ -324,8 +327,11 @@ class TeeTimeRepository {
   Future<int> countPlayersThisWeek() async {
     final now = DateTime.now();
 
-    final start = DateTime(now.year, now.month, now.day)
-        .subtract(Duration(days: now.weekday - 1));
+    final start = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    ).subtract(Duration(days: now.weekday - 1));
     final end = start.add(const Duration(days: 7));
     return countPlayersInRange(start, end);
   }
@@ -352,9 +358,6 @@ class TeeTimeRepository {
       return out;
     }
 
-    return [
-      ...buildRange(6, 30, 8, 30),
-      ...buildRange(11, 30, 14, 0),
-    ];
+    return [...buildRange(6, 30, 8, 30), ...buildRange(11, 30, 14, 0)];
   }
 }
